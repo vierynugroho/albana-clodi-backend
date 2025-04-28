@@ -2,21 +2,21 @@ import { PrismaClient } from "../../generated/prisma/client";
 import { env } from "../common/utils/envConfig";
 
 declare global {
-  // eslint-disable-next-line no-var
-  var prisma: PrismaClient | undefined;
+	// eslint-disable-next-line no-var
+	var prisma: PrismaClient | undefined;
 }
 
 const prismaClient = new PrismaClient({
-  log: [
-    { level: "query", emit: "event" },
-    { level: "error", emit: "stdout" },
-    { level: "info", emit: "stdout" },
-    { level: "warn", emit: "stdout" },
-  ],
+	log: [
+		{ level: "query", emit: "event" },
+		{ level: "error", emit: "stdout" },
+		{ level: "info", emit: "stdout" },
+		{ level: "warn", emit: "stdout" },
+	],
 });
 
 prismaClient.$on("query", (e) => {
-  console.log(`Query: ${e.query}`);
+	console.log(`Query: ${e.query}`);
 });
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
