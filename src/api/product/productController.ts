@@ -8,7 +8,9 @@ export class ProductController {
 	};
 
 	public updateProduct: RequestHandler = async (req: Request, res: Response) => {
-		await productService.updateProduct(req);
+		const id = req.params.id;
+		const serviceResponse = await productService.updateProduct(req.body, id);
+		res.status(serviceResponse.statusCode).send(serviceResponse);
 	};
 }
 

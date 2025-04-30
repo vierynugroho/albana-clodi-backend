@@ -21,3 +21,9 @@ export const CreateProductWholesalerSchema = ProductWholesalerSchema.omit({
 	createdAt: true,
 	updatedAt: true,
 });
+
+export const UpdateProductWholesalerSchema = ProductWholesalerSchema.omit({
+	productVariantId: true,
+	createdAt: true,
+	updatedAt: true,
+});

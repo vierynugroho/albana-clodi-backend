@@ -22,3 +22,9 @@ export const CreateProductPriceSchema = ProductPriceSchema.omit({
 	createdAt: true,
 	updatedAt: true,
 });
+
+export const UpdateProductPriceSchema = ProductPriceSchema.omit({
+	productVariantId: true,
+	createdAt: true,
+	updatedAt: true,
+});

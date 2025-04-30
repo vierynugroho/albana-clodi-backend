@@ -1,10 +1,18 @@
 import { ProductTypeEnum } from "@/common/enums/product/productTypeEnum";
+import { commonValidations } from "@/common/utils/commonValidation";
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
 import { CreateCategorySchema } from "../category/categoryModel";
-import { CreateProductWholesalerSchema } from "../prodcut-wholesaler/productWholesaleModel";
-import { CreateProductPriceSchema } from "../product-price/productPriceModel";
-import { CreateProductVariantSchema, ProductVariantSchema } from "../product-variant/productVariantModel";
+import {
+	CreateProductWholesalerSchema,
+	UpdateProductWholesalerSchema,
+} from "../prodcut-wholesaler/productWholesaleModel";
+import { CreateProductPriceSchema, UpdateProductPriceSchema } from "../product-price/productPriceModel";
+import {
+	CreateProductVariantSchema,
+	ProductVariantSchema,
+	UpdateProductVariantSchema,
+} from "../product-variant/productVariantModel";
 
 extendZodWithOpenApi(z);
 
@@ -22,7 +30,7 @@ export const ProductSchema = z.object({
 
 export const CreateProductSchema = z.object({
 	product: ProductSchema.omit({ id: true, createdAt: true, updatedAt: true }),
-	categories: z.array(z.string()).optional(),
+	categoryId: z.string().uuid().optional(),
 	productVariants: z
 		.array(
 			CreateProductVariantSchema.extend({
@@ -35,8 +43,26 @@ export const CreateProductSchema = z.object({
 
 export const CreateProductRequestSchema = z.object({
 	body: CreateProductSchema,
-	query: z.object({}),
-	params: z.object({}),
 });
 
 export type CreateProductType = z.infer<typeof CreateProductSchema>;
+
+export const UpdateProductSchema = z.object({
+	product: ProductSchema.omit({ id: true, createdAt: true, updatedAt: true }).partial().optional(),
+	categoryId: z.string().uuid().optional(),
+	productVariants: z
+		.array(
+			UpdateProductVariantSchema.extend({
+				productPrices: UpdateProductPriceSchema.partial().optional(),
+				productWholesalers: z.array(UpdateProductWholesalerSchema.partial()).optional(),
+			}),
+		)
+		.optional(),
+});
+
+export type UpdateProductType = z.infer<typeof UpdateProductSchema>;
+
+export const UpdateProductRequestSchema = z.object({
+	body: UpdateProductSchema,
+	params: z.object({ id: commonValidations.uuid }),
+});
