@@ -10,5 +10,11 @@
 	},
 	"[github-actions-workflow][markdown][xml][yaml]": {
 		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"[typescript]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	},
+	"[json]": {
+		"editor.defaultFormatter": "biomejs.biome"
 	}
 }
