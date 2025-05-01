@@ -13,7 +13,7 @@
 		"start:prod": "node dist/index.js",
 		"lint": "biome lint --fix",
 		"format": "biome format --write",
-		"test": "vitest run",
+		"test": "prisma generate && vitest run",
 		"test:cov": "vitest run --coverage",
 		"check": "pnpm lint && pnpm format && pnpm build && pnpm test"
 	},
