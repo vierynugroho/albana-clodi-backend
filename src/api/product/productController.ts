@@ -12,6 +12,8 @@ export class ProductController {
 		const serviceResponse = await productService.updateProduct(req.body, id);
 		res.status(serviceResponse.statusCode).send(serviceResponse);
 	};
+
+	public deleteProduct: RequestHandler = async (req: Request, res: Response) => {};
 }
 
 export const productController = new ProductController();

@@ -96,7 +96,7 @@ model ProductWholesaler {
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 
-  productVariant ProductVariant? @relation(fields: [productVariantId], references: [id])
+  productVariant ProductVariant? @relation(fields: [productVariantId], references: [id], onDelete: Cascade)
 
   @@map("product_wholesaler")
 }
@@ -112,7 +112,7 @@ model ProductPrice {
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 
-  productVariant ProductVariant? @relation(fields: [productVariantId], references: [id])
+  productVariant ProductVariant? @relation(fields: [productVariantId], references: [id], onDelete: Cascade)
 
   @@index([productVariantId])
   @@map("product_prices")
@@ -130,7 +130,7 @@ model ProductVariant {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  product           Product?            @relation(fields: [productId], references: [id])
+  product           Product?            @relation(fields: [productId], references: [id], onDelete: Cascade)
   productPrices     ProductPrice[]
   ProductWholesaler ProductWholesaler[]
 

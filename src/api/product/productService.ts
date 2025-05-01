@@ -1,7 +1,7 @@
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { logger } from "@/server";
+import { type Prisma, PrismaClient, type ProductVariant } from "@prisma/client";
 import { StatusCodes } from "http-status-codes";
-import { type Prisma, PrismaClient, type ProductVariant } from "../../../generated/prisma";
 import type { CreateProductType, UpdateProductType } from "./productModel";
 import { ProductRepository } from "./productRepository";
 
@@ -207,6 +207,8 @@ class ProductService {
 			);
 		}
 	};
+
+	public deleteProduct = async (productId: string) => {};
 }
 
 export const productService = new ProductService();
