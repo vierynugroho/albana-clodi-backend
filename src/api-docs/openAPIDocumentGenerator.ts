@@ -8,11 +8,7 @@ import { userRegistry } from "@/api/user/userRouter";
 export type OpenAPIDocument = ReturnType<OpenApiGeneratorV3["generateDocument"]>;
 
 export function generateOpenAPIDocument(): OpenAPIDocument {
-<<<<<<< HEAD
-	const registry = new OpenAPIRegistry([healthCheckRegistry, userRegistry, productRegistry]);
-=======
-	const registry = new OpenAPIRegistry([healthCheckRegistry, userRegistry, expensesRegistry]);
->>>>>>> 007527588effa19647c8801f4273297645f1023b
+	const registry = new OpenAPIRegistry([healthCheckRegistry, userRegistry, productRegistry, expensesRegistry]);
 	const generator = new OpenApiGeneratorV3(registry.definitions);
 
 	return generator.generateDocument({

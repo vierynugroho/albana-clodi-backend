@@ -1,4 +1,4 @@
-import type { PrismaClient } from "../../../generated/prisma";
+import type { PrismaClient } from "@prisma/client";
 
 export class ProductRepository {
 	public readonly client: PrismaClient;
