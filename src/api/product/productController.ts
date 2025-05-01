@@ -33,4 +33,3 @@ export class ProductController {
 }
 
 export const productController = new ProductController();
-console.log("productService.getDetailProduct:", productService.getDetailProduct);
