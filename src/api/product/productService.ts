@@ -42,7 +42,7 @@ class ProductService {
 
 		try {
 			// Use transaction to ensure data consistency across related tables
-			return await this.productRepo.client.$transaction(async (tx) => {
+			return await this.productRepo.client.$transaction(async (tx: Prisma.TransactionClient) => {
 				// Prepare product data with category connection
 				const createDataProduct: Prisma.ProductCreateInput = {
 					...req.product,
@@ -122,7 +122,7 @@ class ProductService {
 			}
 
 			// Use transaction to ensure data consistency during update
-			return await this.productRepo.client.$transaction(async (tx) => {
+			return await this.productRepo.client.$transaction(async (tx: Prisma.TransactionClient) => {
 				// Update main product information
 				await tx.product.update({
 					where: { id: productId },
