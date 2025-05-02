@@ -243,8 +243,8 @@ model DeliveryPlace {
 model Expense {
   id                String   @id @default(uuid()) @db.Uuid
   itemName          String?  @map("item_name")
-  itemPrice         String?  @map("item_price")
-  itemTotal         Int?     @map("item_total")
+  itemPrice         Float?   @map("item_price")
+  qty               Int?     @map("item_total")
   totalPrice        Float?   @map("total_price")
   personResponsible String?  @map("person_responsible")
   note              String?  @db.Text

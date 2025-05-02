@@ -6,8 +6,8 @@ extendZodWithOpenApi(z);
 export const ExpensesSchema = z.object({
 	id: z.string().uuid(),
 	itemName: z.string().optional(),
-	itemPrice: z.string().optional(),
-	itemTotal: z.number().int().optional(),
+	itemPrice: z.number().optional(),
+	qty: z.number().int().optional(),
 	totalPrice: z.number().optional(),
 	personResponsible: z.string().optional(),
 	note: z.string().optional(),

@@ -6,6 +6,9 @@ declare global {
 	var prisma: PrismaClient | undefined;
 }
 
+// Konfigurasi timezone untuk Prisma
+process.env.TZ = "Asia/Jakarta";
+
 const prismaClient = new PrismaClient({
 	log: [
 		{ level: "query", emit: "event" },
