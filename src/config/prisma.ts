@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { type Prisma, PrismaClient } from "@prisma/client";
 import { env } from "../common/utils/envConfig";
 
 declare global {
@@ -18,7 +18,7 @@ const prismaClient = new PrismaClient({
 	],
 });
 
-prismaClient.$on("query", (e) => {
+prismaClient.$on("query", (e: Prisma.QueryEvent) => {
 	console.log(`Query: ${e.query}`);
 });
 
