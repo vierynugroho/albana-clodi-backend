@@ -5,7 +5,8 @@ extendZodWithOpenApi(z);
 
 export type ProductPrice = z.infer<typeof ProductPriceSchema>;
 export const ProductPriceSchema = z.object({
-	id: z.number(),
+	id: z.string(),
+	productVariantId: z.string(),
 	normal: z.number(),
 	buy: z.number(),
 	reseller: z.number(),
@@ -15,4 +16,15 @@ export const ProductPriceSchema = z.object({
 	updatedAt: z.date(),
 });
 
-export const CreateProductPriceSchema = ProductPriceSchema.omit({ id: true, createdAt: true, updatedAt: true });
+export const CreateProductPriceSchema = ProductPriceSchema.omit({
+	id: true,
+	productVariantId: true,
+	createdAt: true,
+	updatedAt: true,
+});
+
+export const UpdateProductPriceSchema = ProductPriceSchema.omit({
+	productVariantId: true,
+	createdAt: true,
+	updatedAt: true,
+});

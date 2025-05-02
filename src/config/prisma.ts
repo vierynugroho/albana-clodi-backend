@@ -1,10 +1,13 @@
-import { PrismaClient } from "../../generated/prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { env } from "../common/utils/envConfig";
 
 declare global {
 	// eslint-disable-next-line no-var
 	var prisma: PrismaClient | undefined;
 }
+
+// Konfigurasi timezone untuk Prisma
+process.env.TZ = "Asia/Jakarta";
 
 const prismaClient = new PrismaClient({
 	log: [

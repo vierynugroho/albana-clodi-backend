@@ -1,12 +1,9 @@
-import { PrismaClient } from "../../../generated/prisma";
+import type { PrismaClient } from "@prisma/client";
 
 export class ProductRepository {
-	constructor(private readonly prisma: PrismaClient) {}
+	public readonly client: PrismaClient;
 
-	public get client() {
-		return this.prisma;
+	constructor(private readonly prismaInit: PrismaClient) {
+		this.client = prismaInit;
 	}
 }
-
-const prisma = new PrismaClient();
-export const productRepository = new ProductRepository(prisma);

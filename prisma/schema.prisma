@@ -3,7 +3,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -55,9 +54,11 @@ model User {
 }
 
 model Category {
-  id       String    @id @default(uuid()) @db.Uuid
-  name     String?
-  products Product[]
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String?
+  products  Product[]
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
 
   @@index([name])
   @@map("categories")
@@ -71,6 +72,8 @@ model Product {
   description String?       @db.Text
   weight      Float?
   isPublish   Boolean?      @default(true) @map("is_publish")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
 
   category        Category?        @relation(fields: [categoryId], references: [id])
   productVariants ProductVariant[]
@@ -83,44 +86,50 @@ model Product {
 }
 
 model ProductWholesaler {
-  id               String  @id @default(uuid()) @db.Uuid
-  productVariantId String? @map("product_variant_id") @db.Uuid
-  lowerLimitItem   Int?    @map("lower_limit_item")
-  upperLimitItem   Int?    @map("upper_limit_item")
-  unitPrice        Float?  @map("unit_price")
-  wholesalerPrice  Float?  @map("wholesaler_price")
+  id               String   @id @default(uuid()) @db.Uuid
+  productVariantId String?  @map("product_variant_id") @db.Uuid
+  lowerLimitItem   Int?     @map("lower_limit_item")
+  upperLimitItem   Int?     @map("upper_limit_item")
+  unitPrice        Float?   @map("unit_price")
+  wholesalerPrice  Float?   @map("wholesaler_price")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
 
-  productVariant ProductVariant? @relation(fields: [productVariantId], references: [id])
+  productVariant ProductVariant? @relation(fields: [productVariantId], references: [id], onDelete: Cascade)
 
   @@map("product_wholesaler")
 }
 
 model ProductPrice {
-  id               String  @id @default(uuid()) @db.Uuid
-  productVariantId String? @map("product_variant_id") @db.Uuid
+  id               String   @id @default(uuid()) @db.Uuid
+  productVariantId String?  @map("product_variant_id") @db.Uuid
   normal           Float?
   buy              Float?
   reseller         Float?
   agent            Float?
   member           Float?
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
 
-  productVariant ProductVariant? @relation(fields: [productVariantId], references: [id])
+  productVariant ProductVariant? @relation(fields: [productVariantId], references: [id], onDelete: Cascade)
 
   @@index([productVariantId])
   @@map("product_prices")
 }
 
 model ProductVariant {
-  id        String  @id @default(uuid()) @db.Uuid
-  productId String? @map("product_id") @db.Uuid
+  id        String   @id @default(uuid()) @db.Uuid
+  productId String?  @map("product_id") @db.Uuid
   sku       String?
   stock     Int?
   size      String?
   color     String?
-  imageUrl  String? @map("image_url")
-  barcode   String? @db.Text
+  imageUrl  String?  @map("image_url")
+  barcode   String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  product           Product?            @relation(fields: [productId], references: [id])
+  product           Product?            @relation(fields: [productId], references: [id], onDelete: Cascade)
   productPrices     ProductPrice[]
   ProductWholesaler ProductWholesaler[]
 
@@ -139,6 +148,8 @@ model Customer {
   phoneNumber String?             @map("phone_number")
   email       String?
   status      CustomerStatuses?
+  createdAt   DateTime            @default(now()) @map("created_at")
+  updatedAt   DateTime            @updatedAt @map("updated_at")
 
   ordersAsOrderer        Order[] @relation("OrdererCustomer")
   ordersAsDeliveryTarget Order[] @relation("DeliveryTargetCustomer")
@@ -158,6 +169,8 @@ model Order {
   orderDate                DateTime? @map("order_date") @db.Date
   salesChannel             String?   @map("sales_channel")
   note                     String?   @db.Text
+  createdAt                DateTime  @default(now()) @map("created_at")
+  updatedAt                DateTime  @updatedAt @map("updated_at")
 
   ordererCustomer        Customer? @relation("OrdererCustomer", fields: [ordererCustomerId], references: [id])
   deliveryTargetCustomer Customer? @relation("DeliveryTargetCustomer", fields: [deliveryTargetCustomerId], references: [id])
@@ -184,6 +197,8 @@ model OrderDetail {
   paymentStatus   PaymentStatus?
   paymentDate     DateTime?      @map("payment_date")
   receiptNumber   String?        @map("receipt_number")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
 
   product       Product?       @relation(fields: [productId], references: [id])
   paymentMethod PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
@@ -196,11 +211,13 @@ model OrderDetail {
 }
 
 model PaymentMethod {
-  id            String  @id @default(uuid()) @db.Uuid
+  id            String   @id @default(uuid()) @db.Uuid
   name          String?
-  bankName      String? @map("bank_name")
-  bankBranch    String? @map("bank_branch")
-  accountNumber String? @map("account_number")
+  bankName      String?  @map("bank_name")
+  bankBranch    String?  @map("bank_branch")
+  accountNumber String?  @map("account_number")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
   orderDetails OrderDetail[]
 
@@ -209,12 +226,14 @@ model PaymentMethod {
 }
 
 model DeliveryPlace {
-  id          String  @id @default(uuid()) @db.Uuid
+  id          String   @id @default(uuid()) @db.Uuid
   name        String?
-  address     String? @db.Text
+  address     String?  @db.Text
   subdistrict String?
-  phoneNumber String? @map("phone_number")
+  phoneNumber String?  @map("phone_number")
   email       String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@index([name])
   @@index([email])
@@ -222,36 +241,42 @@ model DeliveryPlace {
 }
 
 model Expense {
-  id                String  @id @default(uuid()) @db.Uuid
-  itemName          String? @map("item_name")
-  itemPrice         String? @map("item_price")
-  itemTotal         Int?    @map("item_total")
-  totalPrice        Float?  @map("total_price")
-  personResponsible String? @map("person_responsible")
-  note              String? @db.Text
+  id                String   @id @default(uuid()) @db.Uuid
+  itemName          String?  @map("item_name")
+  itemPrice         Float?   @map("item_price")
+  qty               Int?     @map("item_total")
+  totalPrice        Float?   @map("total_price")
+  personResponsible String?  @map("person_responsible")
+  note              String?  @db.Text
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
 
   @@index([personResponsible])
   @@map("expenses")
 }
 
 model ShopSetting {
-  id          String  @id @default(uuid()) @db.Uuid
+  id          String   @id @default(uuid()) @db.Uuid
   name        String?
-  description String? @db.Text
+  description String?  @db.Text
   email       String?
-  phoneNumber String? @map("phone_number")
-  address     String? @db.Text
+  phoneNumber String?  @map("phone_number")
+  address     String?  @db.Text
   owner       String?
   logo        String?
   banner      String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("shop_settings")
 }
 
 model SalesChannel {
-  id       String   @id @default(uuid()) @db.Uuid
-  name     String?
-  isActive Boolean? @map("is_active")
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String?
+  isActive  Boolean? @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([name])
   @@index([isActive])

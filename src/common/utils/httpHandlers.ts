@@ -13,9 +13,19 @@ export const validateRequest = (schema: ZodSchema) => async (req: Request, res: 
 		});
 		next();
 	} catch (err) {
-		const errorMessage = `Invalid input: ${(err as ZodError).errors.map((e) => e.message).join(", ")}`;
+		const formattedError = (err as ZodError).format();
+		console.log(formattedError);
+
+		const errorDetails: string[] = [];
+
+		const errorMessage =
+			errorDetails.length > 0
+				? `Validation failed: ${errorDetails.join("; ")}`
+				: `Invalid input: ${(err as ZodError).errors.map((e) => e.message).join(", ")}`;
+
 		const statusCode = StatusCodes.BAD_REQUEST;
 		const serviceResponse = ServiceResponse.failure(errorMessage, null, statusCode);
+
 		res.status(serviceResponse.statusCode).send(serviceResponse);
 	}
 };
