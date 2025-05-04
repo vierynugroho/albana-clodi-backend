@@ -12,6 +12,7 @@ import requestLogger from "@/common/middleware/requestLogger";
 import { env } from "@/common/utils/envConfig";
 import { deliveryPlaceRouter } from "./api/delivery-place/router";
 import { expensesRouter } from "./api/expenses/router";
+import { orderRouter } from "./api/order/router";
 import { productRouter } from "./api/product/productRouter";
 import { locationRouter } from "./api/shipping-cost/router";
 
@@ -38,6 +39,7 @@ app.use("/expenses", expensesRouter);
 app.use("/products", productRouter);
 app.use("/locations", locationRouter);
 app.use("/delivery-places", deliveryPlaceRouter);
+app.use("/orders", orderRouter);
 
 // Swagger UI
 app.use(openAPIRouter);

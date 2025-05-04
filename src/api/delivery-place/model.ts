@@ -9,7 +9,7 @@ export const DeliveryPlaceSchema = z.object({
 	address: z.string().optional().describe("Alamat tempat pengiriman"),
 	subdistrict: z.string().optional().describe("Kecamatan tempat pengiriman"),
 	phoneNumber: z.string().optional().describe("Nomor telepon"),
-	destination_id: z.number().optional().describe("ID destinasi"),
+	destinationId: z.number().optional().describe("ID destinasi"),
 	email: z.string().optional().describe("Alamat email"),
 	description: z.string().optional().describe("Deskripsi tempat pengiriman"),
 });

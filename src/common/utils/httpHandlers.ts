@@ -13,18 +13,22 @@ export const validateRequest = (schema: ZodSchema) => async (req: Request, res: 
 		});
 		next();
 	} catch (err) {
-		const formattedError = (err as ZodError).format();
-		console.log(formattedError);
-
-		const errorDetails: string[] = [];
-
-		const errorMessage =
-			errorDetails.length > 0
-				? `Validation failed: ${errorDetails.join("; ")}`
-				: `Invalid input: ${(err as ZodError).errors.map((e) => e.message).join(", ")}`;
-
 		const statusCode = StatusCodes.BAD_REQUEST;
-		const serviceResponse = ServiceResponse.failure(errorMessage, null, statusCode);
+		// Format error path agar lebih readable
+		let responseObject: ZodError | unknown;
+		if ((err as ZodError).errors) {
+			const formattedErrors = (err as ZodError).errors.map((error) => {
+				const pathString = error.path.join(".");
+				return {
+					...error,
+					path: pathString,
+				};
+			});
+			responseObject = formattedErrors;
+		} else {
+			responseObject = err;
+		}
+		const serviceResponse = ServiceResponse.failure("Validation Error", responseObject, statusCode);
 
 		res.status(serviceResponse.statusCode).send(serviceResponse);
 	}
