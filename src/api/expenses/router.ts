@@ -1,10 +1,11 @@
 import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
+import { validateRequest } from "@/common/utils/httpHandlers";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Request, type Response, type Router } from "express";
 import multer from "multer";
 import { z } from "zod";
 import { ExpenseController } from "./controller";
-import { ExpensesSchema } from "./model";
+import { CreateExpensesSchema, ExpenseParamsSchema, ExpensesSchema, UpdateExpensesSchema } from "./model";
 
 export const expensesRegistry = new OpenAPIRegistry();
 export const expensesRouter: Router = express.Router();
@@ -87,7 +88,7 @@ expensesRegistry.registerPath({
 });
 
 expensesRegistry.registerPath({
-	method: "get",
+	method: "post",
 	path: "/expenses/export/excel",
 	tags: ["Expenses"],
 	request: {
@@ -149,11 +150,14 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 const expenseController = new ExpenseController();
 
-expensesRouter.route("/").get(expenseController.getAllExpenses).post(expenseController.createExpense);
+expensesRouter
+	.route("/")
+	.get(expenseController.getAllExpenses)
+	.post(validateRequest(CreateExpensesSchema), expenseController.createExpense);
 expensesRouter
 	.route("/:id")
-	.get(expenseController.getExpenseDetail)
-	.put(expenseController.updateExpense)
-	.delete(expenseController.deleteExpense);
-expensesRouter.route("/export/excel").get(expenseController.exportExpenses);
+	.get(validateRequest(ExpenseParamsSchema), expenseController.getExpenseDetail)
+	.put(validateRequest(UpdateExpensesSchema), expenseController.updateExpense)
+	.delete(validateRequest(ExpenseParamsSchema), expenseController.deleteExpense);
+expensesRouter.route("/export/excel").post(expenseController.exportExpenses);
 expensesRouter.route("/import/excel").post(upload.single("expenses_data"), expenseController.importExpenses);
