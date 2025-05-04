@@ -1,9 +1,15 @@
 import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
+import { validateRequest } from "@/common/utils/httpHandlers";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Request, type Response, type Router } from "express";
 import { z } from "zod";
 import { DeliveryPlaceController } from "./controller";
-import { DeliveryPlaceSchema } from "./model";
+import {
+	CreateDeliveryPlaceSchema,
+	DeliveryPlaceParamsSchema,
+	DeliveryPlaceSchema,
+	UpdateDeliveryPlaceSchema,
+} from "./model";
 
 export const deliveryPlaceRegistry = new OpenAPIRegistry();
 export const deliveryPlaceRouter: Router = express.Router();
@@ -66,5 +72,11 @@ deliveryPlaceRegistry.registerPath({
 
 const deliveryPlaceController = new DeliveryPlaceController();
 
-deliveryPlaceRouter.route("/").get(deliveryPlaceController.getAll).post(deliveryPlaceController.create);
-deliveryPlaceRouter.route("/:id").put(deliveryPlaceController.update).delete(deliveryPlaceController.delete);
+deliveryPlaceRouter
+	.route("/")
+	.get(deliveryPlaceController.getAll)
+	.post(validateRequest(CreateDeliveryPlaceSchema), deliveryPlaceController.create);
+deliveryPlaceRouter
+	.route("/:id")
+	.put(validateRequest(UpdateDeliveryPlaceSchema), deliveryPlaceController.update)
+	.delete(validateRequest(DeliveryPlaceParamsSchema), deliveryPlaceController.delete);

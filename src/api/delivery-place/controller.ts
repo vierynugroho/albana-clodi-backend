@@ -1,42 +1,33 @@
 import type { Request, RequestHandler, Response } from "express";
-import { locationService } from "./service";
+import { deliveryPlaceService } from "./service";
 
 export class DeliveryPlaceController {
 	public getAll: RequestHandler = async (req: Request, res: Response) => {
-		const serviceResponse = await locationService.getProvinces();
-		res.status(serviceResponse.statusCode).send(serviceResponse);
-	};
-
-	public create: RequestHandler = async (req: Request, res: Response) => {
-		const serviceResponse = await locationService.getProvinces();
+		const serviceResponse = await deliveryPlaceService.getAll();
 		res.status(serviceResponse.statusCode).send(serviceResponse);
 	};
 
 	public getOne: RequestHandler = async (req: Request, res: Response) => {
-		const serviceResponse = await locationService.getProvinces();
+		const { id } = req.params;
+		const serviceResponse = await deliveryPlaceService.getOne(id);
+		res.status(serviceResponse.statusCode).send(serviceResponse);
+	};
+
+	public create: RequestHandler = async (req: Request, res: Response) => {
+		const data = req.body;
+		const serviceResponse = await deliveryPlaceService.create(data);
 		res.status(serviceResponse.statusCode).send(serviceResponse);
 	};
 
 	public update: RequestHandler = async (req: Request, res: Response) => {
 		const { id } = req.params;
-		const serviceResponse = await locationService.getCities(id);
+		const serviceResponse = await deliveryPlaceService.update(id);
 		res.status(serviceResponse.statusCode).send(serviceResponse);
 	};
 
 	public delete: RequestHandler = async (req: Request, res: Response) => {
-		const { origin, destination, weight, courier } = req.body;
-
-		if (!origin || !destination || !weight || !courier) {
-			res.status(400).send({
-				success: false,
-				message: "Incomplete data. Please fill in all required fields: origin, destination, weight, and courier.",
-				responseObject: null,
-				statusCode: 400,
-			});
-			return;
-		}
-
-		const serviceResponse = await locationService.checkShippingCost(origin, destination, weight, courier);
+		const { id } = req.params;
+		const serviceResponse = await deliveryPlaceService.delete(id);
 		res.status(serviceResponse.statusCode).send(serviceResponse);
 	};
 }

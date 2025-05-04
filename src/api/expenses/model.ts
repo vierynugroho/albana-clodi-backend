@@ -23,6 +23,9 @@ export type CreateExpensesType = z.infer<typeof CreateExpensesSchema>;
 
 // Schema untuk update expense
 export const UpdateExpensesSchema = z.object({
+	params: z.object({
+		id: z.string().uuid(),
+	}),
 	body: ExpensesSchema.omit({ id: true }).partial(),
 });
 export type UpdateExpensesType = z.infer<typeof UpdateExpensesSchema>;
