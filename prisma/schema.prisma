@@ -139,17 +139,18 @@ model ProductVariant {
 }
 
 model Customer {
-  id          String              @id @default(uuid()) @db.Uuid
-  name        String?
-  category    CustomerCategories?
-  address     String?             @db.Text
-  subdistrict String?
-  postalCode  String?             @map("postal_code")
-  phoneNumber String?             @map("phone_number")
-  email       String?
-  status      CustomerStatuses?
-  createdAt   DateTime            @default(now()) @map("created_at")
-  updatedAt   DateTime            @updatedAt @map("updated_at")
+  id             String              @id @default(uuid()) @db.Uuid
+  name           String?
+  category       CustomerCategories?
+  address        String?             @db.Text
+  subdistrict    String?
+  postalCode     String?             @map("postal_code")
+  phoneNumber    String?             @map("phone_number")
+  destination_id Int?
+  email          String?
+  status         CustomerStatuses?
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
 
   ordersAsOrderer        Order[] @relation("OrdererCustomer")
   ordersAsDeliveryTarget Order[] @relation("DeliveryTargetCustomer")
@@ -226,14 +227,15 @@ model PaymentMethod {
 }
 
 model DeliveryPlace {
-  id          String   @id @default(uuid()) @db.Uuid
-  name        String?
-  address     String?  @db.Text
-  subdistrict String?
-  phoneNumber String?  @map("phone_number")
-  email       String?
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id             String   @id @default(uuid()) @db.Uuid
+  name           String?
+  address        String?  @db.Text
+  subdistrict    String?
+  phoneNumber    String?  @map("phone_number")
+  destination_id Int?
+  email          String?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
   @@index([name])
   @@index([email])

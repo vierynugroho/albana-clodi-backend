@@ -49,43 +49,6 @@ class LocationService {
 			return ServiceResponse.failure("Gagal mengambil data kota", null, StatusCodes.INTERNAL_SERVER_ERROR);
 		}
 	};
-
-	public checkShippingCost = async (
-		originCityId: string,
-		destinationCityId: string,
-		weight: number,
-		courier: string,
-	) => {
-		try {
-			const API_KEY = process.env.RAJAONGKIR_SHIPPING_COST_API_KEY;
-			const BASE_URL = process.env.RAJAONGKIR_BASE_URL;
-
-			const formData = new URLSearchParams();
-			formData.append("origin", originCityId);
-			formData.append("destination", destinationCityId);
-			formData.append("weight", weight.toString());
-			formData.append("courier", courier);
-
-			const response = await fetch(`${BASE_URL}/cost`, {
-				method: "POST",
-				headers: {
-					key: API_KEY as string,
-					"content-type": "application/x-www-form-urlencoded",
-				},
-				body: formData,
-			});
-			const data = await response.json();
-
-			if (data.rajaongkir.status.code === 400) {
-				return ServiceResponse.failure(data.rajaongkir.status.description, null, StatusCodes.BAD_REQUEST);
-			}
-
-			return ServiceResponse.success("Successfully calculated shipping cost", data.rajaongkir.results, StatusCodes.OK);
-		} catch (error) {
-			logger.error(error);
-			return ServiceResponse.failure("Failed to calculate shipping cost", null, StatusCodes.INTERNAL_SERVER_ERROR);
-		}
-	};
 }
 
 export const locationService = new LocationService();

@@ -11,8 +11,8 @@ import rateLimiter from "@/common/middleware/rateLimiter";
 import requestLogger from "@/common/middleware/requestLogger";
 import { env } from "@/common/utils/envConfig";
 import { expensesRouter } from "./api/expenses/router";
-import { locationRouter } from "./api/locations/router";
 import { productRouter } from "./api/product/productRouter";
+import { locationRouter } from "./api/shipping-cost/router";
 
 const logger = pino({ name: "server start" });
 const app: Express = express();
