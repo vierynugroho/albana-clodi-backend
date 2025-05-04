@@ -2,14 +2,6 @@ import { ServiceResponse } from "@/common/models/serviceResponse";
 import { logger } from "@/server";
 import { StatusCodes } from "http-status-codes";
 
-interface GetAllExpensesParams {
-	startDate?: string;
-	endDate?: string;
-	month?: string;
-	year?: string;
-	week?: string;
-}
-
 class LocationService {
 	public getProvinces = async () => {
 		try {

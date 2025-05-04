@@ -2,6 +2,11 @@ import type { Request, RequestHandler, Response } from "express";
 import { locationService } from "./service";
 
 export class DeliveryPlaceController {
+	public getAll: RequestHandler = async (req: Request, res: Response) => {
+		const serviceResponse = await locationService.getProvinces();
+		res.status(serviceResponse.statusCode).send(serviceResponse);
+	};
+
 	public create: RequestHandler = async (req: Request, res: Response) => {
 		const serviceResponse = await locationService.getProvinces();
 		res.status(serviceResponse.statusCode).send(serviceResponse);

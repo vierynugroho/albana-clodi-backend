@@ -10,6 +10,7 @@ import errorHandler from "@/common/middleware/errorHandler";
 import rateLimiter from "@/common/middleware/rateLimiter";
 import requestLogger from "@/common/middleware/requestLogger";
 import { env } from "@/common/utils/envConfig";
+import { deliveryPlaceRouter } from "./api/delivery-place/router";
 import { expensesRouter } from "./api/expenses/router";
 import { productRouter } from "./api/product/productRouter";
 import { locationRouter } from "./api/shipping-cost/router";
@@ -36,6 +37,7 @@ app.use("/users", userRouter);
 app.use("/expenses", expensesRouter);
 app.use("/products", productRouter);
 app.use("/locations", locationRouter);
+app.use("/delivery-places", deliveryPlaceRouter);
 
 // Swagger UI
 app.use(openAPIRouter);

@@ -2,50 +2,69 @@ import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Request, type Response, type Router } from "express";
 import { z } from "zod";
-import { LocationController } from "./controller";
-import { ShippingCostParams } from "./model";
+import { DeliveryPlaceController } from "./controller";
+import { DeliveryPlaceSchema } from "./model";
 
-export const locationRegistry = new OpenAPIRegistry();
-export const locationRouter: Router = express.Router();
+export const deliveryPlaceRegistry = new OpenAPIRegistry();
+export const deliveryPlaceRouter: Router = express.Router();
 
-locationRegistry.register("Location", ShippingCostParams);
+deliveryPlaceRegistry.register("DeliveryPlaces", DeliveryPlaceSchema);
 
-locationRegistry.registerPath({
+deliveryPlaceRegistry.registerPath({
 	method: "get",
-	path: "/locations/provinces",
-	tags: ["Locations"],
-	responses: createApiResponse(z.array(z.any()), "Berhasil mengambil data provinsi"),
+	path: "/delivery-places",
+	tags: ["DeliveryPlaces"],
+	responses: createApiResponse(z.array(DeliveryPlaceSchema), "Berhasil mengambil semua tempat pengiriman"),
 });
 
-locationRegistry.registerPath({
-	method: "get",
-	path: "/locations/cities/{id}",
-	tags: ["Locations"],
+deliveryPlaceRegistry.registerPath({
+	method: "post",
+	path: "/delivery-places",
+	tags: ["DeliveryPlaces"],
+	request: {
+		body: {
+			content: {
+				"application/json": {
+					schema: DeliveryPlaceSchema,
+				},
+			},
+		},
+	},
+	responses: createApiResponse(DeliveryPlaceSchema, "Berhasil membuat tempat pengiriman baru"),
+});
+
+deliveryPlaceRegistry.registerPath({
+	method: "put",
+	path: "/delivery-places/{id}",
+	tags: ["DeliveryPlaces"],
 	request: {
 		params: z.object({
-			id: z.string().describe("ID provinsi"),
+			id: z.string().describe("ID tempat pengiriman"),
 		}),
+		body: {
+			content: {
+				"application/json": {
+					schema: DeliveryPlaceSchema,
+				},
+			},
+		},
 	},
-	responses: createApiResponse(z.array(z.any()), "Berhasil mengambil data kota"),
+	responses: createApiResponse(DeliveryPlaceSchema, "Berhasil memperbarui tempat pengiriman"),
 });
 
-locationRegistry.registerPath({
-	method: "get",
-	path: "/locations/shipping-cost",
-	tags: ["Locations"],
+deliveryPlaceRegistry.registerPath({
+	method: "delete",
+	path: "/delivery-places/{id}",
+	tags: ["DeliveryPlaces"],
 	request: {
-		query: z.object({
-			origin: z.string().describe("ID kota asal"),
-			destination: z.string().describe("ID kota tujuan"),
-			weight: z.number().describe("Berat dalam gram"),
-			courier: z.string().describe("Kode kurir (jne, pos, tiki)"),
+		params: z.object({
+			id: z.string().describe("ID tempat pengiriman"),
 		}),
 	},
-	responses: createApiResponse(z.any(), "Berhasil menghitung biaya pengiriman"),
+	responses: createApiResponse(z.object({ message: z.string() }), "Berhasil menghapus tempat pengiriman"),
 });
 
-const locationController = new LocationController();
+const deliveryPlaceController = new DeliveryPlaceController();
 
-locationRouter.route("/provinces").get(locationController.getProvinces);
-locationRouter.route("/cities").get(locationController.getCities);
-locationRouter.route("/shipping-cost").get(locationController.getShippingCost);
+deliveryPlaceRouter.route("/").get(deliveryPlaceController.getAll).post(deliveryPlaceController.create);
+deliveryPlaceRouter.route("/:id").put(deliveryPlaceController.update).delete(deliveryPlaceController.delete);

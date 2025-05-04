@@ -1,5 +1,6 @@
 import { OpenAPIRegistry, OpenApiGeneratorV3 } from "@asteasolutions/zod-to-openapi";
 
+import { deliveryPlaceRegistry } from "@/api/delivery-place/router";
 import { expensesRegistry } from "@/api/expenses/router";
 import { healthCheckRegistry } from "@/api/healthCheck/healthCheckRouter";
 import { locationRegistry } from "@/api/location/router";
@@ -17,6 +18,7 @@ export function generateOpenAPIDocument(): OpenAPIDocument {
 		productRegistry,
 		locationRegistry,
 		shippingCostRegistry,
+		deliveryPlaceRegistry,
 	]);
 	const generator = new OpenApiGeneratorV3(registry.definitions);
 
