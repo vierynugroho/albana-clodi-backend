@@ -21,7 +21,8 @@ export class DeliveryPlaceController {
 
 	public update: RequestHandler = async (req: Request, res: Response) => {
 		const { id } = req.params;
-		const serviceResponse = await deliveryPlaceService.update(id);
+		const data = req.body;
+		const serviceResponse = await deliveryPlaceService.update(id, data);
 		res.status(serviceResponse.statusCode).send(serviceResponse);
 	};
 

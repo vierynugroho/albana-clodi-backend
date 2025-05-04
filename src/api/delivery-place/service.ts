@@ -1,130 +1,99 @@
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { logger } from "@/server";
 import { StatusCodes } from "http-status-codes";
+import type { CreateDeliveryPlaceType, UpdateDeliveryPlaceType } from "./model";
+import { type DeliveryPlaceRepository, deliveryPlaceRepository } from "./repository";
 
 class DeliveryPlaceService {
+	private readonly deliveryPlaceRepo: DeliveryPlaceRepository;
+
+	constructor() {
+		this.deliveryPlaceRepo = deliveryPlaceRepository;
+	}
+
 	public getAll = async () => {
 		try {
-			const API_KEY = process.env.RAJAONGKIR_SHIPPING_COST_API_KEY;
-			const BASE_URL = process.env.RAJAONGKIR_BASE_URL;
-			console.log(API_KEY);
-			const response = await fetch(`${BASE_URL}/province`, {
-				headers: { key: API_KEY as string },
-			});
-			const data = await response.json();
-
-			if (data.rajaongkir.status.code === 400) {
-				return ServiceResponse.failure(data.rajaongkir.status.description, null, StatusCodes.BAD_REQUEST);
-			}
-
-			return ServiceResponse.success("Berhasil mengambil data provinsi", data.rajaongkir.results, StatusCodes.OK);
+			const result = await this.deliveryPlaceRepo.client.deliveryPlace.findMany();
+			return ServiceResponse.success("Berhasil mengambil data asal pengiriman", result, StatusCodes.OK);
 		} catch (error) {
 			logger.error(error);
-			return ServiceResponse.failure("Gagal mengambil data provinsi", null, StatusCodes.INTERNAL_SERVER_ERROR);
+			return ServiceResponse.failure("Gagal mengambil data asal pengiriman", null, StatusCodes.INTERNAL_SERVER_ERROR);
 		}
 	};
 
-	public getOne = async (provinceId: string) => {
+	public getOne = async (id: string) => {
 		try {
-			const API_KEY = process.env.RAJAONGKIR_SHIPPING_COST_API_KEY;
-			const BASE_URL = process.env.RAJAONGKIR_BASE_URL;
-
-			const response = await fetch(`${BASE_URL}/city`, {
-				headers: { key: API_KEY as string },
-				method: "GET",
+			const result = await this.deliveryPlaceRepo.client.deliveryPlace.findUnique({
+				where: { id },
 			});
-			const data = await response.json();
 
-			if (data.rajaongkir.status.code === 400) {
-				return ServiceResponse.failure(data.rajaongkir.status.description, null, StatusCodes.BAD_REQUEST);
+			if (!result) {
+				return ServiceResponse.failure("Data asal pengiriman tidak ditemukan", null, StatusCodes.NOT_FOUND);
 			}
 
-			const filteredCities = data.rajaongkir.results.filter(
-				(city: { province_id: string }) => city.province_id === provinceId,
-			);
-
-			return ServiceResponse.success("Berhasil mengambil data kota", filteredCities, StatusCodes.OK);
+			return ServiceResponse.success("Berhasil mengambil data asal pengiriman", result, StatusCodes.OK);
 		} catch (error) {
 			logger.error(error);
-			return ServiceResponse.failure("Gagal mengambil data kota", null, StatusCodes.INTERNAL_SERVER_ERROR);
+			return ServiceResponse.failure("Gagal mengambil data asal pengiriman", null, StatusCodes.INTERNAL_SERVER_ERROR);
 		}
 	};
 
-	public create = async (provinceId: string) => {
+	public create = async (data: CreateDeliveryPlaceType) => {
 		try {
-			const API_KEY = process.env.RAJAONGKIR_SHIPPING_COST_API_KEY;
-			const BASE_URL = process.env.RAJAONGKIR_BASE_URL;
-
-			const response = await fetch(`${BASE_URL}/city`, {
-				headers: { key: API_KEY as string },
-				method: "GET",
+			const result = await this.deliveryPlaceRepo.client.deliveryPlace.create({
+				data,
 			});
-			const data = await response.json();
 
-			if (data.rajaongkir.status.code === 400) {
-				return ServiceResponse.failure(data.rajaongkir.status.description, null, StatusCodes.BAD_REQUEST);
-			}
-
-			const filteredCities = data.rajaongkir.results.filter(
-				(city: { province_id: string }) => city.province_id === provinceId,
-			);
-
-			return ServiceResponse.success("Berhasil mengambil data kota", filteredCities, StatusCodes.OK);
+			return ServiceResponse.success("Berhasil membuat data asal pengiriman", result, StatusCodes.CREATED);
 		} catch (error) {
 			logger.error(error);
-			return ServiceResponse.failure("Gagal mengambil data kota", null, StatusCodes.INTERNAL_SERVER_ERROR);
+			return ServiceResponse.failure("Gagal membuat data asal pengiriman", null, StatusCodes.INTERNAL_SERVER_ERROR);
 		}
 	};
 
-	public update = async (provinceId: string) => {
+	public update = async (id: string, data: Partial<UpdateDeliveryPlaceType>) => {
 		try {
-			const API_KEY = process.env.RAJAONGKIR_SHIPPING_COST_API_KEY;
-			const BASE_URL = process.env.RAJAONGKIR_BASE_URL;
-
-			const response = await fetch(`${BASE_URL}/city`, {
-				headers: { key: API_KEY as string },
-				method: "GET",
+			const existingDeliveryPlace = await this.deliveryPlaceRepo.client.deliveryPlace.findUnique({
+				where: { id },
 			});
-			const data = await response.json();
 
-			if (data.rajaongkir.status.code === 400) {
-				return ServiceResponse.failure(data.rajaongkir.status.description, null, StatusCodes.BAD_REQUEST);
+			if (!existingDeliveryPlace) {
+				return ServiceResponse.failure("Data asal pengiriman tidak ditemukan", null, StatusCodes.NOT_FOUND);
 			}
 
-			const filteredCities = data.rajaongkir.results.filter(
-				(city: { province_id: string }) => city.province_id === provinceId,
-			);
+			const result = await this.deliveryPlaceRepo.client.deliveryPlace.update({
+				where: { id },
+				data: {
+					...data,
+					updatedAt: new Date(),
+				},
+			});
 
-			return ServiceResponse.success("Berhasil mengambil data kota", filteredCities, StatusCodes.OK);
+			return ServiceResponse.success("Berhasil memperbarui data asal pengiriman", result, StatusCodes.OK);
 		} catch (error) {
 			logger.error(error);
-			return ServiceResponse.failure("Gagal mengambil data kota", null, StatusCodes.INTERNAL_SERVER_ERROR);
+			return ServiceResponse.failure("Gagal memperbarui data asal pengiriman", null, StatusCodes.INTERNAL_SERVER_ERROR);
 		}
 	};
 
-	public delete = async (provinceId: string) => {
+	public delete = async (id: string) => {
 		try {
-			const API_KEY = process.env.RAJAONGKIR_SHIPPING_COST_API_KEY;
-			const BASE_URL = process.env.RAJAONGKIR_BASE_URL;
-
-			const response = await fetch(`${BASE_URL}/city`, {
-				headers: { key: API_KEY as string },
-				method: "GET",
+			const existingDeliveryPlace = await this.deliveryPlaceRepo.client.deliveryPlace.findUnique({
+				where: { id },
 			});
-			const data = await response.json();
 
-			if (data.rajaongkir.status.code === 400) {
-				return ServiceResponse.failure(data.rajaongkir.status.description, null, StatusCodes.BAD_REQUEST);
+			if (!existingDeliveryPlace) {
+				return ServiceResponse.failure("Data asal pengiriman tidak ditemukan", null, StatusCodes.NOT_FOUND);
 			}
 
-			const filteredCities = data.rajaongkir.results.filter(
-				(city: { province_id: string }) => city.province_id === provinceId,
-			);
+			const result = await this.deliveryPlaceRepo.client.deliveryPlace.delete({
+				where: { id },
+			});
 
-			return ServiceResponse.success("Berhasil mengambil data kota", filteredCities, StatusCodes.OK);
+			return ServiceResponse.success("Berhasil menghapus data asal pengiriman", result, StatusCodes.OK);
 		} catch (error) {
 			logger.error(error);
-			return ServiceResponse.failure("Gagal mengambil data kota", null, StatusCodes.INTERNAL_SERVER_ERROR);
+			return ServiceResponse.failure("Gagal menghapus data asal pengiriman", null, StatusCodes.INTERNAL_SERVER_ERROR);
 		}
 	};
 }

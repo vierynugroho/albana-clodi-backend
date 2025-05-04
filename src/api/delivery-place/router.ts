@@ -24,6 +24,18 @@ deliveryPlaceRegistry.registerPath({
 });
 
 deliveryPlaceRegistry.registerPath({
+	method: "get",
+	path: "/delivery-places/{id}",
+	tags: ["DeliveryPlaces"],
+	request: {
+		params: z.object({
+			id: z.string().uuid().describe("ID tempat pengiriman"),
+		}),
+	},
+	responses: createApiResponse(DeliveryPlaceSchema, "Berhasil mengambil detail tempat pengiriman"),
+});
+
+deliveryPlaceRegistry.registerPath({
 	method: "post",
 	path: "/delivery-places",
 	tags: ["DeliveryPlaces"],
@@ -78,5 +90,6 @@ deliveryPlaceRouter
 	.post(validateRequest(CreateDeliveryPlaceSchema), deliveryPlaceController.create);
 deliveryPlaceRouter
 	.route("/:id")
+	.get(validateRequest(DeliveryPlaceParamsSchema), deliveryPlaceController.getOne)
 	.put(validateRequest(UpdateDeliveryPlaceSchema), deliveryPlaceController.update)
 	.delete(validateRequest(DeliveryPlaceParamsSchema), deliveryPlaceController.delete);
