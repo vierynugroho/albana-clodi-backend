@@ -316,3 +316,55 @@ model SalesChannel {
   @@index([isActive])
   @@map("sales_channels")
 }
+
+model Province {
+  id        BigInt   @id @default(autoincrement())
+  name      String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  City City[]
+
+  @@index([name])
+  @@map("provinces")
+}
+
+model City {
+  id         BigInt   @id @default(autoincrement())
+  provinceId BigInt?  @map("province_id")
+  name       String?
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  province Province?  @relation(fields: [provinceId], references: [id])
+  District District[]
+
+  @@index([name])
+  @@map("cities")
+}
+
+model District {
+  id        BigInt   @id @default(autoincrement())
+  cityId    BigInt?  @map("city_id")
+  name      String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  city    City?     @relation(fields: [cityId], references: [id])
+  Village Village[]
+
+  @@index([name])
+  @@map("districts")
+}
+
+model Village {
+  id         BigInt  @id @default(autoincrement())
+  districtId BigInt? @map("disctict_id")
+  name       String?
+  postalCode Int?
+
+  district District? @relation(fields: [districtId], references: [id])
+
+  @@index([name])
+  @@map("villages")
+}
