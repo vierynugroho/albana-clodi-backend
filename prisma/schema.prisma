@@ -139,17 +139,18 @@ model ProductVariant {
 }
 
 model Customer {
-  id          String              @id @default(uuid()) @db.Uuid
-  name        String?
-  category    CustomerCategories?
-  address     String?             @db.Text
-  subdistrict String?
-  postalCode  String?             @map("postal_code")
-  phoneNumber String?             @map("phone_number")
-  email       String?
-  status      CustomerStatuses?
-  createdAt   DateTime            @default(now()) @map("created_at")
-  updatedAt   DateTime            @updatedAt @map("updated_at")
+  id            String              @id @default(uuid()) @db.Uuid
+  name          String?
+  category      CustomerCategories?
+  address       String?             @db.Text
+  subdistrict   String?
+  postalCode    String?             @map("postal_code")
+  phoneNumber   String?             @map("phone_number")
+  destinationId Int?                @map("destination_id")
+  email         String?
+  status        CustomerStatuses?
+  createdAt     DateTime            @default(now()) @map("created_at")
+  updatedAt     DateTime            @updatedAt @map("updated_at")
 
   ordersAsOrderer        Order[] @relation("OrdererCustomer")
   ordersAsDeliveryTarget Order[] @relation("DeliveryTargetCustomer")
@@ -162,52 +163,81 @@ model Customer {
 }
 
 model Order {
-  id                       String    @id @default(uuid()) @db.Uuid
-  ordererCustomerId        String?   @map("orderer_customer_id") @db.Uuid
-  deliveryTargetCustomerId String?   @map("delivery_target_customer_id") @db.Uuid
-  senderPlace              String?   @map("sender_place")
-  orderDate                DateTime? @map("order_date") @db.Date
-  salesChannel             String?   @map("sales_channel")
-  note                     String?   @db.Text
-  createdAt                DateTime  @default(now()) @map("created_at")
-  updatedAt                DateTime  @updatedAt @map("updated_at")
-
-  ordererCustomer        Customer? @relation("OrdererCustomer", fields: [ordererCustomerId], references: [id])
-  deliveryTargetCustomer Customer? @relation("DeliveryTargetCustomer", fields: [deliveryTargetCustomerId], references: [id])
+  id                       String         @id @default(uuid()) @db.Uuid
+  ordererCustomerId        String?        @map("orderer_customer_id") @db.Uuid
+  deliveryTargetCustomerId String?        @map("delivery_target_customer_id") @db.Uuid
+  deliveryPlaceId          String?        @map("delivery_place_id") @db.Uuid
+  salesChannelId           String?        @map("sales_channel_id") @db.Uuid
+  orderDate                DateTime?      @map("order_date") @db.Date
+  note                     String?        @db.Text
+  createdAt                DateTime       @default(now()) @map("created_at")
+  updatedAt                DateTime       @updatedAt @map("updated_at")
+  salesChannel             SalesChannel?  @relation(fields: [salesChannelId], references: [id])
+  deliveryPlace            DeliveryPlace? @relation(fields: [deliveryPlaceId], references: [id])
+  ordererCustomer          Customer?      @relation("OrdererCustomer", fields: [ordererCustomerId], references: [id])
+  deliveryTargetCustomer   Customer?      @relation("DeliveryTargetCustomer", fields: [deliveryTargetCustomerId], references: [id])
+  OrderDetail              OrderDetail[]
 
   @@index([ordererCustomerId])
   @@index([deliveryTargetCustomerId])
   @@index([orderDate])
-  @@index([salesChannel])
+  @@index([deliveryPlaceId])
+  @@index([salesChannelId])
+  @@index([createdAt])
   @@map("orders")
 }
 
 model OrderDetail {
-  id              String         @id @default(uuid()) @db.Uuid
-  productId       String?        @map("product_id") @db.Uuid
-  paymentMethodId String?        @map("payment_method_id") @db.Uuid
-  code            String?
-  productQty      Int?           @map("product_qty")
-  courierName     String?        @map("courier_name")
-  courierCategory String?        @map("courier_category")
-  courierEta      String?        @map("courier_eta")
-  courierCost     String?        @map("courier_cost")
-  otherFees       Json?          @map("other_fees")
-  finalPrice      Float?         @map("final_price")
-  paymentStatus   PaymentStatus?
-  paymentDate     DateTime?      @map("payment_date")
-  receiptNumber   String?        @map("receipt_number")
-  createdAt       DateTime       @default(now()) @map("created_at")
-  updatedAt       DateTime       @updatedAt @map("updated_at")
+  id                String         @id @default(uuid()) @db.Uuid
+  orderId           String?        @map("order_id") @db.Uuid
+  productId         String?        @map("product_id") @db.Uuid
+  paymentMethodId   String?        @map("payment_method_id") @db.Uuid
+  code              String?
+  productQty        Int?           @map("product_qty")
+  shippingServiceId String?        @map("shipping_service_id") @db.Uuid
+  otherFees         Json?          @map("other_fees")
+  finalPrice        Float?         @map("final_price")
+  paymentStatus     PaymentStatus?
+  paymentDate       DateTime?      @map("payment_date")
+  receiptNumber     String?        @map("receipt_number")
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
 
-  product       Product?       @relation(fields: [productId], references: [id])
-  paymentMethod PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
+  order           Order?           @relation(fields: [orderId], references: [id])
+  shippingService ShippingService? @relation(fields: [shippingServiceId], references: [id])
+  product         Product?         @relation(fields: [productId], references: [id])
+  paymentMethod   PaymentMethod?   @relation(fields: [paymentMethodId], references: [id])
 
   @@index([productId])
   @@index([paymentMethodId])
   @@index([paymentStatus])
   @@index([code])
   @@map("order_details")
+}
+
+model ShippingService {
+  id               String        @id @default(uuid()) @db.Uuid
+  orderDetailId    String?       @map("order_detail_id") @db.Uuid
+  shippingName     String?       @map("shipping_name")
+  serviceName      String?       @map("service_name")
+  weight           Int?
+  isCod            Boolean?      @default(false) @map("is_cod")
+  shippingCost     Float?        @map("shipping_cost")
+  shippingCashback Float?        @map("shipping_cashback")
+  shippingCostNet  Float?        @map("shipping_cost_net")
+  grandtotal       Float?
+  serviceFee       Float?        @map("service_fee")
+  netIncome        Float?        @map("net_income")
+  etd              String?
+  type             String? // reguler, cargo, instant
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+  OrderDetail      OrderDetail[]
+
+  @@index([shippingName])
+  @@index([serviceName])
+  @@index([type])
+  @@map("shipping_services")
 }
 
 model PaymentMethod {
@@ -226,14 +256,17 @@ model PaymentMethod {
 }
 
 model DeliveryPlace {
-  id          String   @id @default(uuid()) @db.Uuid
-  name        String?
-  address     String?  @db.Text
-  subdistrict String?
-  phoneNumber String?  @map("phone_number")
-  email       String?
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id            String   @id @default(uuid()) @db.Uuid
+  name          String?
+  address       String?  @db.Text
+  subdistrict   String?
+  phoneNumber   String?  @map("phone_number")
+  destinationId Int?     @map("destination_id")
+  email         String?
+  description   String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  Order         Order[]
 
   @@index([name])
   @@index([email])
@@ -277,8 +310,61 @@ model SalesChannel {
   isActive  Boolean? @map("is_active")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+  Order     Order[]
 
   @@index([name])
   @@index([isActive])
   @@map("sales_channels")
+}
+
+model Province {
+  id        BigInt   @id @default(autoincrement())
+  name      String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  City City[]
+
+  @@index([name])
+  @@map("provinces")
+}
+
+model City {
+  id         BigInt   @id @default(autoincrement())
+  provinceId BigInt?  @map("province_id")
+  name       String?
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  province Province?  @relation(fields: [provinceId], references: [id])
+  District District[]
+
+  @@index([name])
+  @@map("cities")
+}
+
+model District {
+  id        BigInt   @id @default(autoincrement())
+  cityId    BigInt?  @map("city_id")
+  name      String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  city    City?     @relation(fields: [cityId], references: [id])
+  Village Village[]
+
+  @@index([name])
+  @@map("districts")
+}
+
+model Village {
+  id         BigInt  @id @default(autoincrement())
+  districtId BigInt? @map("disctict_id")
+  name       String?
+  postalCode Int?
+
+  district District? @relation(fields: [districtId], references: [id])
+
+  @@index([name])
+  @@map("villages")
 }

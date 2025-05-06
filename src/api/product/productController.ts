@@ -2,7 +2,7 @@ import type { Request, RequestHandler, Response } from "express";
 import type { RequestQueryProductType } from "./productModel";
 import { productService } from "./productService";
 
-export class ProductController {
+class ProductController {
 	public getAllProducts: RequestHandler = async (req: Request, res: Response) => {
 		const serviceResponse = await productService.getAllProducts(req.query as unknown as RequestQueryProductType);
 		res.status(serviceResponse.statusCode).send(serviceResponse);
