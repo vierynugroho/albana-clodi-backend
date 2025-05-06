@@ -55,7 +55,6 @@ const httpLogger = pinoHttp({
 		return `${req.method} ${req.url} completed`;
 	},
 	customErrorMessage: (_req, res: Response) => {
-		console.log(res.err);
 		const errorMessage = res.locals.err?.message || `Status code: ${res.statusCode}`;
 		return `Request failed with error: ${errorMessage}`;
 	},

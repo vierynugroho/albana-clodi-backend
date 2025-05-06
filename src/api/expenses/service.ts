@@ -4,7 +4,7 @@ import { importData } from "@/common/utils/dataImporter";
 import { logger } from "@/server";
 import type { Expense, Prisma } from "@prisma/client";
 import { StatusCodes } from "http-status-codes";
-import type { CreateProductsType, Expenses } from "./model";
+import type { CreateExpensesType, UpdateExpensesType } from "./model";
 import { type ExpenseRepository, expenseRepository } from "./repository";
 
 interface GetAllExpensesParams {
@@ -22,17 +22,10 @@ class ExpenseService {
 		this.expenseRepo = expenseRepository;
 	}
 
-	public createExpense = async (req: CreateProductsType) => {
+	public createExpense = async (data: CreateExpensesType) => {
 		try {
 			const result = await this.expenseRepo.client.expense.create({
-				data: {
-					itemName: req.itemName,
-					itemPrice: req.itemPrice,
-					qty: req.qty,
-					totalPrice: req.totalPrice,
-					personResponsible: req.personResponsible,
-					note: req.note,
-				},
+				data,
 			});
 
 			return ServiceResponse.success("Berhasil menambahkan data pengeluaran", result, StatusCodes.CREATED);
@@ -42,7 +35,7 @@ class ExpenseService {
 		}
 	};
 
-	public updateExpense = async (id: string, data: Partial<Expenses>) => {
+	public updateExpense = async (id: string, data: Partial<UpdateExpensesType>) => {
 		try {
 			const updatedExpense = await this.expenseRepo.client.expense.update({
 				where: { id },
@@ -92,7 +85,7 @@ class ExpenseService {
 	public getAllExpenses = async (params: GetAllExpensesParams) => {
 		try {
 			const { startDate, endDate, month, year, week } = params;
-			console.log(new Date().toString());
+
 			let where: { createdAt?: { gte?: Date; lte?: Date; lt?: Date } } = {};
 
 			// Filter by date range
