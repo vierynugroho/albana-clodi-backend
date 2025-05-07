@@ -14,6 +14,7 @@ import { customerRouter } from "./api/customer/customerRouter";
 import { deliveryPlaceRouter } from "./api/delivery-place/router";
 import { expensesRouter } from "./api/expenses/router";
 import { orderRouter } from "./api/order/router";
+import { paymentMethodRouter } from "./api/payment-method/paymentMethodRouter";
 import { productRouter } from "./api/product/productRouter";
 import { regionRouter } from "./api/region/regionRouter";
 import { locationRouter } from "./api/shipping-cost/router";
@@ -44,6 +45,7 @@ app.use("/delivery-places", deliveryPlaceRouter);
 app.use("/orders", orderRouter);
 app.use("/regions", regionRouter);
 app.use("/customers", customerRouter);
+app.use("/payments", paymentMethodRouter);
 
 // Swagger UI
 app.use(openAPIRouter);
