@@ -17,6 +17,7 @@ import { orderRouter } from "./api/order/router";
 import { paymentMethodRouter } from "./api/payment-method/paymentMethodRouter";
 import { productRouter } from "./api/product/productRouter";
 import { regionRouter } from "./api/region/regionRouter";
+import { salesChannelRouter } from "./api/sales-channel/salesChannelRouter";
 import { locationRouter } from "./api/shipping-cost/router";
 
 const logger = pino({ name: "server start" });
@@ -46,6 +47,7 @@ app.use("/orders", orderRouter);
 app.use("/regions", regionRouter);
 app.use("/customers", customerRouter);
 app.use("/payments", paymentMethodRouter);
+app.use("/sales-channels", salesChannelRouter);
 
 // Swagger UI
 app.use(openAPIRouter);
