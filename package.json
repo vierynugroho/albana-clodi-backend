@@ -15,7 +15,8 @@
 		"format": "biome format --write",
 		"test": "prisma generate && vitest run",
 		"test:cov": "vitest run --coverage",
-		"check": "pnpm lint && pnpm format && pnpm build && pnpm test"
+		"check": "pnpm lint && pnpm format && pnpm build && pnpm test",
+		"seed": "tsx prisma/seeders/main.ts"
 	},
 	"dependencies": {
 		"@asteasolutions/zod-to-openapi": "7.3.0",
@@ -33,6 +34,7 @@
 		"pino-http": "10.4.0",
 		"prisma": "^6.7.0",
 		"swagger-ui-express": "5.0.1",
+		"ts-node": "^10.9.2",
 		"xlsx": "^0.18.5",
 		"zod": "3.24.3"
 	},
@@ -54,14 +56,9 @@
 		"vitest": "3.1.2"
 	},
 	"tsup": {
-		"entry": [
-			"src/index.ts"
-		],
+		"entry": ["src/index.ts"],
 		"outDir": "dist",
-		"format": [
-			"esm",
-			"cjs"
-		],
+		"format": ["esm", "cjs"],
 		"target": "es2020",
 		"sourcemap": true,
 		"clean": true,

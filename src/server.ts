@@ -10,10 +10,14 @@ import errorHandler from "@/common/middleware/errorHandler";
 import rateLimiter from "@/common/middleware/rateLimiter";
 import requestLogger from "@/common/middleware/requestLogger";
 import { env } from "@/common/utils/envConfig";
+import { customerRouter } from "./api/customer/customerRouter";
 import { deliveryPlaceRouter } from "./api/delivery-place/router";
 import { expensesRouter } from "./api/expenses/router";
 import { orderRouter } from "./api/order/router";
+import { paymentMethodRouter } from "./api/payment-method/paymentMethodRouter";
 import { productRouter } from "./api/product/productRouter";
+import { regionRouter } from "./api/region/regionRouter";
+import { salesChannelRouter } from "./api/sales-channel/salesChannelRouter";
 import { locationRouter } from "./api/shipping-cost/router";
 
 const logger = pino({ name: "server start" });
@@ -40,6 +44,10 @@ app.use("/products", productRouter);
 app.use("/locations", locationRouter);
 app.use("/delivery-places", deliveryPlaceRouter);
 app.use("/orders", orderRouter);
+app.use("/regions", regionRouter);
+app.use("/customers", customerRouter);
+app.use("/payments", paymentMethodRouter);
+app.use("/sales-channels", salesChannelRouter);
 
 // Swagger UI
 app.use(openAPIRouter);

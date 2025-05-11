@@ -8,7 +8,7 @@ export const OrderSchema = z.object({
 	ordererCustomerId: z.string().uuid().optional().describe("ID pelanggan pemesan"),
 	deliveryTargetCustomerId: z.string().uuid().optional().describe("ID pelanggan tujuan pengiriman"),
 	deliveryPlaceId: z.string().uuid().optional().describe("ID tempat pengiriman"),
-	orderDate: z.string().or(z.date()).optional().describe("Tanggal pemesanan"),
+	orderDate: z.string().datetime().optional().describe("Tanggal pemesanan"),
 	salesChannelId: z.string().optional().describe("ID saluran penjualan"),
 	note: z.string().optional().describe("Catatan pesanan"),
 	createdAt: z.date().optional(),
@@ -20,8 +20,8 @@ export type OrderType = z.infer<typeof OrderSchema>;
 // Schema untuk metode pembayaran
 export const PaymentMethodSchema = z.object({
 	id: z.string().uuid().optional().describe("ID metode pembayaran"),
-	status: z.string().optional().describe("Status pembayaran"),
-	date: z.string().or(z.date()).optional().describe("Tanggal pembayaran"),
+	status: z.enum(["settlement", "pending", "cancel", "installments"]).optional().describe("Status pembayaran"),
+	date: z.string().datetime().optional().describe("Tanggal pembayaran"),
 	nominal: z.number().optional().describe("Nominal pembayaran"),
 });
 
