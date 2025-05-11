@@ -21,8 +21,7 @@ export class OrderController {
 
 	public update: RequestHandler = async (req: Request, res: Response) => {
 		const { id } = req.params;
-		const data = req.body;
-		const serviceResponse = await orderService.update(id, data);
+		const serviceResponse = await orderService.update(id, req.body);
 		res.status(serviceResponse.statusCode).send(serviceResponse);
 	};
 

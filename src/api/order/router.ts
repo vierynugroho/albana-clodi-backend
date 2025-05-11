@@ -77,7 +77,7 @@ orderRegistry.registerPath({
 								],
 								paymentMethod: {
 									id: "550e8400-e29b-41d4-a716-446655440006",
-									status: "PAID",
+									status: "UNPAID",
 									date: "2023-05-16",
 								},
 							},
@@ -101,7 +101,52 @@ orderRegistry.registerPath({
 		body: {
 			content: {
 				"application/json": {
-					schema: CreateOrderSchema,
+					schema: UpdateOrderSchema,
+					example: {
+						order: {
+							ordererCustomerId: "550e8400-e29b-41d4-a716-446655440001",
+							deliveryTargetCustomerId: "550e8400-e29b-41d4-a716-446655440002",
+							deliveryPlaceId: "550e8400-e29b-41d4-a716-446655440003",
+							orderDate: "2023-05-15",
+							salesChannelId: "550e8400-e29b-41d4-a716-446655440004",
+							note: "Pesanan update",
+						},
+						orderDetails: [
+							{
+								id: "550e8400-e29b-41d4-a716-446655440007",
+								detail: {
+									productId: "550e8400-e29b-41d4-a716-446655440000",
+									code: "ORD-001-UPDATE",
+									productQty: 3,
+									shippingServiceId: "550e8400-e29b-41d4-a716-446655440005",
+									otherFees: { packaging: 7000, insurance: 12000 },
+									finalPrice: 180000,
+									receiptNumber: "JNE987654321",
+								},
+								shippingServices: [
+									{
+										shippingName: "JNE",
+										serviceName: "YES",
+										weight: 1200,
+										isCod: false,
+										shippingCost: 20000,
+										shippingCashback: 3000,
+										shippingCostNet: 17000,
+										grandtotal: 197000,
+										serviceFee: 2500,
+										netIncome: 177500,
+										etd: "1 hari",
+										type: "express",
+									},
+								],
+								paymentMethod: {
+									id: "550e8400-e29b-41d4-a716-446655440006",
+									status: "PAID",
+									date: "2023-05-17",
+								},
+							},
+						],
+					},
 				},
 			},
 		},

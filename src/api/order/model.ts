@@ -15,6 +15,8 @@ export const OrderSchema = z.object({
 	updatedAt: z.date().optional(),
 });
 
+export type OrderType = z.infer<typeof OrderSchema>;
+
 // Schema untuk metode pembayaran
 export const PaymentMethodSchema = z.object({
 	id: z.string().uuid().optional().describe("ID metode pembayaran"),
@@ -58,19 +60,6 @@ export const ShippingServiceSchema = z.object({
 	updatedAt: z.date().optional(),
 });
 
-// Schema untuk order dengan detail
-export const OrderWithDetailsSchema = OrderSchema.extend({
-	orderDetails: z
-		.array(
-			OrderDetailSchema.extend({
-				shippingServices: z.array(ShippingServiceSchema).optional().describe("Layanan pengiriman"),
-				paymentMethod: PaymentMethodSchema.optional().describe("Metode pembayaran"),
-			}),
-		)
-		.optional()
-		.describe("Detail pesanan"),
-});
-
 // Schema untuk create order dengan detail dan shipping service
 export const CreateOrderSchema = z.object({
 	body: z.object({
@@ -93,16 +82,18 @@ export type CreateOrderType = z.infer<typeof CreateOrderSchema>;
 // Schema untuk update order dengan detail dan shipping service
 export const UpdateOrderSchema = z.object({
 	body: z.object({
-		order: OrderSchema.partial().optional(),
-		orderDetails: z
-			.array(
-				z.object({
-					id: z.string().uuid().optional(),
-					detail: OrderDetailSchema.partial().omit({ id: true, orderId: true }).optional(),
-					shippingServices: z.array(ShippingServiceSchema.partial().omit({ id: true, orderDetailId: true })).optional(),
-				}),
-			)
-			.optional(),
+		order: OrderSchema.partial().omit({ id: true }),
+		orderDetails: z.array(
+			z.object({
+				id: z.string().uuid().optional(),
+				detail: OrderDetailSchema.partial().omit({ id: true, orderId: true }),
+				shippingServices: z
+					.array(ShippingServiceSchema.partial().omit({ id: true, orderDetailId: true }))
+					.optional()
+					.describe("Shipping Service Detail"),
+				paymentMethod: PaymentMethodSchema.partial().optional().describe("Metode pembayaran"),
+			}),
+		),
 	}),
 	params: z.object({
 		id: z.string().uuid(),
@@ -110,8 +101,6 @@ export const UpdateOrderSchema = z.object({
 });
 
 export type UpdateOrderType = z.infer<typeof UpdateOrderSchema>;
-
-export type OrderType = z.infer<typeof OrderSchema>;
 
 // Schema untuk params id
 export const OrderParamsSchema = z.object({
