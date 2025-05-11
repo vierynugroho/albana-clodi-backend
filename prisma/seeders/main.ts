@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { OrderSeeder } from "./orderSeeder";
 import { RegionSeeder } from "./regionSeeder";
 
 const prisma = new PrismaClient();
@@ -8,6 +9,7 @@ async function main() {
 		console.log("Starting seeder....");
 
 		await RegionSeeder();
+		await OrderSeeder();
 
 		console.log("Completed seeder....");
 	} catch (error) {

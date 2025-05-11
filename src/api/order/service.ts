@@ -2,6 +2,7 @@ import { ServiceResponse } from "@/common/models/serviceResponse";
 import { logger } from "@/server";
 import type { PaymentStatus } from "@prisma/client";
 import { StatusCodes } from "http-status-codes";
+import { Product } from "../product/productModel";
 import type { CreateOrderType, OrderParamsType, UpdateOrderType } from "./model";
 import { type OrderRepository, orderRepository } from "./repository";
 
@@ -16,17 +17,21 @@ class OrderService {
 		try {
 			const result = await this.orderRepo.client.order.findMany({
 				include: {
-					salesChannel: true,
-					deliveryPlace: true,
-					ordererCustomer: true,
-					deliveryTargetCustomer: true,
+					SalesChannel: true,
+					DeliveryPlace: true,
+					OrdererCustomer: true,
+					DeliveryTargetCustomer: true,
 					OrderDetail: {
 						include: {
-							shippingService: true,
-							paymentMethod: true,
-							product: true,
+							OrderProducts: {
+								include: {
+									Product: true,
+								},
+							},
+							PaymentMethod: true,
 						},
 					},
+					ShippingServices: true,
 				},
 			});
 			return ServiceResponse.success("Berhasil mengambil data order", result, StatusCodes.OK);
@@ -41,17 +46,21 @@ class OrderService {
 			const result = await this.orderRepo.client.order.findUnique({
 				where: { id },
 				include: {
-					salesChannel: true,
-					deliveryPlace: true,
-					ordererCustomer: true,
-					deliveryTargetCustomer: true,
+					SalesChannel: true,
+					DeliveryPlace: true,
+					OrdererCustomer: true,
+					DeliveryTargetCustomer: true,
 					OrderDetail: {
 						include: {
-							shippingService: true,
-							paymentMethod: true,
-							product: true,
+							OrderProducts: {
+								include: {
+									Product: true,
+								},
+							},
+							PaymentMethod: true,
 						},
 					},
+					ShippingServices: true,
 				},
 			});
 
@@ -66,12 +75,12 @@ class OrderService {
 		}
 	};
 
-	public create = async (data: CreateOrderType) => {
+	public create = async (data: CreateOrderType["body"]) => {
 		try {
 			// Cek customer pemesan
-			if (data.body.order.ordererCustomerId) {
+			if (data.order.ordererCustomerId) {
 				const ordererCustomer = await this.orderRepo.client.customer.findUnique({
-					where: { id: data.body.order.ordererCustomerId },
+					where: { id: data.order.ordererCustomerId },
 				});
 				if (!ordererCustomer) {
 					return ServiceResponse.failure("Data customer pemesan tidak ditemukan", null, StatusCodes.NOT_FOUND);
@@ -79,9 +88,9 @@ class OrderService {
 			}
 
 			// Cek customer tujuan pengiriman
-			if (data.body.order.deliveryTargetCustomerId) {
+			if (data.order.deliveryTargetCustomerId) {
 				const deliveryTargetCustomer = await this.orderRepo.client.customer.findUnique({
-					where: { id: data.body.order.deliveryTargetCustomerId },
+					where: { id: data.order.deliveryTargetCustomerId },
 				});
 				if (!deliveryTargetCustomer) {
 					return ServiceResponse.failure(
@@ -93,9 +102,9 @@ class OrderService {
 			}
 
 			// Cek tempat pengiriman
-			if (data.body.order.deliveryPlaceId) {
+			if (data.order.deliveryPlaceId) {
 				const deliveryPlace = await this.orderRepo.client.deliveryPlace.findUnique({
-					where: { id: data.body.order.deliveryPlaceId },
+					where: { id: data.order.deliveryPlaceId },
 				});
 				if (!deliveryPlace) {
 					return ServiceResponse.failure("Data tempat pengiriman tidak ditemukan", null, StatusCodes.NOT_FOUND);
@@ -103,58 +112,51 @@ class OrderService {
 			}
 
 			// Cek saluran penjualan
-			if (data.body.order.salesChannelId) {
+			if (data.order.salesChannelId) {
 				const salesChannel = await this.orderRepo.client.salesChannel.findUnique({
-					where: { id: data.body.order.salesChannelId },
+					where: { id: data.order.salesChannelId },
 				});
 				if (!salesChannel) {
 					return ServiceResponse.failure("Data saluran penjualan tidak ditemukan", null, StatusCodes.NOT_FOUND);
 				}
 			}
 
-			// Cek produk dan metode pembayaran untuk setiap detail order
-			for (const orderDetail of data.body.orderDetails) {
-				if (orderDetail.detail.productId) {
+			// Cek produk dan metode pembayaran untuk detail order
+			if (data.orderDetail.detail.productId) {
+				const product = await this.orderRepo.client.product.findUnique({
+					where: { id: data.orderDetail.detail.productId },
+				});
+				if (!product) {
+					return ServiceResponse.failure("Data produk tidak ditemukan", null, StatusCodes.NOT_FOUND);
+				}
+			}
+
+			if (data.orderDetail.paymentMethod?.id) {
+				const paymentMethod = await this.orderRepo.client.paymentMethod.findUnique({
+					where: { id: data.orderDetail.paymentMethod.id },
+				});
+				if (!paymentMethod) {
+					return ServiceResponse.failure("Data metode pembayaran tidak ditemukan", null, StatusCodes.NOT_FOUND);
+				}
+			}
+
+			// Cek produk untuk order products
+			for (const orderProduct of data.orderDetail.orderProducts) {
+				if (orderProduct.productId) {
 					const product = await this.orderRepo.client.product.findUnique({
-						where: { id: orderDetail.detail.productId },
+						where: { id: orderProduct.productId },
 					});
 					if (!product) {
 						return ServiceResponse.failure("Data produk tidak ditemukan", null, StatusCodes.NOT_FOUND);
 					}
 				}
+			}
 
-				if (orderDetail.paymentMethod?.id) {
-					const paymentMethod = await this.orderRepo.client.paymentMethod.findUnique({
-						where: { id: orderDetail.paymentMethod.id },
-					});
-					if (!paymentMethod) {
-						return ServiceResponse.failure("Data metode pembayaran tidak ditemukan", null, StatusCodes.NOT_FOUND);
-					}
-				}
-
-				if (orderDetail.shippingServices && orderDetail.shippingServices.length > 0) {
-					// Data shipping service sudah ada dalam request dan akan disimpan saat transaksi
-					// Format data sudah sesuai dengan model ShippingService:
-					// {
-					//   shippingName: "JNE",
-					//   serviceName: "REG23",
-					//   weight: 490,
-					//   isCod: true,
-					//   shippingCost: 29400000,
-					//   shippingCashback: 7350000,
-					//   shippingCostNet: 22050000,
-					//   grandtotal: 29450000,
-					//   serviceFee: 0,
-					//   netIncome: 7400000,
-					//   etd: "5-7 day",
-					//   type: "reguler"
-					// }
-
-					// Validasi format data shipping service
-					for (const service of orderDetail.shippingServices) {
-						if (!service.shippingName || !service.serviceName) {
-							return ServiceResponse.failure("Data shipping service tidak lengkap", null, StatusCodes.BAD_REQUEST);
-						}
+			// Validasi shipping services jika ada
+			if (data.orderDetail.shippingServices && data.orderDetail.shippingServices.length > 0) {
+				for (const service of data.orderDetail.shippingServices) {
+					if (!service.shippingName || !service.serviceName) {
+						return ServiceResponse.failure("Data shipping service tidak lengkap", null, StatusCodes.BAD_REQUEST);
 					}
 				}
 			}
@@ -162,57 +164,79 @@ class OrderService {
 			const result = await this.orderRepo.client.$transaction(async (prisma) => {
 				const createdOrder = await prisma.order.create({
 					data: {
-						ordererCustomerId: data.body.order.ordererCustomerId,
-						deliveryTargetCustomerId: data.body.order.deliveryTargetCustomerId,
-						deliveryPlaceId: data.body.order.deliveryPlaceId,
-						salesChannelId: data.body.order.salesChannelId,
-						orderDate: data.body.order.orderDate ? new Date(data.body.order.orderDate) : undefined,
-						note: data.body.order.note,
+						ordererCustomerId: data.order.ordererCustomerId,
+						deliveryTargetCustomerId: data.order.deliveryTargetCustomerId,
+						deliveryPlaceId: data.order.deliveryPlaceId,
+						salesChannelId: data.order.salesChannelId,
+						orderDate: data.order.orderDate ? new Date(data.order.orderDate) : undefined,
+						note: data.order.note,
 					},
 				});
 
-				const orderDetailsPromises = data.body.orderDetails.map(async (orderDetailData) => {
-					const createdOrderDetail = await prisma.orderDetail.create({
-						data: {
-							orderId: createdOrder.id,
-							productId: orderDetailData.detail.productId,
-							paymentMethodId: orderDetailData.paymentMethod?.id,
-							code: orderDetailData.detail.code,
-							productQty: orderDetailData.detail.productQty,
-							shippingServiceId: orderDetailData.detail.shippingServiceId,
-							otherFees: orderDetailData.detail.otherFees,
-							finalPrice: orderDetailData.detail.finalPrice,
-							paymentStatus: orderDetailData.paymentMethod?.status
-								? (orderDetailData.paymentMethod?.status as PaymentStatus)
-								: undefined,
-							paymentDate: orderDetailData.paymentMethod?.date
-								? new Date(orderDetailData.paymentMethod?.date)
-								: undefined,
-							receiptNumber: orderDetailData.detail.receiptNumber,
-						},
-					});
-
-					if (orderDetailData.shippingServices && orderDetailData.shippingServices.length > 0) {
-						await Promise.all(
-							orderDetailData.shippingServices.map((shippingService) =>
-								prisma.shippingService.create({
-									data: {
-										...shippingService,
-										orderDetailId: createdOrderDetail.id,
-									},
-								}),
-							),
-						);
-					}
-
-					return createdOrderDetail;
+				// Buat order detail
+				const createdOrderDetail = await prisma.orderDetail.create({
+					data: {
+						orderId: createdOrder.id,
+						paymentMethodId: data.orderDetail.paymentMethod?.id,
+						code: data.orderDetail.detail.code,
+						otherFees: data.orderDetail.detail.otherFees,
+						finalPrice: data.orderDetail.detail.finalPrice,
+						paymentStatus: data.orderDetail.paymentMethod?.status
+							? (data.orderDetail.paymentMethod?.status.toUpperCase() as PaymentStatus)
+							: undefined,
+						paymentDate: data.orderDetail.paymentMethod?.date
+							? new Date(data.orderDetail.paymentMethod?.date)
+							: undefined,
+						receiptNumber: data.orderDetail.detail.receiptNumber,
+					},
 				});
 
-				const orderDetails = await Promise.all(orderDetailsPromises);
+				// Buat order products
+				const orderProductsPromises = data.orderDetail.orderProducts.map((orderProduct) => {
+					if (!orderProduct.productId) {
+						return ServiceResponse.failure("productId is required", null, StatusCodes.BAD_REQUEST);
+					}
+
+					return prisma.orderProduct.create({
+						data: {
+							orderId: createdOrder.id,
+							orderDetailId: createdOrderDetail.id,
+							productId: orderProduct.productId,
+							productQty: orderProduct.productQty,
+						},
+					});
+				});
+
+				await Promise.all(orderProductsPromises);
+
+				// Buat shipping services jika ada
+				if (data.orderDetail.shippingServices && data.orderDetail.shippingServices.length > 0) {
+					const shippingServicesPromises = data.orderDetail.shippingServices.map((shippingService) =>
+						prisma.shippingService.create({
+							data: {
+								orderId: createdOrder.id,
+								shippingName: shippingService.shippingName,
+								serviceName: shippingService.serviceName,
+								weight: shippingService.weight,
+								isCod: shippingService.isCod,
+								shippingCost: shippingService.shippingCost,
+								shippingCashback: shippingService.shippingCashback,
+								shippingCostNet: shippingService.shippingCostNet,
+								grandtotal: shippingService.grandtotal,
+								serviceFee: shippingService.serviceFee,
+								netIncome: shippingService.netIncome,
+								etd: shippingService.etd,
+								type: shippingService.type,
+							},
+						}),
+					);
+
+					await Promise.all(shippingServicesPromises);
+				}
 
 				return {
 					...createdOrder,
-					orderDetails,
+					orderDetail: createdOrderDetail,
 				};
 			});
 
@@ -227,12 +251,26 @@ class OrderService {
 		}
 	};
 
-	public update = async (id: string, data: Partial<UpdateOrderType>) => {
+	public update = async (id: string, data: Partial<UpdateOrderType>["body"]) => {
 		try {
 			const existingOrder = await this.orderRepo.client.order.findUnique({
 				where: { id },
 				include: {
-					OrderDetail: true,
+					SalesChannel: true,
+					DeliveryPlace: true,
+					OrdererCustomer: true,
+					DeliveryTargetCustomer: true,
+					OrderDetail: {
+						include: {
+							OrderProducts: {
+								include: {
+									Product: true,
+								},
+							},
+							PaymentMethod: true,
+						},
+					},
+					ShippingServices: true,
 				},
 			});
 
@@ -241,9 +279,9 @@ class OrderService {
 			}
 
 			// Cek customer pemesan jika ada perubahan
-			if (data.body?.order?.ordererCustomerId) {
+			if (data?.order?.ordererCustomerId) {
 				const ordererCustomer = await this.orderRepo.client.customer.findUnique({
-					where: { id: data.body.order.ordererCustomerId },
+					where: { id: data.order.ordererCustomerId },
 				});
 				if (!ordererCustomer) {
 					return ServiceResponse.failure("Data customer pemesan tidak ditemukan", null, StatusCodes.NOT_FOUND);
@@ -251,9 +289,9 @@ class OrderService {
 			}
 
 			// Cek customer tujuan pengiriman jika ada perubahan
-			if (data.body?.order?.deliveryTargetCustomerId) {
+			if (data?.order?.deliveryTargetCustomerId) {
 				const deliveryTargetCustomer = await this.orderRepo.client.customer.findUnique({
-					where: { id: data.body.order.deliveryTargetCustomerId },
+					where: { id: data.order.deliveryTargetCustomerId },
 				});
 				if (!deliveryTargetCustomer) {
 					return ServiceResponse.failure(
@@ -265,9 +303,9 @@ class OrderService {
 			}
 
 			// Cek tempat pengiriman jika ada perubahan
-			if (data.body?.order?.deliveryPlaceId) {
+			if (data?.order?.deliveryPlaceId) {
 				const deliveryPlace = await this.orderRepo.client.deliveryPlace.findUnique({
-					where: { id: data.body.order.deliveryPlaceId },
+					where: { id: data.order.deliveryPlaceId },
 				});
 				if (!deliveryPlace) {
 					return ServiceResponse.failure("Data tempat pengiriman tidak ditemukan", null, StatusCodes.NOT_FOUND);
@@ -275,44 +313,22 @@ class OrderService {
 			}
 
 			// Cek saluran penjualan jika ada perubahan
-			if (data.body?.order?.salesChannelId) {
+			if (data?.order?.salesChannelId) {
 				const salesChannel = await this.orderRepo.client.salesChannel.findUnique({
-					where: { id: data.body.order.salesChannelId },
+					where: { id: data.order.salesChannelId },
 				});
 				if (!salesChannel) {
 					return ServiceResponse.failure("Data saluran penjualan tidak ditemukan", null, StatusCodes.NOT_FOUND);
 				}
 			}
 
-			// Cek produk dan metode pembayaran untuk setiap detail order jika ada perubahan
-			if (data.body?.orderDetails) {
-				for (const orderDetail of data.body.orderDetails) {
-					if (orderDetail.detail?.productId) {
-						const product = await this.orderRepo.client.product.findUnique({
-							where: { id: orderDetail.detail.productId },
-						});
-						if (!product) {
-							return ServiceResponse.failure("Data produk tidak ditemukan", null, StatusCodes.NOT_FOUND);
-						}
-					}
-
-					if (orderDetail.paymentMethod?.id) {
-						const paymentMethod = await this.orderRepo.client.paymentMethod.findUnique({
-							where: { id: orderDetail.paymentMethod.id },
-						});
-						if (!paymentMethod) {
-							return ServiceResponse.failure("Data metode pembayaran tidak ditemukan", null, StatusCodes.NOT_FOUND);
-						}
-					}
-
-					if (orderDetail.detail?.shippingServiceId) {
-						const shippingService = await this.orderRepo.client.shippingService.findUnique({
-							where: { id: orderDetail.detail.shippingServiceId },
-						});
-						if (!shippingService) {
-							return ServiceResponse.failure("Data layanan pengiriman tidak ditemukan", null, StatusCodes.NOT_FOUND);
-						}
-					}
+			// Cek metode pembayaran untuk detail order jika ada perubahan
+			if (data?.orderDetail?.paymentMethod?.id) {
+				const paymentMethod = await this.orderRepo.client.paymentMethod.findUnique({
+					where: { id: data.orderDetail.paymentMethod.id },
+				});
+				if (!paymentMethod) {
+					return ServiceResponse.failure("Data metode pembayaran tidak ditemukan", null, StatusCodes.NOT_FOUND);
 				}
 			}
 
@@ -321,110 +337,131 @@ class OrderService {
 				const updatedOrder = await prisma.order.update({
 					where: { id },
 					data: {
-						ordererCustomerId: data.body?.order?.ordererCustomerId,
-						deliveryTargetCustomerId: data.body?.order?.deliveryTargetCustomerId,
-						deliveryPlaceId: data.body?.order?.deliveryPlaceId,
-						salesChannelId: data.body?.order?.salesChannelId,
-						orderDate: data.body?.order?.orderDate ? new Date(data.body.order.orderDate) : undefined,
-						note: data.body?.order?.note,
+						ordererCustomerId: data?.order?.ordererCustomerId,
+						deliveryTargetCustomerId: data?.order?.deliveryTargetCustomerId,
+						deliveryPlaceId: data?.order?.deliveryPlaceId,
+						salesChannelId: data?.order?.salesChannelId,
+						orderDate: data?.order?.orderDate ? new Date(data.order.orderDate) : undefined,
+						note: data?.order?.note,
 					},
 				});
 
-				// Update order details jika ada
-				if (data.body?.orderDetails && data.body.orderDetails.length > 0) {
-					// Proses setiap detail order
-					for (const orderDetailData of data.body.orderDetails) {
-						if (orderDetailData.id) {
-							// Update detail order yang sudah ada
-							const updatedOrderDetail = await prisma.orderDetail.update({
-								where: { id: orderDetailData.id },
-								data: {
-									productId: orderDetailData.detail?.productId,
-									paymentMethodId: orderDetailData.paymentMethod?.id,
-									code: orderDetailData.detail?.code,
-									productQty: orderDetailData.detail?.productQty,
-									shippingServiceId: orderDetailData.detail?.shippingServiceId,
-									otherFees: orderDetailData.detail?.otherFees,
-									finalPrice: orderDetailData.detail?.finalPrice,
-									paymentStatus: orderDetailData.paymentMethod?.status
-										? (orderDetailData.paymentMethod.status as PaymentStatus)
-										: undefined,
-									paymentDate: orderDetailData.paymentMethod?.date
-										? new Date(orderDetailData.paymentMethod.date)
-										: undefined,
-									receiptNumber: orderDetailData.detail?.receiptNumber,
-								},
-							});
+				// Update order detail jika ada
+				if (data?.orderDetail) {
+					if (existingOrder.OrderDetail) {
+						// Update order detail yang sudah ada
+						await prisma.orderDetail.update({
+							where: { id: existingOrder.OrderDetail.id },
+							data: {
+								paymentMethodId: data.orderDetail.paymentMethod?.id,
+								code: data.orderDetail.detail?.code,
+								otherFees: data.orderDetail.detail?.otherFees,
+								finalPrice: data.orderDetail.detail?.finalPrice,
+								paymentStatus: data.orderDetail.paymentMethod?.status
+									? (data.orderDetail.paymentMethod.status.toUpperCase() as PaymentStatus)
+									: undefined,
+								paymentDate: data.orderDetail.detail?.paymentDate
+									? new Date(data.orderDetail.detail.paymentDate)
+									: undefined,
+								receiptNumber: data.orderDetail.detail?.receiptNumber,
+							},
+						});
+					} else {
+						// Buat order detail baru jika belum ada
+						await prisma.orderDetail.create({
+							data: {
+								orderId: id,
+								paymentMethodId: data.orderDetail.paymentMethod?.id,
+								code: data.orderDetail.detail?.code,
+								otherFees: data.orderDetail.detail?.otherFees,
+								finalPrice: data.orderDetail.detail?.finalPrice,
+								paymentStatus: data.orderDetail.detail?.paymentStatus
+									? (data.orderDetail.detail.paymentStatus.toUpperCase() as PaymentStatus)
+									: undefined,
+								paymentDate: data.orderDetail.detail?.paymentDate
+									? new Date(data.orderDetail.detail.paymentDate)
+									: undefined,
+								receiptNumber: data.orderDetail.detail?.receiptNumber,
+							},
+						});
+					}
+				}
 
-							// Update shipping services jika ada
-							if (orderDetailData.shippingServices && orderDetailData.shippingServices.length > 0) {
-								// Hapus shipping services lama
-								await prisma.shippingService.deleteMany({
-									where: { orderDetailId: orderDetailData.id },
-								});
+				// Update order products jika ada
+				if (data?.orderDetail?.orderProducts && data.orderDetail.orderProducts.length > 0) {
+					// Hapus order products lama
+					await prisma.orderProduct.deleteMany({
+						where: { orderId: id },
+					});
 
-								// Buat shipping services baru
-								await Promise.all(
-									orderDetailData.shippingServices.map((shippingService) =>
-										prisma.shippingService.create({
-											data: {
-												...shippingService,
-												orderDetailId: updatedOrderDetail.id,
-											},
-										}),
-									),
-								);
+					// Buat order products baru
+					await Promise.all(
+						data.orderDetail.orderProducts.map((orderProduct) => {
+							if (!orderProduct.productId) {
+								return ServiceResponse.failure("productId tidak ditemukan", null, StatusCodes.BAD_REQUEST);
 							}
-						} else {
-							// Buat detail order baru
-							const createdOrderDetail = await prisma.orderDetail.create({
+							return prisma.orderProduct.create({
 								data: {
 									orderId: id,
-									productId: orderDetailData.detail?.productId,
-									paymentMethodId: orderDetailData.paymentMethod?.id,
-									code: orderDetailData.detail?.code,
-									productQty: orderDetailData.detail?.productQty,
-									shippingServiceId: orderDetailData.detail?.shippingServiceId,
-									otherFees: orderDetailData.detail?.otherFees,
-									finalPrice: orderDetailData.detail?.finalPrice,
-									paymentStatus: orderDetailData.paymentMethod?.status
-										? (orderDetailData.paymentMethod.status as PaymentStatus)
-										: undefined,
-									paymentDate: orderDetailData.paymentMethod?.date
-										? new Date(orderDetailData.paymentMethod.date)
-										: undefined,
-									receiptNumber: orderDetailData.detail?.receiptNumber,
+									productId: orderProduct.productId,
+									productQty: orderProduct.productQty || 0,
+									orderDetailId: existingOrder.OrderDetail?.id ?? undefined,
 								},
 							});
+						}),
+					);
+				}
 
-							// Buat shipping services jika ada
-							if (orderDetailData.shippingServices && orderDetailData.shippingServices.length > 0) {
-								await Promise.all(
-									orderDetailData.shippingServices.map((shippingService) =>
-										prisma.shippingService.create({
-											data: {
-												...shippingService,
-												orderDetailId: createdOrderDetail.id,
-											},
-										}),
-									),
-								);
-							}
-						}
-					}
+				// Update shipping services jika ada
+				if (data?.orderDetail?.shippingServices && data.orderDetail.shippingServices.length > 0) {
+					// Hapus shipping services lama
+					await prisma.shippingService.deleteMany({
+						where: { orderId: id },
+					});
+
+					// Buat shipping services baru
+					await Promise.all(
+						data.orderDetail.shippingServices.map((shippingService) =>
+							prisma.shippingService.create({
+								data: {
+									orderId: id,
+									shippingName: shippingService.shippingName,
+									serviceName: shippingService.serviceName,
+									weight: shippingService.weight,
+									isCod: shippingService.isCod,
+									shippingCost: shippingService.shippingCost,
+									shippingCashback: shippingService.shippingCashback,
+									shippingCostNet: shippingService.shippingCostNet,
+									grandtotal: shippingService.grandtotal,
+									serviceFee: shippingService.serviceFee,
+									netIncome: shippingService.netIncome,
+									etd: shippingService.etd,
+									type: shippingService.type,
+								},
+							}),
+						),
+					);
 				}
 
 				// Ambil data order yang sudah diupdate beserta detailnya
 				return await prisma.order.findUnique({
 					where: { id },
 					include: {
+						SalesChannel: true,
+						DeliveryPlace: true,
+						OrdererCustomer: true,
+						DeliveryTargetCustomer: true,
 						OrderDetail: {
 							include: {
-								shippingService: true,
-								paymentMethod: true,
-								product: true,
+								OrderProducts: {
+									include: {
+										Product: true,
+									},
+								},
+								PaymentMethod: true,
 							},
 						},
+						ShippingServices: true,
 					},
 				});
 			});
@@ -433,7 +470,7 @@ class OrderService {
 		} catch (error) {
 			logger.error(error);
 			return ServiceResponse.failure(
-				"Gagal membuat data order",
+				"Gagal mengupdate data order",
 				(error as Error).message,
 				StatusCodes.INTERNAL_SERVER_ERROR,
 			);
