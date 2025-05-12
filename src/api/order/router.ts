@@ -15,6 +15,50 @@ orderRegistry.registerPath({
 	method: "get",
 	path: "/orders",
 	tags: ["Order"],
+	request: {
+		query: z.object({
+			ordererCustomerId: z
+				.string()
+				.uuid()
+				.optional()
+				.describe("ID pelanggan pemesan (contoh: 29d9f9d0-a35d-4ec1-af8c-6e514cade06c)"),
+			deliveryTargetCustomerId: z
+				.string()
+				.uuid()
+				.optional()
+				.describe("ID pelanggan tujuan pengiriman (contoh: e1ee8c68-feed-47fd-8a24-c0af38ac9f51)"),
+			salesChannelId: z
+				.string()
+				.uuid()
+				.optional()
+				.describe("ID saluran penjualan (contoh: 659a18d0-a4da-4103-a7bd-a81616cca889)"),
+			deliveryPlaceId: z
+				.string()
+				.uuid()
+				.optional()
+				.describe("ID tempat pengiriman (contoh: da127630-ae9c-4678-b0f6-cdb51d645bfb)"),
+			orderDate: z.string().optional().describe("Tanggal pemesanan (contoh: 2024-01-01T00:00:00.000Z)"),
+			orderStatus: z.string().optional().describe("Status pesanan (contoh: settlement, pending, cancel, installments)"),
+			orderMonth: z.string().optional().describe("Bulan pemesanan (1-12)"),
+			orderYear: z.string().optional().describe("Tahun pemesanan (contoh: 2024)"),
+			startDate: z.string().optional().describe("Tanggal mulai pencarian (contoh: 2024-01-01T00:00:00.000Z)"),
+			endDate: z.string().optional().describe("Tanggal akhir pencarian (contoh: 2025-01-01T00:00:00.000Z)"),
+			customerCategory: z.string().optional().describe("Kategori pelanggan (contoh: RETAIL, DISTRIBUTOR)"),
+			paymentStatus: z
+				.string()
+				.optional()
+				.describe("Status pembayaran (contoh: settlement, pending, cancel, installments)"),
+			productId: z.string().uuid().optional().describe("ID produk (contoh: 3fa85f64-5717-4562-b3fc-2c963f66afa6)"),
+			paymentMethodId: z
+				.string()
+				.uuid()
+				.optional()
+				.describe("ID metode pembayaran (contoh: 3fa85f64-5717-4562-b3fc-2c963f66afa6)"),
+			search: z.string().optional().describe("Kata kunci pencarian (contoh: nama pelanggan atau kode order)"),
+			sort: z.string().optional().describe("Kolom untuk pengurutan (contoh: orderDate, code)"),
+			order: z.enum(["asc", "desc"]).optional().describe("Urutan pengurutan (asc: naik, desc: turun)"),
+		}),
+	},
 	responses: createApiResponse(z.array(OrderSchema), "Berhasil mengambil semua order"),
 });
 

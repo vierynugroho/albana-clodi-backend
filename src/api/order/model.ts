@@ -157,3 +157,29 @@ export const OrderParamsSchema = z.object({
 	}),
 });
 export type OrderParamsType = z.infer<typeof OrderParamsSchema>;
+
+// =============================================
+// TODO: QUERY SCHEMA
+// =============================================
+export const OrderQuerySchema = z.object({
+	query: z.object({
+		ordererCustomerId: z.string().uuid().optional(),
+		deliveryTargetCustomerId: z.string().uuid().optional(),
+		salesChannelId: z.string().uuid().optional(),
+		deliveryPlaceId: z.string().uuid().optional(),
+		orderDate: z.string().optional(),
+		orderStatus: z.string().optional(),
+		orderMonth: z.string().optional(),
+		orderYear: z.string().optional(),
+		startDate: z.string().optional(),
+		endDate: z.string().optional(),
+		customerCategory: z.string().optional(),
+		paymentStatus: z.string().optional(),
+		productId: z.string().uuid().optional(),
+		paymentMethodId: z.string().uuid().optional(),
+		search: z.string().optional(),
+		sort: z.string().optional(),
+		order: z.enum(["asc", "desc"]).optional(),
+	}),
+});
+export type OrderQueryType = z.infer<typeof OrderQuerySchema>;

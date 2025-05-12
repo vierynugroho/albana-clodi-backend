@@ -1,9 +1,10 @@
 import type { Request, RequestHandler, Response } from "express";
+import type { OrderQueryType } from "./model";
 import { orderService } from "./service";
 
 export class OrderController {
 	public getAll: RequestHandler = async (req: Request, res: Response) => {
-		const serviceResponse = await orderService.getAll();
+		const serviceResponse = await orderService.getAll(req.query as OrderQueryType["query"]);
 		res.status(serviceResponse.statusCode).send(serviceResponse);
 	};
 
