@@ -14,8 +14,7 @@ export class OrderController {
 	};
 
 	public create: RequestHandler = async (req: Request, res: Response) => {
-		const data = req;
-		const serviceResponse = await orderService.create(data);
+		const serviceResponse = await orderService.create(req.body);
 		res.status(serviceResponse.statusCode).send(serviceResponse);
 	};
 
