@@ -28,8 +28,29 @@ export const OrderDetailSchema = z.object({
 	paymentMethodId: z.string().uuid().optional().describe("ID metode pembayaran"),
 	productId: z.string().uuid().optional().describe("ID produk"),
 	code: z.string().optional().describe("Kode pesanan"),
-	otherFees: z.any().optional().describe("Biaya tambahan lainnya"),
-	finalPrice: z.number().optional().describe("Harga akhir"),
+	otherFees: z
+		.object({
+			packaging: z.number().optional().describe("Biaya packaging"),
+			insurance: z.number().optional().describe("Biaya asuransi"),
+			weight: z.number().optional().describe("Berat produk 1 kg"),
+			discount: z
+				.object({
+					value: z.number().describe("Nilai diskon"),
+					type: z.enum(["percent", "nominal"]).describe("Tipe diskon (persen atau nominal)"),
+				})
+				.optional()
+				.describe("Diskon (opsional)"),
+			shippingCost: z
+				.object({
+					shippingService: z.string(),
+					type: z.string(),
+					cost: z.number(),
+				})
+				.optional()
+				.describe("Biaya pengiriman"),
+		})
+		.optional()
+		.describe("Biaya tambahan lainnya"),
 	paymentStatus: z.enum(["settlement", "pending", "cancel", "installments"]).optional().describe("Status pembayaran"),
 	paymentDate: z.date().optional().describe("Tanggal pembayaran"),
 	receiptNumber: z.string().optional().describe("Nomor resi"),
@@ -47,6 +68,7 @@ export const OrderProductSchema = z.object({
 	id: z.string().uuid().optional(),
 	orderId: z.string().uuid().optional().describe("ID order"),
 	productId: z.string().uuid().optional().describe("ID produk"),
+	productVariantId: z.string().uuid().optional().describe("ID varian produk"),
 	productQty: z.number().int().describe("Jumlah produk"),
 	createdAt: z.date().optional(),
 	updatedAt: z.date().optional(),

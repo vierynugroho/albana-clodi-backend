@@ -2,7 +2,6 @@ import { ServiceResponse } from "@/common/models/serviceResponse";
 import { logger } from "@/server";
 import type { PaymentStatus } from "@prisma/client";
 import { StatusCodes } from "http-status-codes";
-import { Product } from "../product/productModel";
 import type { CreateOrderType, OrderParamsType, UpdateOrderType } from "./model";
 import { type OrderRepository, orderRepository } from "./repository";
 
@@ -25,7 +24,11 @@ class OrderService {
 						include: {
 							OrderProducts: {
 								include: {
-									Product: true,
+									Product: {
+										include: {
+											productVariants: true,
+										},
+									},
 								},
 							},
 							PaymentMethod: true,
@@ -54,7 +57,11 @@ class OrderService {
 						include: {
 							OrderProducts: {
 								include: {
-									Product: true,
+									Product: {
+										include: {
+											productVariants: true,
+										},
+									},
 								},
 							},
 							PaymentMethod: true,
@@ -77,6 +84,8 @@ class OrderService {
 
 	public create = async (data: CreateOrderType["body"]) => {
 		try {
+			let totalPrice = 0;
+
 			// Cek customer pemesan
 			if (data.order.ordererCustomerId) {
 				const ordererCustomer = await this.orderRepo.client.customer.findUnique({
@@ -121,13 +130,56 @@ class OrderService {
 				}
 			}
 
-			// Cek produk dan metode pembayaran untuk detail order
-			if (data.orderDetail.detail.productId) {
-				const product = await this.orderRepo.client.product.findUnique({
-					where: { id: data.orderDetail.detail.productId },
-				});
-				if (!product) {
-					return ServiceResponse.failure("Data produk tidak ditemukan", null, StatusCodes.NOT_FOUND);
+			// Validasi data detail order
+			if (data.orderDetail.detail) {
+				// Validasi kode order jika ada
+				if (data.orderDetail.detail.code) {
+					// Cek apakah kode order sudah digunakan
+					const existingOrder = await this.orderRepo.client.orderDetail.findFirst({
+						where: { code: data.orderDetail.detail.code },
+					});
+					console.log("TEST==========================");
+					if (existingOrder) {
+						console.log("ADAAAA==========================");
+						return ServiceResponse.failure("Kode order sudah digunakan", null, StatusCodes.BAD_REQUEST);
+					}
+				}
+
+				// Validasi otherFees jika ada
+				if (data.orderDetail.detail.otherFees) {
+					const { packaging, insurance, discount, ongkir1kg } = data.orderDetail.detail.otherFees as {
+						packaging?: number;
+						insurance?: number;
+						discount?: {
+							value: number;
+							type: "percent" | "nominal";
+						};
+						ongkir1kg?: number;
+					};
+					if (packaging && typeof packaging !== "number") {
+						return ServiceResponse.failure("Biaya packaging harus berupa angka", null, StatusCodes.BAD_REQUEST);
+					}
+					if (insurance && typeof insurance !== "number") {
+						return ServiceResponse.failure("Biaya asuransi harus berupa angka", null, StatusCodes.BAD_REQUEST);
+					}
+					if (discount) {
+						if (typeof discount !== "object" || discount === null) {
+							return ServiceResponse.failure("Diskon harus berupa objek", null, StatusCodes.BAD_REQUEST);
+						}
+						if (typeof discount.value !== "number") {
+							return ServiceResponse.failure("Nilai diskon harus berupa angka", null, StatusCodes.BAD_REQUEST);
+						}
+						if (discount.type !== "percent" && discount.type !== "nominal") {
+							return ServiceResponse.failure(
+								"Tipe diskon harus 'percent' atau 'nominal'",
+								null,
+								StatusCodes.BAD_REQUEST,
+							);
+						}
+					}
+					if (ongkir1kg && typeof ongkir1kg !== "number") {
+						return ServiceResponse.failure("Ongkir 1kg harus berupa angka", null, StatusCodes.BAD_REQUEST);
+					}
 				}
 			}
 
@@ -173,6 +225,106 @@ class OrderService {
 					},
 				});
 
+				// Ambil data customer untuk menentukan kategori harga
+				const customer = await prisma.customer.findUnique({
+					where: { id: data.order.ordererCustomerId },
+					select: { category: true },
+				});
+
+				if (!customer) {
+					throw new Error("Data customer tidak ditemukan");
+				}
+
+				// Hitung harga produk berdasarkan kategori customer
+				for (const orderProduct of data.orderDetail.orderProducts) {
+					if (!orderProduct.productId) continue;
+
+					const product = await prisma.product.findUnique({
+						where: { id: orderProduct.productId },
+						include: {
+							productVariants: {
+								include: {
+									productPrices: true,
+								},
+							},
+						},
+					});
+
+					if (!product) continue;
+
+					// Ambil harga dari product price berdasarkan kategori customer
+					let productPrice = 0;
+					const variant = product.productVariants[0]; // Ambil variant pertama jika ada
+
+					if (variant?.productPrices && variant.productPrices.length > 0) {
+						const priceData = variant.productPrices[0]; // Ambil data harga pertama dari array
+
+						// Tentukan harga berdasarkan kategori customer
+						switch (customer.category) {
+							case "CUSTOMER":
+							case "DROPSHIPPER":
+								productPrice = priceData.normal || 0;
+								break;
+							case "MEMBER":
+								productPrice = priceData.member || priceData.normal || 0;
+								break;
+							case "RESELLER":
+								productPrice = priceData.reseller || priceData.normal || 0;
+								break;
+							case "AGENT":
+								productPrice = priceData.agent || priceData.normal || 0;
+								break;
+							default:
+								productPrice = priceData.normal || 0;
+						}
+					}
+
+					// Tambahkan ke total price (harga * quantity)
+					totalPrice += productPrice * orderProduct.productQty;
+				}
+
+				// Tambahkan other fees jika ada
+				if (data.orderDetail.detail.otherFees) {
+					const otherFees = data.orderDetail.detail.otherFees;
+
+					// Tambahkan biaya asuransi jika ada
+					if (otherFees.insurance) {
+						totalPrice += otherFees.insurance;
+					}
+
+					// Tambahkan biaya packaging jika ada
+					if (otherFees.packaging) {
+						totalPrice += otherFees.packaging;
+					}
+
+					// Tambahkan biaya untuk order berdasarkan berat
+					if (otherFees.weight) {
+						const orderWeight = 1; // Berat order dalam kg
+						const pricePerKg = otherFees.weight; // Harga per kg dari otherFees.weight
+						totalPrice += orderWeight * pricePerKg;
+					}
+
+					// Tambahkan biaya pengiriman jika ada
+					if (otherFees.shippingCost) {
+						if (otherFees.shippingCost.cost) {
+							totalPrice += otherFees.shippingCost.cost;
+						}
+					}
+
+					// Proses discount jika ada
+					if (otherFees.discount) {
+						// Jika discount dalam bentuk persentase
+						if (otherFees.discount.type === "percent" && otherFees.discount.value) {
+							const discountAmount = (totalPrice * otherFees.discount.value) / 100;
+							totalPrice -= discountAmount;
+						}
+						// Jika discount dalam bentuk nominal
+						else if (otherFees.discount.type === "nominal" && otherFees.discount.value) {
+							totalPrice -= otherFees.discount.value;
+						}
+					}
+				}
+
 				// Buat order detail
 				const createdOrderDetail = await prisma.orderDetail.create({
 					data: {
@@ -180,7 +332,7 @@ class OrderService {
 						paymentMethodId: data.orderDetail.paymentMethod?.id,
 						code: data.orderDetail.detail.code,
 						otherFees: data.orderDetail.detail.otherFees,
-						finalPrice: data.orderDetail.detail.finalPrice,
+						finalPrice: totalPrice,
 						paymentStatus: data.orderDetail.paymentMethod?.status
 							? (data.orderDetail.paymentMethod?.status.toUpperCase() as PaymentStatus)
 							: undefined,
@@ -253,6 +405,8 @@ class OrderService {
 
 	public update = async (id: string, data: Partial<UpdateOrderType>["body"]) => {
 		try {
+			let totalPrice = 0;
+
 			const existingOrder = await this.orderRepo.client.order.findUnique({
 				where: { id },
 				include: {
@@ -332,6 +486,157 @@ class OrderService {
 				}
 			}
 
+			// Hitung total harga jika ada produk
+
+			if (data?.orderDetail?.orderProducts && data.orderDetail.orderProducts.length > 0) {
+				// Ambil data customer untuk menentukan kategori harga
+				const customer = await this.orderRepo.client.customer.findUnique({
+					where: { id: data.order?.ordererCustomerId },
+					select: { category: true },
+				});
+
+				// Ambil data produk untuk menghitung total harga
+				const productIds = data.orderDetail.orderProducts
+					.map((product) => product.productId)
+					.filter((id): id is string => id !== undefined);
+
+				const products = await this.orderRepo.client.product.findMany({
+					where: {
+						id: {
+							in: productIds,
+						},
+					},
+					include: {
+						productVariants: {
+							include: {
+								productPrices: true,
+							},
+						},
+					},
+				});
+
+				// Hitung total harga berdasarkan produk dan kuantitas
+				for (const orderProduct of data.orderDetail.orderProducts) {
+					if (!orderProduct.productId) continue;
+
+					const product = products.find((p) => p.id === orderProduct.productId);
+					if (!product || !product.productVariants || product.productVariants.length === 0) continue;
+
+					// Cari variant yang sesuai dengan productVariantId jika ada
+					let variant = product.productVariants[0]; // Default ke variant pertama
+					if (orderProduct.productVariantId) {
+						const matchingVariant = product.productVariants.find((v) => v.id === orderProduct.productVariantId);
+						if (matchingVariant) {
+							variant = matchingVariant;
+						}
+					}
+
+					if (variant?.productPrices && variant.productPrices.length > 0) {
+						const priceData = variant.productPrices[0];
+
+						// Tentukan harga berdasarkan kategori customer
+						let productPrice = 0;
+						if (customer) {
+							switch (customer.category) {
+								case "CUSTOMER":
+								case "DROPSHIPPER":
+									productPrice = priceData.normal || 0;
+									break;
+								case "MEMBER":
+									productPrice = priceData.member || priceData.normal || 0;
+									break;
+								case "RESELLER":
+									productPrice = priceData.reseller || priceData.normal || 0;
+									break;
+								case "AGENT":
+									productPrice = priceData.agent || priceData.normal || 0;
+									break;
+								default:
+									productPrice = priceData.normal || 0;
+							}
+						} else {
+							productPrice = priceData.normal || 0;
+						}
+
+						// Dapatkan quantity produk saat ini
+						const productQty = orderProduct.productQty || 1;
+
+						// Cari produk yang sama di order yang sudah ada jika ada
+						let existingProductQty = 0;
+						if (existingOrder?.OrderDetail?.OrderProducts) {
+							const existingProduct = existingOrder.OrderDetail.OrderProducts.find(
+								(p) => p.productId === orderProduct.productId && !orderProduct.productVariantId,
+							);
+							if (existingProduct) {
+								existingProductQty = existingProduct.productQty || 0;
+							}
+						}
+
+						// Gunakan quantity dari order product saat ini, atau dari existing order jika tidak ada
+						const finalQty = productQty || existingProductQty || 1;
+
+						// Tambahkan ke total price (harga * quantity)
+						totalPrice += productPrice * finalQty;
+					}
+				}
+
+				// Tambahkan biaya lain jika ada
+				if (data.orderDetail.detail?.otherFees) {
+					const otherFees = data.orderDetail.detail.otherFees as {
+						packaging?: number;
+						insurance?: number;
+						discount?: {
+							value: number;
+							type: "percent" | "nominal";
+						};
+						ongkir1kg?: number;
+						weight?: number;
+						shippingCost?: {
+							shippingService: string;
+							type: string;
+							cost: number;
+						};
+					};
+
+					// Add packaging cost if exists
+					if (otherFees.packaging) {
+						totalPrice += otherFees.packaging;
+					}
+
+					// Add insurance cost if exists
+					if (otherFees.insurance) {
+						totalPrice += otherFees.insurance;
+					}
+
+					// Add cost based on order weight
+					if (otherFees.weight) {
+						const orderWeight = 1; // Order weight in kg
+						const pricePerKg = otherFees.weight; // Price per kg
+						totalPrice += orderWeight * pricePerKg;
+					}
+
+					// Add shipping cost if exists
+					if (otherFees.shippingCost) {
+						if (otherFees.shippingCost.cost) {
+							totalPrice += otherFees.shippingCost.cost;
+						}
+					}
+
+					// Proses discount jika ada
+					if (otherFees.discount) {
+						// Jika discount dalam bentuk persentase
+						if (otherFees.discount.type === "percent" && otherFees.discount.value) {
+							const discountAmount = (totalPrice * otherFees.discount.value) / 100;
+							totalPrice -= discountAmount;
+						}
+						// Jika discount dalam bentuk nominal
+						else if (otherFees.discount.type === "nominal" && otherFees.discount.value) {
+							totalPrice -= otherFees.discount.value;
+						}
+					}
+				}
+			}
+
 			const result = await this.orderRepo.client.$transaction(async (prisma) => {
 				// Update order
 				const updatedOrder = await prisma.order.update({
@@ -356,12 +661,12 @@ class OrderService {
 								paymentMethodId: data.orderDetail.paymentMethod?.id,
 								code: data.orderDetail.detail?.code,
 								otherFees: data.orderDetail.detail?.otherFees,
-								finalPrice: data.orderDetail.detail?.finalPrice,
+								finalPrice: totalPrice,
 								paymentStatus: data.orderDetail.paymentMethod?.status
 									? (data.orderDetail.paymentMethod.status.toUpperCase() as PaymentStatus)
 									: undefined,
-								paymentDate: data.orderDetail.detail?.paymentDate
-									? new Date(data.orderDetail.detail.paymentDate)
+								paymentDate: data.orderDetail.paymentMethod?.date
+									? new Date(data.orderDetail.paymentMethod.date)
 									: undefined,
 								receiptNumber: data.orderDetail.detail?.receiptNumber,
 							},
@@ -374,12 +679,11 @@ class OrderService {
 								paymentMethodId: data.orderDetail.paymentMethod?.id,
 								code: data.orderDetail.detail?.code,
 								otherFees: data.orderDetail.detail?.otherFees,
-								finalPrice: data.orderDetail.detail?.finalPrice,
-								paymentStatus: data.orderDetail.detail?.paymentStatus
-									? (data.orderDetail.detail.paymentStatus.toUpperCase() as PaymentStatus)
+								paymentStatus: data.orderDetail.paymentMethod?.status
+									? (data.orderDetail.paymentMethod.status.toUpperCase() as PaymentStatus)
 									: undefined,
-								paymentDate: data.orderDetail.detail?.paymentDate
-									? new Date(data.orderDetail.detail.paymentDate)
+								paymentDate: data.orderDetail.paymentMethod?.date
+									? new Date(data.orderDetail.paymentMethod.date)
 									: undefined,
 								receiptNumber: data.orderDetail.detail?.receiptNumber,
 							},
@@ -479,22 +783,59 @@ class OrderService {
 
 	public delete = async (id: string) => {
 		try {
-			const existingDeliveryPlace = await this.orderRepo.client.order.findUnique({
+			const existingOrder = await this.orderRepo.client.order.findUnique({
 				where: { id },
+				include: {
+					OrderDetail: {
+						include: {
+							OrderProducts: true,
+						},
+					},
+					ShippingServices: true,
+				},
 			});
 
-			if (!existingDeliveryPlace) {
+			if (!existingOrder) {
 				return ServiceResponse.failure("Data order tidak ditemukan", null, StatusCodes.NOT_FOUND);
 			}
 
-			const result = await this.orderRepo.client.order.delete({
-				where: { id },
+			// Hapus data terkait terlebih dahulu menggunakan transaksi
+			const result = await this.orderRepo.client.$transaction(async (prisma) => {
+				// Hapus shipping services jika ada
+				if (existingOrder.ShippingServices.length > 0) {
+					await prisma.shippingService.deleteMany({
+						where: { orderId: id },
+					});
+				}
+
+				// Hapus order products jika ada
+				if (existingOrder.OrderDetail?.OrderProducts && existingOrder.OrderDetail.OrderProducts.length > 0) {
+					await prisma.orderProduct.deleteMany({
+						where: { orderDetailId: existingOrder.OrderDetail.id },
+					});
+				}
+
+				// Hapus order detail jika ada
+				if (existingOrder.OrderDetail) {
+					await prisma.orderDetail.delete({
+						where: { id: existingOrder.OrderDetail.id },
+					});
+				}
+
+				// Hapus order
+				return await prisma.order.delete({
+					where: { id },
+				});
 			});
 
 			return ServiceResponse.success("Berhasil menghapus data order", result, StatusCodes.OK);
 		} catch (error) {
 			logger.error(error);
-			return ServiceResponse.failure("Gagal menghapus data order", null, StatusCodes.INTERNAL_SERVER_ERROR);
+			return ServiceResponse.failure(
+				"Gagal menghapus data order",
+				(error as Error).message,
+				StatusCodes.INTERNAL_SERVER_ERROR,
+			);
 		}
 	};
 }

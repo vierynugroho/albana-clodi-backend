@@ -41,31 +41,41 @@ orderRegistry.registerPath({
 					schema: CreateOrderSchema,
 					example: {
 						order: {
-							ordererCustomerId: "550e8400-e29b-41d4-a716-446655440000",
-							deliveryTargetCustomerId: "550e8400-e29b-41d4-a716-446655440001",
-							deliveryPlaceId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-							salesChannelId: "550e8400-e29b-41d4-a716-446655440010",
+							ordererCustomerId: "29d9f9d0-a35d-4ec1-af8c-6e514cade06c",
+							deliveryTargetCustomerId: "e1ee8c68-feed-47fd-8a24-c0af38ac9f51",
+							deliveryPlaceId: "da127630-ae9c-4678-b0f6-cdb51d645bfb",
+							salesChannelId: "659a18d0-a4da-4103-a7bd-a81616cca889",
 							orderDate: "2023-01-01T00:00:00.000Z",
 							note: "Tolong kirim secepatnya",
 						},
 						orderDetail: {
 							detail: {
-								code: "ORD-001",
+								code: "ORD-004",
 								otherFees: {
 									packaging: 5000,
 									insurance: 10000,
+									weight: 1000,
+									shippingCost: {
+										shippingService: "JNE",
+										cost: 1000,
+										type: "reguler",
+									},
+									discount: {
+										value: 10,
+										type: "percent",
+									},
 								},
-								finalPrice: 150000,
 								receiptNumber: "JNE123456789",
 							},
 							paymentMethod: {
-								id: "550e8400-e29b-41d4-a716-446655440001",
+								id: "1598512d-0daa-45c1-bbeb-01855ebc1447",
 								status: "PENDING",
 								date: "2023-01-01T00:00:00.000Z",
 							},
 							orderProducts: [
 								{
-									productId: "3fa85f64-5717-4562-b3fc-2c963f66afa1",
+									productId: "0f11aa20-1f00-428d-9651-b226abfedae9",
+									productVariantId: "0f027aee-6ed4-406e-8e70-1f951ecb66a0",
 									productQty: 2,
 								},
 							],
@@ -108,31 +118,41 @@ orderRegistry.registerPath({
 					schema: UpdateOrderSchema,
 					example: {
 						order: {
-							ordererCustomerId: "550e8400-e29b-41d4-a716-446655440000",
-							deliveryTargetCustomerId: "550e8400-e29b-41d4-a716-446655440001",
-							deliveryPlaceId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-							salesChannelId: "550e8400-e29b-41d4-a716-446655440010",
+							ordererCustomerId: "29d9f9d0-a35d-4ec1-af8c-6e514cade06c",
+							deliveryTargetCustomerId: "e1ee8c68-feed-47fd-8a24-c0af38ac9f51",
+							deliveryPlaceId: "da127630-ae9c-4678-b0f6-cdb51d645bfb",
+							salesChannelId: "659a18d0-a4da-4103-a7bd-a81616cca889",
 							orderDate: "2023-01-01T00:00:00.000Z",
 							note: "Tolong kirim secepatnya",
 						},
 						orderDetail: {
 							detail: {
-								code: "ORD-001",
+								code: "ORD-004",
 								otherFees: {
 									packaging: 5000,
 									insurance: 10000,
+									weight: 1000,
+									shippingCost: {
+										shippingService: "JNE",
+										cost: 1000,
+										type: "reguler",
+									},
+									discount: {
+										value: 10,
+										type: "percent",
+									},
 								},
-								finalPrice: 150000,
 								receiptNumber: "JNE123456789",
 							},
 							paymentMethod: {
-								id: "550e8400-e29b-41d4-a716-446655440001",
+								id: "1598512d-0daa-45c1-bbeb-01855ebc1447",
 								status: "PENDING",
 								date: "2023-01-01T00:00:00.000Z",
 							},
 							orderProducts: [
 								{
-									productId: "3fa85f64-5717-4562-b3fc-2c963f66afa1",
+									productId: "0f11aa20-1f00-428d-9651-b226abfedae9",
+									productVariantId: "0f027aee-6ed4-406e-8e70-1f951ecb66a0",
 									productQty: 2,
 								},
 							],

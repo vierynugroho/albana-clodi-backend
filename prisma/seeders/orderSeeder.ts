@@ -234,16 +234,16 @@ export async function OrderSeeder() {
 		// Seed sales channels
 		console.time("Sales channels seeding");
 		const salesChannels = [
-			{ name: "Website" },
-			{ name: "Tokopedia" },
-			{ name: "Shopee" },
-			{ name: "Lazada" },
-			{ name: "Bukalapak" },
-			{ name: "TikTok Shop" },
-			{ name: "Instagram" },
-			{ name: "Facebook" },
-			{ name: "WhatsApp" },
-			{ name: "Offline Store" },
+			{ name: "Website", isActive: true },
+			{ name: "Tokopedia", isActive: true },
+			{ name: "Shopee", isActive: true },
+			{ name: "Lazada", isActive: true },
+			{ name: "Bukalapak", isActive: false },
+			{ name: "TikTok Shop", isActive: true },
+			{ name: "Instagram", isActive: true },
+			{ name: "Facebook", isActive: false },
+			{ name: "WhatsApp", isActive: true },
+			{ name: "Offline Store", isActive: true },
 		];
 
 		await prisma.salesChannel.createMany({
