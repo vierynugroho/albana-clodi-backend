@@ -48,6 +48,20 @@ export const RequestQueryCustomer = z.object({
 	status: z.nativeEnum(CustomerStatusEnum).optional(),
 	sort: z.string().optional(),
 	order: z.nativeEnum(OrderPaginationEnum).optional(),
+	startDate: z.coerce.date().optional(),
+	endDate: z.coerce.date().optional(),
+	month: z.coerce
+		.string()
+		.regex(/^\d{1,2}$/)
+		.optional(),
+	year: z.coerce
+		.string()
+		.regex(/^\d{4}$/)
+		.optional(),
+	week: z.coerce
+		.string()
+		.regex(/^\d{1,2}$/)
+		.optional(),
 });
 export type RequestQueryCustomerType = z.infer<typeof RequestQueryCustomer>;
 export const GetAllCustomerRequestSchema = z.object({
