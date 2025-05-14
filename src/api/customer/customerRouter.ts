@@ -3,6 +3,7 @@ import { validateRequest } from "@/common/utils/httpHandlers";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Router } from "express";
 import { StatusCodes } from "http-status-codes";
+import multer from "multer";
 import { type ZodTypeAny, z } from "zod";
 import { customerController } from "./customerController";
 import {
@@ -16,6 +17,7 @@ import {
 
 export const customerRegistry = new OpenAPIRegistry();
 export const customerRouter: Router = express.Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
 customerRegistry.register("Customer", CustomerSchema);
 
@@ -103,3 +105,6 @@ customerRegistry.registerPath({
 	responses: createApiResponse({} as ZodTypeAny, "Success", StatusCodes.CREATED),
 });
 customerRouter.delete("/:id", validateRequest(DeleteCustomerRequestSchema), customerController.deleteCustomer);
+
+customerRouter.post("/export/excel", customerController.exportCustomers);
+customerRouter.post("/import/excel", upload.single("customer_data"), customerController.importCustomers);

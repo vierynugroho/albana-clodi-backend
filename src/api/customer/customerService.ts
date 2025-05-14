@@ -1,6 +1,9 @@
 import type { UUID } from "node:crypto";
+import { URLSearchParams } from "node:url";
 import { ServiceResponse } from "@/common/models/serviceResponse";
-import { type Customer, type Prisma, PrismaClient } from "@prisma/client";
+import { exportData } from "@/common/utils/dataExporter";
+import { importData } from "@/common/utils/dataImporter";
+import { type Customer, type CustomerCategories, Expense, type Prisma, PrismaClient } from "@prisma/client";
 import { StatusCodes } from "http-status-codes";
 import type {
 	CreateCustomerType,
@@ -19,10 +22,49 @@ export class CustomerService {
 
 	public getAllCustomers = async (reqQuery: RequestQueryCustomerType) => {
 		try {
-			const { page = 1, limit = 10, category, sort, status, order } = reqQuery;
+			const { page = 1, limit = 10, category, sort, status, order, startDate, endDate, month, year, week } = reqQuery;
 			const skip = (page - 1) * limit;
 			const query: Prisma.CustomerFindManyArgs = {};
 			const sortableFields = ["createdAt", "name", "email"];
+
+			const createdAt: { gte?: Date; lte?: Date; lt?: Date } = {};
+
+			if (startDate && endDate) {
+				createdAt.gte = new Date(`${startDate}T00:00:00`);
+				createdAt.lte = new Date(`${endDate}T23:59:59`);
+			}
+
+			if (month) {
+				const monthNumber = Number.parseInt(month, 10);
+				const yearNumber = year ? Number.parseInt(year, 10) : new Date().getFullYear();
+
+				createdAt.gte = new Date(yearNumber, monthNumber - 1, 1);
+				createdAt.lte = new Date(yearNumber, monthNumber, 0, 23, 59, 59);
+			}
+
+			if (year && !month && !week) {
+				const yearNumber = Number.parseInt(year, 10);
+
+				createdAt.gte = new Date(yearNumber, 0, 1);
+				createdAt.lt = new Date(yearNumber + 1, 0, 1);
+			}
+
+			if (week) {
+				const weekNumber = Number.parseInt(week, 10);
+				const yearNumber = year ? Number.parseInt(year, 10) : new Date().getFullYear();
+
+				const janFirst = new Date(yearNumber, 0, 1);
+				const daysToAdd = (weekNumber - 1) * 7;
+
+				const weekStart = new Date(janFirst);
+				weekStart.setDate(janFirst.getDate() + daysToAdd);
+
+				const weekEnd = new Date(weekStart);
+				weekEnd.setDate(weekStart.getDate() + 6);
+
+				createdAt.gte = weekStart;
+				createdAt.lte = new Date(weekEnd.setHours(23, 59, 59));
+			}
 
 			if (category) {
 				query.where = {
@@ -101,9 +143,11 @@ export class CustomerService {
 				return ServiceResponse.failure("Customer already exists", null, StatusCodes.BAD_REQUEST);
 			}
 
-			await this.customerRepo.create({ data: req });
+			const destinationId = await this.getDestinationIdFromAPI(req.subdistrict.split(","), req.postalCode);
 
-			return ServiceResponse.success("Customer created successfully", null, StatusCodes.CREATED);
+			const response = await this.customerRepo.create({ data: { ...req, destinationId } });
+
+			return ServiceResponse.success("Customer created successfully", response, StatusCodes.CREATED);
 		} catch (ex) {
 			const errorMessage = `Error create customer: ${(ex as Error).message}`;
 			return ServiceResponse.failure(
@@ -125,9 +169,12 @@ export class CustomerService {
 				return ServiceResponse.failure("Customer not found", null, StatusCodes.BAD_REQUEST);
 			}
 
-			await this.customerRepo.update({ where: { id: customerId }, data: req as Prisma.CustomerUpdateInput });
+			const response = await this.customerRepo.update({
+				where: { id: customerId },
+				data: req as Prisma.CustomerUpdateInput,
+			});
 
-			return ServiceResponse.success("Customer updated successfully", null, StatusCodes.OK);
+			return ServiceResponse.success("Customer updated successfully", response, StatusCodes.OK);
 		} catch (ex) {
 			const errorMessage = `Error update customer: ${(ex as Error).message}`;
 			return ServiceResponse.failure(
@@ -140,33 +187,155 @@ export class CustomerService {
 
 	public deleteCustomer = async (customerId: string, req: DeleteCustomerSchema) => {
 		try {
+			let responses: Customer[];
 			if (req && Array.isArray(req.customerIds) && req.customerIds?.length > 0) {
-				const foundCustomers = await this.customerRepo.findMany({
+				responses = await this.customerRepo.findMany({
 					where: {
 						id: {
 							in: req.customerIds,
 						},
 					},
 				});
-				if (!foundCustomers.length) {
+				if (!responses.length) {
 					return ServiceResponse.failure("Customers not found", null, StatusCodes.NOT_FOUND);
 				}
 
 				await this.customerRepo.deleteMany({ where: { id: { in: req.customerIds } } });
 			} else {
-				const foundCustomer = await this.customerRepo.findUnique({ where: { id: customerId } });
-				if (!foundCustomer) {
+				responses = (await this.customerRepo.findUnique({ where: { id: customerId } })) as unknown as Customer[];
+				if (!responses) {
 					return ServiceResponse.failure("Customer not found", null, StatusCodes.NOT_FOUND);
 				}
 
 				await this.customerRepo.delete({ where: { id: customerId } });
 			}
 
-			return ServiceResponse.failure("Customer deleted successfully", null, StatusCodes.OK);
+			return ServiceResponse.failure("Customer deleted successfully", responses, StatusCodes.OK);
 		} catch (ex) {
 			const errorMessage = `Error delete customer: ${(ex as Error).message}`;
 			return ServiceResponse.failure(
 				"An error occurred while delete customer.",
+				errorMessage,
+				StatusCodes.INTERNAL_SERVER_ERROR,
+			);
+		}
+	};
+
+	private getDestinationIdFromAPI = async (region: string[], postalCode: string) => {
+		const API_KEY = process.env.RAJAONGKIR_SHIPPING_DELIVERY_API_KEY;
+		const BASE_URL = process.env.RAJAONGKIR_BASE_URL;
+		console.log(region);
+
+		const regionTrimmed = region.slice(0, -1);
+
+		const prefixes = ["Kota ", "Kabupaten ", "Kab. "];
+
+		const cleanedRegion = regionTrimmed.map((item, index) => {
+			const trimmedItem = item.trim();
+
+			if (index === regionTrimmed.length - 1) {
+				const lowercasedItem = trimmedItem.toLowerCase();
+				for (const prefix of prefixes) {
+					if (lowercasedItem.startsWith(prefix.toLowerCase())) {
+						return trimmedItem.slice(prefix.length);
+					}
+				}
+			}
+			return trimmedItem;
+		});
+
+		const keyword = `${cleanedRegion.join(" ").toLowerCase()} ${postalCode}`;
+		console.log(keyword);
+
+		const query = new URLSearchParams();
+		query.append("keyword", keyword);
+
+		const response = await fetch(`${BASE_URL}/destination/search?${query.toString()}`, {
+			method: "GET",
+			headers: {
+				"x-api-key": API_KEY as string,
+			},
+		});
+
+		const data = await response.json();
+		console.log(data);
+
+		return data.data.length === 1 ? data.data[0].id : null;
+	};
+
+	public exportCustomers = async (reqQuery: RequestQueryCustomerType) => {
+		try {
+			const formatter = new Intl.DateTimeFormat("id-ID", {
+				timeZone: "Asia/Jakarta",
+				dateStyle: "short",
+			});
+
+			const exportParams = {
+				...reqQuery,
+				startDate: reqQuery.startDate?.toISOString().split("T")[0],
+				endDate: reqQuery.endDate?.toISOString().split("T")[0],
+			};
+
+			return exportData<Customer>(
+				exportParams,
+				async (where) => {
+					return this.customerRepo.findMany({
+						where: where as Prisma.CustomerWhereInput,
+						orderBy: { createdAt: "desc" },
+					});
+				},
+				(customer, index) => ({
+					No: index + 1,
+					Nama: customer.name ?? null,
+					Kategori: customer.category ?? null,
+					Alamat: customer.address ?? null,
+					Provinsi: customer.subdistrict?.split(",")[3] ?? null,
+					"Kota/Kabupaten": customer.subdistrict?.split(",")[2] ?? null,
+					Kecamatan: customer.subdistrict?.split(",")[1] ?? null,
+					Kelurahan: customer.subdistrict?.split(",")[0] ?? null,
+					"Kode Pos": customer.postalCode ?? null,
+					Email: customer.email ?? null,
+					"No. Telp": customer.phoneNumber ?? null,
+				}),
+				"Customer",
+				"Tidak ada data customer untuk diekspor",
+			);
+		} catch (ex: unknown) {
+			const errorMessage = `Error export customers: ${(ex as Error).message}`;
+			return ServiceResponse.failure(
+				"An error occurred while export customers.",
+				errorMessage,
+				StatusCodes.INTERNAL_SERVER_ERROR,
+			);
+		}
+	};
+
+	public importCustomers = async (file: Buffer) => {
+		try {
+			const importResult = await importData<Prisma.CustomerCreateInput>(
+				file,
+				(row, index) => ({
+					name: row.Nama as string,
+					subdistrict: `${row.Kelurahan}, ${row.Kecamatan}, ${row["Kota/Kabupaten"]}, ${row.Provinsi}`,
+					address: row.Alamat as string,
+					category: row.Kategori as CustomerCategories,
+					email: row.Email as string,
+					postalCode: String(row["Kode Pos"]),
+					phoneNumber: String(row["No. Telp"]),
+				}),
+				async (data) => {
+					return this.customerRepo.createMany({
+						data,
+						skipDuplicates: true,
+					});
+				},
+			);
+
+			return ServiceResponse.success("Berhasil mengimpor data customers", importResult.responseObject, StatusCodes.OK);
+		} catch (ex: unknown) {
+			const errorMessage = `Error import customers: ${(ex as Error).message}`;
+			return ServiceResponse.failure(
+				"An error occurred while import customers.",
 				errorMessage,
 				StatusCodes.INTERNAL_SERVER_ERROR,
 			);
