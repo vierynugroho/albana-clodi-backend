@@ -1,10 +1,21 @@
 import { ServiceResponse } from "@/common/models/serviceResponse";
+import type { OrderWithRelations } from "@/common/types/orderExport";
+import { exportData } from "@/common/utils/dataExporter";
+import { importData } from "@/common/utils/dataImporter";
 import { logger } from "@/server";
-import type { CustomerCategories, Prisma } from "@prisma/client";
+import type { CustomerCategories, Order, Prisma } from "@prisma/client";
 import type { PaymentStatus } from "@prisma/client";
 import { StatusCodes } from "http-status-codes";
 import type { CreateOrderType, OrderParamsType, OrderQueryType, UpdateOrderType } from "./model";
 import { type OrderRepository, orderRepository } from "./repository";
+
+interface GetAllOrdersParams {
+	startDate?: string;
+	endDate?: string;
+	month?: string;
+	year?: string;
+	week?: string;
+}
 
 class OrderService {
 	private readonly orderRepo: OrderRepository;
@@ -982,6 +993,172 @@ class OrderService {
 				(error as Error).message,
 				StatusCodes.INTERNAL_SERVER_ERROR,
 			);
+		}
+	};
+
+	public exportOrders = async (params: GetAllOrdersParams) => {
+		try {
+			const formatter = new Intl.DateTimeFormat("id-ID", {
+				timeZone: "Asia/Jakarta",
+				dateStyle: "short",
+			});
+
+			return exportData<OrderWithRelations>(
+				params,
+				async (where): Promise<OrderWithRelations[]> => {
+					const queryParams = {
+						productId: undefined as string | undefined,
+						paymentMethodId: undefined as string | undefined,
+						paymentStatus: undefined as PaymentStatus | undefined,
+					};
+
+					// Ambil data order dengan relasi yang dibutuhkan
+					const orders = await this.orderRepo.client.order.findMany({
+						where: where as Prisma.OrderWhereInput,
+						include: {
+							SalesChannel: true,
+							DeliveryPlace: true,
+							OrdererCustomer: true,
+							DeliveryTargetCustomer: true,
+							OrderDetail: {
+								include: {
+									OrderProducts: {
+										where: queryParams.productId ? { productId: queryParams.productId } : undefined,
+										include: {
+											Product: {
+												include: {
+													productVariants: true,
+												},
+											},
+										},
+									},
+									PaymentMethod:
+										queryParams.paymentMethodId || queryParams.paymentStatus
+											? {
+													where: {
+														...(queryParams.paymentMethodId && { id: queryParams.paymentMethodId }),
+														...(queryParams.paymentStatus && { status: queryParams.paymentStatus }),
+													},
+												}
+											: true,
+								},
+							},
+							ShippingServices: true,
+						},
+						orderBy: { createdAt: "desc" },
+					});
+
+					// Konversi hasil query ke tipe yang diharapkan
+					return orders as unknown as OrderWithRelations[];
+				},
+				(order, index) => {
+					// Menghitung total item dan membuat daftar produk dengan kuantitasnya
+					const totalItems = order.OrderDetail?.OrderProducts?.reduce((sum, op) => sum + (op.productQty || 0), 0) ?? 0;
+
+					// Membuat daftar produk dalam satu cell
+					const productList =
+						order.OrderDetail?.OrderProducts?.map((op) => {
+							const variants = op.Product?.productVariants || [];
+							const variantInfo = variants.map((variant) => `(SKU: ${variant.sku})`).join(", ");
+
+							return `${op.Product?.name || "Produk"}${variantInfo ? ` - ${variantInfo}` : ""} - (${op.productQty || 0}x)`;
+						}).join(", ") ?? "";
+
+					// Menghitung total harga, ongkir, dan biaya lain
+					const productPrice = order.OrderDetail?.otherFees?.subtotal ?? 0;
+					const shippingCost = order.OrderDetail?.otherFees?.shippingCost?.cost ?? 0;
+					const otherFees =
+						(order.OrderDetail?.otherFees?.insurance ?? 0) + (order.OrderDetail?.otherFees?.packaging ?? 0);
+					const totalPrice = order.OrderDetail?.finalPrice ?? 0;
+
+					// Mengembalikan satu baris data untuk satu order
+					return {
+						No: index + 1,
+						"Kode Order": order.OrderDetail?.code ?? "",
+						Pemesan: order.OrdererCustomer?.name ?? "",
+						"Pelanggan Tujuan": order.DeliveryTargetCustomer?.name ?? "",
+						"Lokasi Pengiriman": order.DeliveryPlace?.name ?? "",
+						"Channel Penjualan": order.SalesChannel?.name ?? "",
+						"Metode Pembayaran": order.OrderDetail?.PaymentMethod?.name ?? "",
+						"Status Pembayaran": order.OrderDetail?.paymentStatus ?? "",
+						"Tanggal Order": order.orderDate ? formatter.format(new Date(order.orderDate)) : "",
+						"Tanggal Pembayaran": order.OrderDetail?.paymentDate
+							? formatter.format(new Date(order.OrderDetail.paymentDate))
+							: "",
+						"Produk & Qty": productList,
+						"Total Item": totalItems,
+						"Total Harga Produk": productPrice,
+						Ongkir: shippingCost,
+						"Biaya Lainnya": otherFees,
+						"Total Keseluruhan": totalPrice,
+						"Nomor Resi": order.OrderDetail?.receiptNumber ?? "",
+						"Layanan Pengiriman": order.ShippingServices?.[0]?.serviceName ?? "",
+						"Tipe Pengiriman": order.OrderDetail?.otherFees?.shippingCost?.type ?? "",
+						Catatan: order.note ?? "",
+						"Tanggal Dibuat": order.createdAt ? formatter.format(new Date(order.createdAt)) : "",
+					};
+				},
+				"Orders",
+				"Tidak ada data pesanan untuk diekspor",
+			);
+		} catch (error) {
+			logger.error(error);
+			return ServiceResponse.failure("Gagal mengekspor data pesanan", null, StatusCodes.INTERNAL_SERVER_ERROR);
+		}
+	};
+
+	public importOrders = async (file: Buffer) => {
+		try {
+			const importResult = await importData<Prisma.OrderCreateInput>(
+				file,
+				(row, index) => ({
+					ordererCustomerId: row.Pemesan as string,
+					deliveryTargetCustomerId: row["Pelanggan Tujuan"] as string,
+					deliveryPlaceId: row["Lokasi Pengiriman"] as string,
+					salesChannelId: row["Channel Penjualan"] as string,
+					orderDate: new Date(row["Tanggal Order"] as string),
+					note: row.Catatan as string,
+					OrderDetail: {
+						create: {
+							paymentMethodId: row["Metode Pembayaran"] as string,
+							code: row["Kode Order"] as string,
+							otherFees: {
+								weight: Number(row.Berat),
+								discount: {
+									type: row["Tipe Diskon"] as string,
+									value: Number(row["Nilai Diskon"]),
+								},
+								insurance: Number(row.Asuransi),
+								packaging: Number(row["Biaya Kemasan"]),
+								shippingCost: {
+									cost: Number(row["Biaya Pengiriman"]),
+									type: row["Tipe Pengiriman"] as string,
+									shippingService: row["Layanan Pengiriman"] as string,
+								},
+							},
+							finalPrice: Number(row["Harga Akhir"]),
+							paymentStatus: row["Status Pembayaran"] as PaymentStatus,
+							paymentDate: new Date(row["Tanggal Pembayaran"] as string),
+							receiptNumber: row["Nomor Resi"] as string,
+						},
+					},
+				}),
+				async (data) => {
+					return this.orderRepo.client.expense.createMany({
+						data,
+						skipDuplicates: true,
+					});
+				},
+			);
+
+			return ServiceResponse.success(
+				"Berhasil mengimpor data pengeluaran",
+				importResult.responseObject,
+				StatusCodes.OK,
+			);
+		} catch (error) {
+			logger.error(error);
+			return ServiceResponse.failure("Gagal mengimpor data pengeluaran", null, StatusCodes.INTERNAL_SERVER_ERROR);
 		}
 	};
 }

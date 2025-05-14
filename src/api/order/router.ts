@@ -2,6 +2,7 @@ import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
 import { validateRequest } from "@/common/utils/httpHandlers";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Request, type Response, type Router } from "express";
+import multer from "multer";
 import { z } from "zod";
 import { OrderController } from "./controller";
 import { CreateOrderSchema, OrderParamsSchema, OrderSchema, UpdateOrderSchema } from "./model";
@@ -237,7 +238,34 @@ orderRegistry.registerPath({
 	responses: createApiResponse(z.object({ message: z.string() }), "Berhasil menghapus order"),
 });
 
+orderRegistry.registerPath({
+	method: "post",
+	path: "/orders/export/excel",
+	tags: ["Orders"],
+	request: {
+		query: z.object({
+			startDate: z.string().optional(),
+			endDate: z.string().optional(),
+			month: z.string().optional(),
+			year: z.string().optional(),
+			week: z.string().optional(),
+		}),
+	},
+	responses: {
+		"200": {
+			description: "Success",
+			content: {
+				"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+					schema: z.any(),
+				},
+			},
+		},
+	},
+});
+
 const orderController = new OrderController();
+
+const upload = multer({ storage: multer.memoryStorage() });
 
 orderRouter.route("/").get(orderController.getAll).post(validateRequest(CreateOrderSchema), orderController.create);
 orderRouter
@@ -245,3 +273,4 @@ orderRouter
 	.get(validateRequest(OrderParamsSchema), orderController.getOne)
 	.put(validateRequest(UpdateOrderSchema), orderController.update)
 	.delete(validateRequest(OrderParamsSchema), orderController.delete);
+orderRouter.route("/export/excel").get(orderController.exportOrders);
