@@ -1,3 +1,5 @@
+import { OrderPaginationEnum } from "@/common/enums/orderPaginationEnum";
+import { ProductPriceEnum } from "@/common/enums/product/productPriceEnum";
 import { ProductTypeEnum } from "@/common/enums/product/productTypeEnum";
 import { commonValidations } from "@/common/utils/commonValidation";
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
@@ -7,6 +9,7 @@ import {
 	CreateProductWholesalerSchema,
 	UpdateProductWholesalerSchema,
 } from "../prodcut-wholesaler/productWholesaleModel";
+import { ProductDiscountSchema } from "../product-discount/productDiscountModel";
 import { CreateProductPriceSchema, UpdateProductPriceSchema } from "../product-price/productPriceModel";
 import {
 	CreateProductVariantSchema,
@@ -31,8 +34,10 @@ export const ProductSchema = z.object({
 
 //  CREATE SCHEMA WITH REQUEST AND TYPE SCHEMA
 export const CreateProductSchema = z.object({
-	product: ProductSchema,
-	categoryId: z.string().uuid().optional(),
+	product: ProductSchema.extend({
+		categoryId: z.string().uuid().optional(),
+	}),
+	productDiscount: ProductDiscountSchema.optional(),
 	productVariants: z
 		.array(
 			CreateProductVariantSchema.extend({
@@ -82,10 +87,40 @@ export const DeleteProductRequestSchema = z.object({
 	params: z.object({ id: commonValidations.uuid }),
 });
 
+const ProductPriceLevelEnum = z.nativeEnum(ProductPriceEnum);
+
 // GET ALL REQUEST SCHEMA
 export const RequestQueryProduct = z.object({
 	page: z.number().min(1).optional(),
 	limit: z.number().min(5).optional(),
+	type: z.nativeEnum(ProductTypeEnum).optional(),
+	categoryId: z.string().uuid().optional(),
+	productDiscountId: z.string().uuid().optional(),
+	sort: z.string().optional(),
+	order: z.nativeEnum(OrderPaginationEnum).optional(),
+	productPrice: z
+		.record(
+			ProductPriceLevelEnum,
+			z.object({
+				min: z.number().optional(),
+				max: z.number().optional(),
+			}),
+		)
+		.optional(),
+	startDate: z.coerce.date().optional(),
+	endDate: z.coerce.date().optional(),
+	month: z.coerce
+		.string()
+		.regex(/^\d{1,2}$/)
+		.optional(),
+	year: z.coerce
+		.string()
+		.regex(/^\d{4}$/)
+		.optional(),
+	week: z.coerce
+		.string()
+		.regex(/^\d{1,2}$/)
+		.optional(),
 });
 
 export type RequestQueryProductType = z.infer<typeof RequestQueryProduct>;

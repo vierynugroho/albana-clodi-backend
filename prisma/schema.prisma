@@ -41,6 +41,11 @@ enum CustomerStatuses {
   NONACTIVE
 }
 
+enum ProductDiscountTypes {
+  PERCENTAGE
+  NOMINAL
+}
+
 model User {
   id        String    @id @default(uuid()) @db.Uuid
   fullname  String?
@@ -75,14 +80,30 @@ model Product {
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")
 
-  category        Category?        @relation(fields: [categoryId], references: [id])
+  category        Category?         @relation(fields: [categoryId], references: [id])
   productVariants ProductVariant[]
   orderDetails    OrderDetail[]
+  ProductDiscount ProductDiscount[]
 
   @@index([categoryId])
   @@index([name])
   @@index([isPublish])
   @@map("products")
+}
+
+model ProductDiscount {
+  id        String                @id @default(uuid()) @db.Uuid
+  productId String?               @map("product_id") @db.Uuid
+  type      ProductDiscountTypes?
+  value     Decimal?
+  startDate DateTime?
+  endDate   DateTime?
+  createdAt DateTime              @default(now()) @map("created_at")
+  updatedAt DateTime              @updatedAt @map("updated_at")
+
+  product Product? @relation(fields: [productId], references: [id])
+
+  @@map("product_discounts")
 }
 
 model ProductWholesaler {

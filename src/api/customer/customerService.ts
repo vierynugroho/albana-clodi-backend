@@ -203,7 +203,7 @@ export class CustomerService {
 				await this.customerRepo.deleteMany({ where: { id: { in: req.customerIds } } });
 			} else {
 				responses = (await this.customerRepo.findUnique({ where: { id: customerId } })) as unknown as Customer[];
-				if (!responses) {
+				if (!responses[0]) {
 					return ServiceResponse.failure("Customer not found", null, StatusCodes.NOT_FOUND);
 				}
 
@@ -296,6 +296,7 @@ export class CustomerService {
 					"Kode Pos": customer.postalCode ?? null,
 					Email: customer.email ?? null,
 					"No. Telp": customer.phoneNumber ?? null,
+					Tanggal: customer.createdAt ? formatter.format(new Date(customer.createdAt)) : null,
 				}),
 				"Customer",
 				"Tidak ada data customer untuk diekspor",
