@@ -274,3 +274,4 @@ orderRouter
 	.put(validateRequest(UpdateOrderSchema), orderController.update)
 	.delete(validateRequest(OrderParamsSchema), orderController.delete);
 orderRouter.route("/export/excel").get(orderController.exportOrders);
+orderRouter.route("/import/excel").post(upload.single("orders_data"), orderController.importOrders);

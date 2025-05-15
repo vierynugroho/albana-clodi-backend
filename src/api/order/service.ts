@@ -6,6 +6,7 @@ import { logger } from "@/server";
 import type { CustomerCategories, Order, Prisma } from "@prisma/client";
 import type { PaymentStatus } from "@prisma/client";
 import { StatusCodes } from "http-status-codes";
+import xlsx from "xlsx";
 import type { CreateOrderType, OrderParamsType, OrderQueryType, UpdateOrderType } from "./model";
 import { type OrderRepository, orderRepository } from "./repository";
 
@@ -1048,28 +1049,52 @@ class OrderService {
 						orderBy: { createdAt: "desc" },
 					});
 
-					// Konversi hasil query ke tipe yang diharapkan
 					return orders as unknown as OrderWithRelations[];
 				},
-				(order, index) => {
-					// Menghitung total item dan membuat daftar produk dengan kuantitasnya
-					const totalItems = order.OrderDetail?.OrderProducts?.reduce((sum, op) => sum + (op.productQty || 0), 0) ?? 0;
-
-					// Membuat daftar produk dalam satu cell
+				(order: OrderWithRelations, index: number) => {
+					const totalItems =
+						order.OrderDetail?.OrderProducts?.reduce((sum: number, op) => sum + (op.productQty || 0), 0) ?? 0;
 					const productList =
 						order.OrderDetail?.OrderProducts?.map((op) => {
 							const variants = op.Product?.productVariants || [];
-							const variantInfo = variants.map((variant) => `(SKU: ${variant.sku})`).join(", ");
+							const variantInfo =
+								variants.length > 0 ? `(SKU: ${variants.map((v) => v?.sku || "N/A").join(", ")})` : "";
 
-							return `${op.Product?.name || "Produk"}${variantInfo ? ` - ${variantInfo}` : ""} - (${op.productQty || 0}x)`;
+							// Format nama produk dengan SKU dan jumlah yang lebih mudah dibaca
+							return `${op.Product?.name || "Produk"} ${variantInfo} x${op.productQty || 0}`;
 						}).join(", ") ?? "";
 
-					// Menghitung total harga, ongkir, dan biaya lain
-					const productPrice = order.OrderDetail?.otherFees?.subtotal ?? 0;
 					const shippingCost = order.OrderDetail?.otherFees?.shippingCost?.cost ?? 0;
 					const otherFees =
-						(order.OrderDetail?.otherFees?.insurance ?? 0) + (order.OrderDetail?.otherFees?.packaging ?? 0);
+						(order.OrderDetail?.otherFees?.insurance ?? 0) +
+						(order.OrderDetail?.otherFees?.packaging ?? 0) +
+						(order.OrderDetail?.otherFees?.weight ?? 0);
 					const totalPrice = order.OrderDetail?.finalPrice ?? 0;
+					let totalProductPrice = 0;
+
+					if (order.OrderDetail) {
+						const totalHarga = order.OrderDetail.finalPrice || 0;
+
+						let diskonValue = 0;
+						if (order.OrderDetail.otherFees?.discount) {
+							if (order.OrderDetail.otherFees.discount.type === "percent") {
+								diskonValue = (totalHarga * order.OrderDetail.otherFees.discount.value) / 100;
+							} else {
+								diskonValue = order.OrderDetail.otherFees.discount.value || 0;
+							}
+						}
+
+						const totalBiayaLain = shippingCost + otherFees;
+
+						totalProductPrice = totalHarga - diskonValue - totalBiayaLain;
+
+						totalProductPrice = Math.max(0, totalProductPrice);
+					}
+					const diskon = order.OrderDetail?.otherFees?.discount
+						? order.OrderDetail.otherFees.discount.type === "percent"
+							? `${order.OrderDetail.otherFees.discount.value}%`
+							: order.OrderDetail.otherFees.discount.value
+						: 0;
 
 					// Mengembalikan satu baris data untuk satu order
 					return {
@@ -1087,9 +1112,10 @@ class OrderService {
 							: "",
 						"Produk & Qty": productList,
 						"Total Item": totalItems,
-						"Total Harga Produk": productPrice,
+						"Total Harga Produk": totalProductPrice,
 						Ongkir: shippingCost,
 						"Biaya Lainnya": otherFees,
+						Discount: diskon,
 						"Total Keseluruhan": totalPrice,
 						"Nomor Resi": order.OrderDetail?.receiptNumber ?? "",
 						"Layanan Pengiriman": order.ShippingServices?.[0]?.serviceName ?? "",
@@ -1109,51 +1135,32 @@ class OrderService {
 
 	public importOrders = async (file: Buffer) => {
 		try {
-			const importResult = await importData<Prisma.OrderCreateInput>(
-				file,
-				(row, index) => ({
-					ordererCustomerId: row.Pemesan as string,
-					deliveryTargetCustomerId: row["Pelanggan Tujuan"] as string,
-					deliveryPlaceId: row["Lokasi Pengiriman"] as string,
-					salesChannelId: row["Channel Penjualan"] as string,
-					orderDate: new Date(row["Tanggal Order"] as string),
-					note: row.Catatan as string,
-					OrderDetail: {
-						create: {
-							paymentMethodId: row["Metode Pembayaran"] as string,
-							code: row["Kode Order"] as string,
-							otherFees: {
-								weight: Number(row.Berat),
-								discount: {
-									type: row["Tipe Diskon"] as string,
-									value: Number(row["Nilai Diskon"]),
-								},
-								insurance: Number(row.Asuransi),
-								packaging: Number(row["Biaya Kemasan"]),
-								shippingCost: {
-									cost: Number(row["Biaya Pengiriman"]),
-									type: row["Tipe Pengiriman"] as string,
-									shippingService: row["Layanan Pengiriman"] as string,
-								},
-							},
-							finalPrice: Number(row["Harga Akhir"]),
-							paymentStatus: row["Status Pembayaran"] as PaymentStatus,
-							paymentDate: new Date(row["Tanggal Pembayaran"] as string),
-							receiptNumber: row["Nomor Resi"] as string,
-						},
-					},
-				}),
-				async (data) => {
-					return this.orderRepo.client.expense.createMany({
-						data,
-						skipDuplicates: true,
-					});
-				},
-			);
+			// Baca data dari Excel tapi jangan simpan ke database dulu
+			const workbook = xlsx.read(file, { type: "buffer" });
+			const sheetToUse = workbook.SheetNames[0];
 
+			if (!workbook.SheetNames.includes(sheetToUse)) {
+				return ServiceResponse.failure(
+					`Sheet "${sheetToUse}" tidak ditemukan dalam file Excel`,
+					null,
+					StatusCodes.BAD_REQUEST,
+				);
+			}
+
+			const worksheet = workbook.Sheets[sheetToUse];
+			const jsonData = xlsx.utils.sheet_to_json(worksheet) as Record<string, unknown>[];
+
+			if (jsonData.length === 0) {
+				return ServiceResponse.failure("File Excel tidak berisi data", null, StatusCodes.BAD_REQUEST);
+			}
+
+			// Kembalikan data mentah untuk memeriksa struktur
 			return ServiceResponse.success(
-				"Berhasil mengimpor data pengeluaran",
-				importResult.responseObject,
+				"Data struktur Excel berhasil dibaca",
+				{
+					totalRows: jsonData.length,
+					sampleData: jsonData, // Ambil 5 baris pertama sebagai sampel
+				},
 				StatusCodes.OK,
 			);
 		} catch (error) {
