@@ -36,9 +36,10 @@ export const importData = async <T>(
 		}
 
 		const mappedData = jsonData.map(mapFunction);
-		await saveIntoDB(mappedData);
+		// await saveIntoDB(mappedData);
 
-		return ServiceResponse.success("Berhasil mengimpor data", { totalImported: mappedData.length }, StatusCodes.OK);
+		return ServiceResponse.success("Berhasil mengimpor data", mappedData, StatusCodes.OK);
+		// return ServiceResponse.success("Berhasil mengimpor data", { totalImported: mappedData.length }, StatusCodes.OK);
 	} catch (error) {
 		logger.error(error);
 		return ServiceResponse.failure("Gagal mengimpor data", null, StatusCodes.INTERNAL_SERVER_ERROR);

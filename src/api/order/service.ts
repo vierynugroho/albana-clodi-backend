@@ -502,10 +502,21 @@ class OrderService {
 				});
 
 				// Buat order products
-				const orderProductsPromises = data.orderDetail.orderProducts.map((orderProduct) => {
+				const orderProductsPromises = data.orderDetail.orderProducts.map(async (orderProduct) => {
 					if (!orderProduct.productId) {
 						return ServiceResponse.failure("productId is required", null, StatusCodes.BAD_REQUEST);
 					}
+
+					prisma.productVariant.update({
+						where: {
+							id: orderProduct.productVariantId,
+						},
+						data: {
+							stock: {
+								decrement: orderProduct.productQty,
+							},
+						},
+					});
 
 					return prisma.orderProduct.create({
 						data: {
@@ -1135,34 +1146,182 @@ class OrderService {
 
 	public importOrders = async (file: Buffer) => {
 		try {
-			// Baca data dari Excel tapi jangan simpan ke database dulu
-			const workbook = xlsx.read(file, { type: "buffer" });
-			const sheetToUse = workbook.SheetNames[0];
+			const importResult = await importData<Prisma.OrderWhereInput>(
+				file,
+				(row, index): Prisma.OrderWhereInput => {
+					// Mengambil data dasar order
+					const orderCode = row["Kode Order"] as string;
+					const orderDate = row["Tanggal Order"] || null;
+					const note = row.Catatan as string;
 
-			if (!workbook.SheetNames.includes(sheetToUse)) {
-				return ServiceResponse.failure(
-					`Sheet "${sheetToUse}" tidak ditemukan dalam file Excel`,
-					null,
-					StatusCodes.BAD_REQUEST,
-				);
-			}
+					// Data pelanggan dan pengiriman
+					const ordererCustomer = {
+						name: row.Pemesan as string,
+					};
+					const deliveryTargetCustomer = {
+						name: row["Pelanggan Tujuan"] as string,
+					};
+					const deliveryPlace = {
+						name: row["Lokasi Pengiriman"] as string,
+					};
+					const salesChannel = {
+						name: row["Channel Penjualan"] as string,
+					};
 
-			const worksheet = workbook.Sheets[sheetToUse];
-			const jsonData = xlsx.utils.sheet_to_json(worksheet) as Record<string, unknown>[];
+					// Data pembayaran
+					const paymentStatus = row["Status Pembayaran"] as PaymentStatus;
+					const paymentDate = row["Tanggal Pembayaran"] || null;
+					const paymentMethod = {
+						name: row["Metode Pembayaran"] as string,
+					};
 
-			if (jsonData.length === 0) {
-				return ServiceResponse.failure("File Excel tidak berisi data", null, StatusCodes.BAD_REQUEST);
-			}
+					// Data biaya dan diskon
+					const finalPrice = Number(row["Total Keseluruhan"]);
+					const otherFeesTotal = Number(row["Biaya Lainnya"]);
+					const shippingCost = Number(row.Ongkir);
+					const shippingType = row["Tipe Pengiriman"] as string;
+					const shippingService = row["Layanan Pengiriman"] as string;
 
-			// Kembalikan data mentah untuk memeriksa struktur
-			return ServiceResponse.success(
-				"Data struktur Excel berhasil dibaca",
-				{
-					totalRows: jsonData.length,
-					sampleData: jsonData, // Ambil 5 baris pertama sebagai sampel
+					// Menentukan tipe dan nilai diskon
+					const discountType = row.Discount?.toString().includes("%") ? "percent" : "fixed";
+					const discountValue = Number(row.Discount?.toString().replace("%", ""));
+
+					// Membuat objek otherFees sebagai JSON
+					const otherFeesJson = {
+						total: otherFeesTotal,
+						discount: {
+							type: discountType,
+							value: discountValue,
+						},
+						shippingCost: {
+							cost: shippingCost,
+							type: shippingType,
+							shippingService: shippingService,
+						},
+					};
+
+					// Mengembalikan objek order yang sesuai dengan OrderWhereInput
+					const data = {
+						code: orderCode,
+						orderDate: orderDate,
+						note: note,
+						OrdererCustomer: {
+							is: {
+								name: {
+									equals: ordererCustomer.name,
+								},
+							},
+						},
+						DeliveryTargetCustomer: {
+							is: {
+								name: {
+									equals: deliveryTargetCustomer.name,
+								},
+							},
+						},
+						DeliveryPlace: {
+							is: {
+								name: {
+									equals: deliveryPlace.name,
+								},
+							},
+						},
+						SalesChannel: {
+							is: {
+								name: {
+									equals: salesChannel.name,
+								},
+							},
+						},
+						OrderDetail: {
+							is: {
+								code: {
+									equals: orderCode,
+								},
+								paymentStatus: {
+									equals: paymentStatus,
+								},
+								paymentDate: paymentDate,
+								PaymentMethod: {
+									is: {
+										name: {
+											equals: paymentMethod.name,
+										},
+									},
+								},
+								finalPrice: {
+									equals: finalPrice,
+								},
+								receiptNumber: {
+									equals: row["Nomor Resi"] as string,
+								},
+								otherFees: {
+									equals: otherFeesJson,
+								},
+							},
+						},
+						ShippingServices: {
+							some: {
+								serviceName: {
+									equals: shippingService,
+								},
+								serviceType: {
+									equals: shippingType,
+								},
+								cost: {
+									equals: shippingCost,
+								},
+							},
+						},
+					};
+
+					return data;
 				},
-				StatusCodes.OK,
+				async (data) => {
+					const createdOrders = [];
+
+					for (const item of data) {
+						const createdOrder = await this.orderRepo.client.order.create({
+							data: {
+								ordererCustomerId: item.OrdererCustomer?.id,
+								deliveryTargetCustomerId: item.DeliveryTargetCustomer?.id,
+								deliveryPlaceId: item.DeliveryPlace?.id,
+								salesChannelId: item.SalesChannel?.id,
+								orderDate: item.orderDate,
+								note: item.note,
+								OrderDetail: {
+									create: {
+										code: item?.OrderDetail?.code,
+										paymentStatus: item?.OrderDetail?.paymentStatus,
+										paymentDate: item?.OrderDetail?.paymentDate,
+										paymentMethodId: item?.OrderDetail?.PaymentMethod?.id,
+										finalPrice: item?.OrderDetail?.finalPrice,
+										receiptNumber: item?.OrderDetail?.receiptNumber,
+										otherFees: item?.OrderDetail?.otherFees,
+									},
+								},
+								ShippingServices: {
+									create: item?.ShippingServices
+										? item.ShippingServices.some
+											? item.ShippingServices.some.map((service: any) => ({
+													serviceName: service.serviceName?.equals,
+													serviceType: service.serviceType?.equals,
+													cost: service.cost?.equals,
+												}))
+											: []
+										: [],
+								},
+							},
+						});
+
+						createdOrders.push(createdOrder);
+					}
+
+					return { count: createdOrders.length };
+				},
 			);
+
+			return ServiceResponse.success("Berhasil mengimpor data order", importResult.responseObject, StatusCodes.OK);
 		} catch (error) {
 			logger.error(error);
 			return ServiceResponse.failure("Gagal mengimpor data pengeluaran", null, StatusCodes.INTERNAL_SERVER_ERROR);
