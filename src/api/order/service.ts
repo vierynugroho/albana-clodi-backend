@@ -548,7 +548,7 @@ class OrderService {
 						);
 					}
 
-					prisma.productVariant.update({
+					await prisma.productVariant.update({
 						where: {
 							id: orderProduct.productVariantId,
 						},
@@ -559,7 +559,7 @@ class OrderService {
 						},
 					});
 
-					return prisma.orderProduct.create({
+					return await prisma.orderProduct.create({
 						data: {
 							orderId: createdOrder.id,
 							orderDetailId: createdOrderDetail.id,
@@ -696,8 +696,6 @@ class OrderService {
 				}
 			}
 
-			// Hitung total harga jika ada produk
-
 			if (data?.orderDetail?.orderProducts && data.orderDetail.orderProducts.length > 0) {
 				// Ambil data customer untuk menentukan kategori harga
 				const customer = await this.orderRepo.client.customer.findUnique({
@@ -739,6 +737,14 @@ class OrderService {
 						if (matchingVariant) {
 							variant = matchingVariant;
 						}
+					}
+
+					if (!variant?.stock || !orderProduct.productQty || variant.stock < orderProduct.productQty) {
+						return ServiceResponse.failure(
+							`Stok produk dengan ID ${orderProduct.productVariantId} tidak tersedia`,
+							null,
+							StatusCodes.BAD_REQUEST,
+						);
 					}
 
 					if (variant?.productPrices && variant.productPrices.length > 0) {
@@ -848,7 +854,6 @@ class OrderService {
 			}
 
 			const result = await this.orderRepo.client.$transaction(async (prisma) => {
-				// Update order
 				const updatedOrder = await prisma.order.update({
 					where: { id },
 					data: {
@@ -904,16 +909,39 @@ class OrderService {
 				// Update order products jika ada
 				if (data?.orderDetail?.orderProducts && data.orderDetail.orderProducts.length > 0) {
 					// Hapus order products lama
+
 					await prisma.orderProduct.deleteMany({
 						where: { orderId: id },
 					});
 
 					// Buat order products baru
 					await Promise.all(
-						data.orderDetail.orderProducts.map((orderProduct) => {
+						data.orderDetail.orderProducts.map(async (orderProduct) => {
 							if (!orderProduct.productId) {
 								return ServiceResponse.failure("productId tidak ditemukan", null, StatusCodes.BAD_REQUEST);
 							}
+
+							if (!orderProduct.productQty) {
+								return ServiceResponse.failure("productQty tidak ditemukan", null, StatusCodes.BAD_REQUEST);
+							}
+
+							existingOrder.OrderDetail?.OrderProducts.map(async (db_product) => {
+								const stockDifference = db_product.productQty - (orderProduct.productQty ?? 0);
+								console.log(
+									`Selisih stok yang akan dikembalikan: ${stockDifference} unit untuk produk dengan ID: ${orderProduct.productVariantId}`,
+								);
+								await prisma.productVariant.update({
+									where: {
+										id: orderProduct.productVariantId,
+									},
+									data: {
+										stock: {
+											increment: stockDifference,
+										},
+									},
+								});
+							});
+
 							return prisma.orderProduct.create({
 								data: {
 									orderId: id,
