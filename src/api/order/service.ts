@@ -317,13 +317,11 @@ class OrderService {
 			if (data.orderDetail.detail) {
 				// Validasi kode order jika ada
 				if (data.orderDetail.detail.code) {
-					// Cek apakah kode order sudah digunakan
 					const existingOrder = await this.orderRepo.client.orderDetail.findFirst({
 						where: { code: data.orderDetail.detail.code },
 					});
-					console.log("TEST==========================");
+
 					if (existingOrder) {
-						console.log("ADAAAA==========================");
 						return ServiceResponse.failure("Kode order sudah digunakan", null, StatusCodes.BAD_REQUEST);
 					}
 				}
@@ -530,6 +528,24 @@ class OrderService {
 				const orderProductsPromises = data.orderDetail.orderProducts.map(async (orderProduct) => {
 					if (!orderProduct.productId) {
 						return ServiceResponse.failure("productId is required", null, StatusCodes.BAD_REQUEST);
+					}
+
+					const productVariant = await prisma.productVariant.findUnique({
+						where: {
+							id: orderProduct.productVariantId,
+						},
+					});
+
+					if (!productVariant) {
+						return ServiceResponse.failure("product variant is not found", null, StatusCodes.NOT_FOUND);
+					}
+
+					if (!productVariant || (productVariant.stock !== null && productVariant.stock <= 0)) {
+						return ServiceResponse.failure(
+							`Stok produk dengan ID ${orderProduct.productVariantId} tidak tersedia`,
+							null,
+							StatusCodes.BAD_REQUEST,
+						);
 					}
 
 					prisma.productVariant.update({
