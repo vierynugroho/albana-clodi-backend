@@ -1184,6 +1184,25 @@ class OrderService {
 					const deliveryPlace = row["Lokasi Pengiriman"];
 					const salesChannel = row["Channel Penjualan"];
 
+					// Data Product
+					const productList = row["Produk & Qty"] as string;
+					const products = productList
+						.split("\n")
+						.map((item) => {
+							const match = item.match(/(.*?)\s*\(SKU:\s*([^)]+)\)\s*x(\d+)/);
+							if (!match) return null;
+
+							const [_, productName, skuList, quantity] = match;
+							const skus = skuList.split(",").map((sku) => sku.trim());
+
+							return {
+								productName,
+								skus,
+								quantity: Number.parseInt(quantity),
+							};
+						})
+						.filter(Boolean);
+
 					// Data pembayaran
 					const paymentStatus = row["Status Pembayaran"] as PaymentStatus;
 					const paymentDate = row["Tanggal Pembayaran"] || null;
@@ -1229,6 +1248,7 @@ class OrderService {
 							PaymentMethod: paymentMethod as string,
 							finalPrice: finalPrice,
 							receiptNumber: row["Nomor Resi"] as string,
+							OrderProducts: products,
 							otherFees: otherFees,
 						},
 						ShippingServices: {
@@ -1244,8 +1264,6 @@ class OrderService {
 					const { v4: uuidv4 } = require("uuid");
 
 					for (const item of data) {
-						console.log(item);
-
 						// TODO: orderer customer
 						const ordererCustomer = await this.customerRepo.findFirst({
 							where: {
@@ -1368,6 +1386,73 @@ class OrderService {
 							});
 						}
 
+						// TODO: products
+						let newProduct = null;
+						const products = await Promise.all(
+							(item.OrderDetail?.OrderProducts as { productName: string; skus: string[]; quantity: number }[])?.map(
+								async (product: { productName: string; skus: string[]; quantity: number }) => {
+									const foundProduct = await this.productRepo.client.product.findFirst({
+										where: {
+											AND: [
+												{
+													name: {
+														equals: product.productName,
+														mode: "insensitive",
+													},
+												},
+												{
+													productVariants: {
+														some: {
+															sku: {
+																in: product.skus,
+															},
+														},
+													},
+												},
+											],
+										},
+										include: {
+											productVariants: {
+												where: {
+													sku: {
+														in: product.skus,
+													},
+												},
+											},
+										},
+									});
+
+									if (!foundProduct) {
+										newProduct = await this.productRepo.client.product.create({
+											data: {
+												id: uuidv4(),
+												name: product.productName,
+												type: "BARANG_STOK_SENDIRI",
+												productVariants: {
+													create: product.skus.map((sku: string) => ({
+														id: uuidv4(),
+														sku: sku,
+														stock: 0,
+													})),
+												},
+											},
+										});
+									}
+
+									return {
+										productId: foundProduct?.id,
+										productQty: product.quantity,
+									};
+								},
+							),
+						);
+
+						const orderProducts = products.map((product: { productId: string | undefined; productQty: number }) => ({
+							id: uuidv4(),
+							productId: product.productId as string,
+							productQty: product.productQty,
+						}));
+
 						const createdOrder = await this.orderRepo.client.order.create({
 							data: {
 								id: uuidv4(),
@@ -1390,6 +1475,17 @@ class OrderService {
 										finalPrice: (item.OrderDetail?.finalPrice as number) || 0,
 										receiptNumber: (item.OrderDetail?.receiptNumber as string) || null,
 										otherFees: item.OrderDetail?.otherFees as Prisma.InputJsonValue | undefined,
+										OrderProducts: {
+											create: orderProducts.map((product) => ({
+												orderId: uuidv4(),
+												Product: {
+													connect: {
+														id: product.productId,
+													},
+												},
+												productQty: product.productQty,
+											})),
+										},
 									},
 								},
 								ShippingServices: {
