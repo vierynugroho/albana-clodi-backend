@@ -1265,230 +1265,227 @@ class OrderService {
 
 					for (const item of data) {
 						// TODO: orderer customer
-						const ordererCustomer = await this.customerRepo.findFirst({
-							where: {
-								name: {
-									equals: item.OrdererCustomer as string,
-									mode: "insensitive",
-								},
-							},
-						});
-
-						let newOrdererCustomer = null;
-						if (!ordererCustomer) {
-							newOrdererCustomer = await this.customerRepo.create({
-								data: {
-									id: uuidv4(),
-									name: item.OrdererCustomer as string,
-									category: "CUSTOMER" as CustomerCategories,
-									status: "ACTIVE",
-									address: "",
-									subdistrict: "",
-									postalCode: "",
-									phoneNumber: "",
-									email: "",
+						await this.orderRepo.client.$transaction(async (tx) => {
+							const ordererCustomer = await tx.customer.findFirst({
+								where: {
+									name: {
+										equals: item.OrdererCustomer as string,
+										mode: "insensitive",
+									},
 								},
 							});
-						}
 
-						// TODO: Delivery Orderer Customer
-						const deliveryOrdererCustomer = await this.customerRepo.findFirst({
-							where: {
-								name: {
-									equals: item.DeliveryTargetCustomer as string,
-									mode: "insensitive",
-								},
-							},
-						});
+							let newOrdererCustomer = null;
+							if (!ordererCustomer) {
+								newOrdererCustomer = await tx.customer.create({
+									data: {
+										id: uuidv4(),
+										name: item.OrdererCustomer as string,
+										category: "CUSTOMER" as CustomerCategories,
+										status: "ACTIVE",
+										address: "",
+										subdistrict: "",
+										postalCode: "",
+										phoneNumber: "",
+										email: "",
+									},
+								});
+							}
 
-						let newDeliveryOrdererCustomer = null;
-						if (!deliveryOrdererCustomer) {
-							newDeliveryOrdererCustomer = await this.customerRepo.create({
-								data: {
-									id: uuidv4(),
-									name: item.DeliveryTargetCustomer as string,
-									category: "CUSTOMER" as CustomerCategories,
-									status: "ACTIVE",
-									address: "",
-									subdistrict: "",
-									postalCode: "",
-									phoneNumber: "",
-									email: "",
-								},
-							});
-						}
-
-						// TODO: Delivery Place
-						const deliveryPlace = await this.deliveryPlaceRepo.client.deliveryPlace.findFirst({
-							where: {
-								name: {
-									equals: item.DeliveryPlace as string,
-									mode: "insensitive",
-								},
-							},
-						});
-
-						let newDeliveryPlace = null;
-						if (!deliveryPlace) {
-							newDeliveryPlace = await this.deliveryPlaceRepo.client.deliveryPlace.create({
-								data: {
-									id: uuidv4(),
-									name: item.OrdererCustomer as string,
-									address: "",
-									subdistrict: "",
-									phoneNumber: "",
-									email: "",
+							const deliveryOrdererCustomer = await tx.customer.findFirst({
+								where: {
+									name: {
+										equals: item.DeliveryTargetCustomer as string,
+										mode: "insensitive",
+									},
 								},
 							});
-						}
 
-						// TODO: Sales Channel
-						const salesChannel = await this.salesChannelRepo.salesChannel.findFirst({
-							where: {
-								name: {
-									equals: item.SalesChannel as string,
-									mode: "insensitive",
-								},
-							},
-						});
+							let newDeliveryOrdererCustomer = null;
+							if (!deliveryOrdererCustomer) {
+								newDeliveryOrdererCustomer = await tx.customer.create({
+									data: {
+										id: uuidv4(),
+										name: item.DeliveryTargetCustomer as string,
+										category: "CUSTOMER" as CustomerCategories,
+										status: "ACTIVE",
+										address: "",
+										subdistrict: "",
+										postalCode: "",
+										phoneNumber: "",
+										email: "",
+									},
+								});
+							}
 
-						let newSalesChannel = null;
-						if (!salesChannel) {
-							newSalesChannel = await this.salesChannelRepo.salesChannel.create({
-								data: {
-									id: uuidv4(),
-									name: item.SalesChannel as string,
-									isActive: true,
-								},
-							});
-						}
-
-						// TODO: Sales Channel
-						const paymentMethod = await this.paymentRepo.paymentMethodRepo.findFirst({
-							where: {
-								name: {
-									equals: item.OrderDetail?.PaymentMethod as string,
-									mode: "insensitive",
-								},
-							},
-						});
-
-						let newPaymentMethod = null;
-						if (!paymentMethod) {
-							newPaymentMethod = await this.paymentRepo.paymentMethodRepo.create({
-								data: {
-									id: uuidv4(),
-									name: null,
-									bankName: item.OrderDetail?.PaymentMethod as string,
-									bankBranch: null,
-									accountNumber: null,
+							const deliveryPlace = await tx.deliveryPlace.findFirst({
+								where: {
+									name: {
+										equals: item.DeliveryPlace as string,
+										mode: "insensitive",
+									},
 								},
 							});
-						}
 
-						// TODO: products
-						let newProduct = null;
-						const products = await Promise.all(
-							(item.OrderDetail?.OrderProducts as { productName: string; skus: string[]; quantity: number }[])?.map(
-								async (product: { productName: string; skus: string[]; quantity: number }) => {
-									const foundProduct = await this.productRepo.client.product.findFirst({
-										where: {
-											AND: [
-												{
-													name: {
-														equals: product.productName,
-														mode: "insensitive",
+							let newDeliveryPlace = null;
+							if (!deliveryPlace) {
+								newDeliveryPlace = await tx.deliveryPlace.create({
+									data: {
+										id: uuidv4(),
+										name: item.OrdererCustomer as string,
+										address: "",
+										subdistrict: "",
+										phoneNumber: "",
+										email: "",
+									},
+								});
+							}
+
+							const salesChannel = await tx.salesChannel.findFirst({
+								where: {
+									name: {
+										equals: item.SalesChannel as string,
+										mode: "insensitive",
+									},
+								},
+							});
+
+							let newSalesChannel = null;
+							if (!salesChannel) {
+								newSalesChannel = await tx.salesChannel.create({
+									data: {
+										id: uuidv4(),
+										name: item.SalesChannel as string,
+										isActive: true,
+									},
+								});
+							}
+
+							const paymentMethod = await tx.paymentMethod.findFirst({
+								where: {
+									name: {
+										equals: item.OrderDetail?.PaymentMethod as string,
+										mode: "insensitive",
+									},
+								},
+							});
+
+							let newPaymentMethod = null;
+							if (!paymentMethod) {
+								newPaymentMethod = await tx.paymentMethod.create({
+									data: {
+										id: uuidv4(),
+										name: null,
+										bankName: item.OrderDetail?.PaymentMethod as string,
+										bankBranch: null,
+										accountNumber: null,
+									},
+								});
+							}
+
+							let newProduct = null;
+							const products = await Promise.all(
+								(item.OrderDetail?.OrderProducts as { productName: string; skus: string[]; quantity: number }[])?.map(
+									async (product: { productName: string; skus: string[]; quantity: number }) => {
+										const foundProduct = await tx.product.findFirst({
+											where: {
+												AND: [
+													{
+														name: {
+															equals: product.productName,
+															mode: "insensitive",
+														},
 													},
-												},
-												{
-													productVariants: {
-														some: {
-															sku: {
-																in: product.skus,
+													{
+														productVariants: {
+															some: {
+																sku: {
+																	in: product.skus,
+																},
 															},
 														},
 													},
-												},
-											],
-										},
-										include: {
-											productVariants: {
-												where: {
-													sku: {
-														in: product.skus,
-													},
-												},
+												],
 											},
-										},
-									});
-
-									if (!foundProduct) {
-										newProduct = await this.productRepo.client.product.create({
-											data: {
-												id: uuidv4(),
-												name: product.productName,
-												type: "BARANG_STOK_SENDIRI",
+											include: {
 												productVariants: {
-													create: product.skus.map((sku: string) => ({
-														id: uuidv4(),
-														sku: sku,
-														stock: 0,
-													})),
+													where: {
+														sku: {
+															in: product.skus,
+														},
+													},
 												},
 											},
 										});
-									}
 
-									return {
-										productId: foundProduct?.id,
-										productQty: product.quantity,
-									};
-								},
-							),
-						);
-
-						const orderProducts = products.map((product: { productId: string | undefined; productQty: number }) => ({
-							id: uuidv4(),
-							productId: product.productId as string,
-							productQty: product.productQty,
-						}));
-
-						await this.orderRepo.client.order.create({
-							data: {
-								id: uuidv4(),
-								ordererCustomerId: ordererCustomer?.id || newOrdererCustomer?.id,
-								deliveryTargetCustomerId: deliveryOrdererCustomer?.id || newDeliveryOrdererCustomer?.id,
-								deliveryPlaceId: deliveryPlace?.id || newDeliveryPlace?.id,
-								salesChannelId: salesChannel?.id || newSalesChannel?.id,
-								orderDate: item.orderDate instanceof Date ? item.orderDate : new Date(item.orderDate as string),
-								note: (item.note as string) || "",
-								OrderDetail: {
-									create: {
-										id: uuidv4(),
-										code: item.OrderDetail?.code as string,
-										paymentStatus: (item.OrderDetail?.paymentStatus as PaymentStatus) || "PENDING",
-										paymentDate:
-											item.OrderDetail?.paymentDate instanceof Date
-												? item.OrderDetail?.paymentDate
-												: new Date(item.OrderDetail?.paymentDate as string),
-										paymentMethodId: paymentMethod?.id || newPaymentMethod?.id,
-										finalPrice: (item.OrderDetail?.finalPrice as number) || 0,
-										receiptNumber: (item.OrderDetail?.receiptNumber as string) || null,
-										otherFees: item.OrderDetail?.otherFees as Prisma.InputJsonValue | undefined,
-										OrderProducts: {
-											create: orderProducts.map((product) => ({
-												orderId: uuidv4(),
-												Product: {
-													connect: {
-														id: product.productId,
+										if (!foundProduct) {
+											newProduct = await tx.product.create({
+												data: {
+													id: uuidv4(),
+													name: product.productName,
+													type: "BARANG_STOK_SENDIRI",
+													productVariants: {
+														create: product.skus.map((sku: string) => ({
+															id: uuidv4(),
+															sku: sku,
+															stock: 0,
+														})),
 													},
 												},
-												productQty: product.productQty,
-											})),
+											});
+										}
+
+										return {
+											productId: foundProduct?.id,
+											productQty: product.quantity,
+										};
+									},
+								),
+							);
+
+							const orderProducts = products.map((product: { productId: string | undefined; productQty: number }) => ({
+								id: uuidv4(),
+								productId: product.productId as string,
+								productQty: product.productQty,
+							}));
+
+							await tx.order.create({
+								data: {
+									id: uuidv4(),
+									ordererCustomerId: ordererCustomer?.id || newOrdererCustomer?.id,
+									deliveryTargetCustomerId: deliveryOrdererCustomer?.id || newDeliveryOrdererCustomer?.id,
+									deliveryPlaceId: deliveryPlace?.id || newDeliveryPlace?.id,
+									salesChannelId: salesChannel?.id || newSalesChannel?.id,
+									orderDate: item.orderDate instanceof Date ? item.orderDate : new Date(item.orderDate as string),
+									note: (item.note as string) || "",
+									OrderDetail: {
+										create: {
+											id: uuidv4(),
+											code: item.OrderDetail?.code as string,
+											paymentStatus: (item.OrderDetail?.paymentStatus as PaymentStatus) || "PENDING",
+											paymentDate:
+												item.OrderDetail?.paymentDate instanceof Date
+													? item.OrderDetail?.paymentDate
+													: new Date(item.OrderDetail?.paymentDate as string),
+											paymentMethodId: paymentMethod?.id || newPaymentMethod?.id,
+											finalPrice: (item.OrderDetail?.finalPrice as number) || 0,
+											receiptNumber: (item.OrderDetail?.receiptNumber as string) || null,
+											otherFees: item.OrderDetail?.otherFees as Prisma.InputJsonValue | undefined,
+											OrderProducts: {
+												create: orderProducts.map((product) => ({
+													orderId: uuidv4(),
+													Product: {
+														connect: {
+															id: product.productId,
+														},
+													},
+													productQty: product.productQty,
+												})),
+											},
 										},
 									},
 								},
-							},
+							});
 						});
 					}
 				},
