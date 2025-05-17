@@ -36,6 +36,7 @@ export const importData = async <T>(
 		}
 
 		const mappedData = jsonData.map(mapFunction);
+
 		await saveIntoDB(mappedData);
 
 		return ServiceResponse.success("Berhasil mengimpor data", mappedData, StatusCodes.OK);

@@ -1453,7 +1453,7 @@ class OrderService {
 							productQty: product.productQty,
 						}));
 
-						const createdOrder = await this.orderRepo.client.order.create({
+						await this.orderRepo.client.order.create({
 							data: {
 								id: uuidv4(),
 								ordererCustomerId: ordererCustomer?.id || newOrdererCustomer?.id,
@@ -1487,25 +1487,6 @@ class OrderService {
 											})),
 										},
 									},
-								},
-								ShippingServices: {
-									create: item?.ShippingServices?.some
-										? {
-												id: uuidv4(),
-												serviceName: item.ShippingServices.some.serviceName,
-												type: item.ShippingServices.some.type,
-												cost: item.ShippingServices.some.shippingCost,
-												weight: item.ShippingServices.some.weight,
-												isCod: item.ShippingServices.some.isCod,
-												shippingCost: item.ShippingServices.some.shippingCost,
-												shippingCashback: item.ShippingServices.some.shippingCashback,
-												shippingCostNet: item.ShippingServices.some.shippingCostNet,
-												grandtotal: item.ShippingServices.some.grandtotal,
-												serviceFee: item.ShippingServices.some.serviceFee,
-												netIncome: item.ShippingServices.some.netIncome,
-												etd: item.ShippingServices.some.etd,
-											}
-										: undefined,
 								},
 							},
 						});
