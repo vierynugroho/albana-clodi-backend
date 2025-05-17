@@ -146,6 +146,22 @@ expensesRegistry.registerPath({
 	},
 });
 
+expensesRegistry.registerPath({
+	method: "get",
+	path: "/expenses/report/summary",
+	tags: ["Expenses"],
+	request: {
+		query: z.object({
+			startDate: z.string().optional().describe("Format: YYYY-MM-DD (e.g. 2025-01-01)"),
+			endDate: z.string().optional().describe("Format: YYYY-MM-DD (e.g. 2025-12-31)"),
+			month: z.string().optional().describe("Month number 1-12 (e.g. 1 for January)"),
+			year: z.string().optional().describe("Year in YYYY format (e.g. 2025)"),
+			week: z.string().optional().describe("Week number 1-52 (e.g. 1)"),
+		}),
+	},
+	responses: createApiResponse(z.array(ExpensesSchema), "Success"),
+});
+
 const upload = multer({ storage: multer.memoryStorage() });
 
 const expenseController = new ExpenseController();
@@ -161,3 +177,6 @@ expensesRouter
 	.delete(validateRequest(ExpenseParamsSchema), expenseController.deleteExpense);
 expensesRouter.route("/export/excel").get(expenseController.exportExpenses);
 expensesRouter.route("/import/excel").post(upload.single("expenses_data"), expenseController.importExpenses);
+
+// reports
+expensesRouter.route("/report/summary").get(expenseController.getSummary);
