@@ -1175,6 +1175,7 @@ class OrderService {
 				file,
 				<T>(row: Record<string, unknown>, index: number): T => {
 					const orderCode = row["Kode Order"] as string;
+
 					const orderDate = row["Tanggal Order"] || null;
 					const note = row.Catatan as string;
 
@@ -1264,6 +1265,15 @@ class OrderService {
 					const { v4: uuidv4 } = require("uuid");
 
 					for (const item of data) {
+						const existingOrder = await this.orderRepo.client.orderDetail.findFirst({
+							where: {
+								code: item.OrderDetail?.code,
+							},
+						});
+						if (existingOrder) {
+							return null;
+						}
+
 						// TODO: orderer customer
 						await this.orderRepo.client.$transaction(async (tx) => {
 							const ordererCustomer = await tx.customer.findFirst({
