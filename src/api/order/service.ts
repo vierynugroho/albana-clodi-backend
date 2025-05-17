@@ -3,10 +3,16 @@ import type { OrderWithRelations } from "@/common/types/orderExport";
 import { exportData } from "@/common/utils/dataExporter";
 import { importData } from "@/common/utils/dataImporter";
 import { logger } from "@/server";
-import type { CustomerCategories, Order, Prisma } from "@prisma/client";
+import { type CustomerCategories, Order, type Prisma, PrismaClient } from "@prisma/client";
 import type { PaymentStatus } from "@prisma/client";
 import { StatusCodes } from "http-status-codes";
 import xlsx from "xlsx";
+import { CustomerRepository } from "../customer/customerRepository";
+import { DeliveryPlaceRepository } from "../delivery-place/repository";
+import { PaymentMethodRepository } from "../payment-method/paymentMethodRepository";
+import { ProductVariantRepository } from "../product-variant/productVariantRepository";
+import { ProductRepository } from "../product/productRepository";
+import { SalesChannelRepository } from "../sales-channel/salesChannelRepository";
 import type { CreateOrderType, OrderParamsType, OrderQueryType, UpdateOrderType } from "./model";
 import { type OrderRepository, orderRepository } from "./repository";
 
@@ -20,9 +26,28 @@ interface GetAllOrdersParams {
 
 class OrderService {
 	private readonly orderRepo: OrderRepository;
+	private readonly customerRepo: CustomerRepository["customer"];
+	private readonly productRepo: ProductRepository;
+	private readonly salesChannelRepo: SalesChannelRepository;
+	private readonly deliveryPlaceRepo: DeliveryPlaceRepository;
+	private readonly productVariantRepo: ProductVariantRepository;
+	private readonly paymentRepo: PaymentMethodRepository;
 
-	constructor() {
+	constructor(
+		customerRepository = new CustomerRepository(new PrismaClient()),
+		productRepository = new ProductRepository(new PrismaClient()),
+		salesChannelRepository = new SalesChannelRepository(new PrismaClient()),
+		deliveryPlaceRepository = new DeliveryPlaceRepository(new PrismaClient()),
+		productVariantRepository = new ProductVariantRepository(new PrismaClient()),
+		paymentMethodRepository = new PaymentMethodRepository(new PrismaClient()),
+	) {
 		this.orderRepo = orderRepository;
+		this.customerRepo = customerRepository.customer;
+		this.productRepo = productRepository;
+		this.salesChannelRepo = salesChannelRepository;
+		this.deliveryPlaceRepo = deliveryPlaceRepository;
+		this.productVariantRepo = productVariantRepository;
+		this.paymentRepo = paymentMethodRepository;
 	}
 
 	public getAll = async (query: OrderQueryType["query"]) => {
@@ -1148,32 +1173,21 @@ class OrderService {
 		try {
 			const importResult = await importData<Prisma.OrderWhereInput>(
 				file,
-				(row, index): Prisma.OrderWhereInput => {
-					// Mengambil data dasar order
+				<T>(row: Record<string, unknown>, index: number): T => {
 					const orderCode = row["Kode Order"] as string;
 					const orderDate = row["Tanggal Order"] || null;
 					const note = row.Catatan as string;
 
 					// Data pelanggan dan pengiriman
-					const ordererCustomer = {
-						name: row.Pemesan as string,
-					};
-					const deliveryTargetCustomer = {
-						name: row["Pelanggan Tujuan"] as string,
-					};
-					const deliveryPlace = {
-						name: row["Lokasi Pengiriman"] as string,
-					};
-					const salesChannel = {
-						name: row["Channel Penjualan"] as string,
-					};
+					const ordererCustomer = row.Pemesan;
+					const deliveryTargetCustomer = row["Pelanggan Tujuan"];
+					const deliveryPlace = row["Lokasi Pengiriman"];
+					const salesChannel = row["Channel Penjualan"];
 
 					// Data pembayaran
 					const paymentStatus = row["Status Pembayaran"] as PaymentStatus;
 					const paymentDate = row["Tanggal Pembayaran"] || null;
-					const paymentMethod = {
-						name: row["Metode Pembayaran"] as string,
-					};
+					const paymentMethod = row["Metode Pembayaran"];
 
 					// Data biaya dan diskon
 					const finalPrice = Number(row["Total Keseluruhan"]);
@@ -1187,144 +1201,226 @@ class OrderService {
 					const discountValue = Number(row.Discount?.toString().replace("%", ""));
 
 					// Membuat objek otherFees sebagai JSON
-					const otherFeesJson = {
-						total: otherFeesTotal,
+					const otherFees = {
+						total: otherFeesTotal || 0,
 						discount: {
-							type: discountType,
-							value: discountValue,
+							type: discountType || 0,
+							value: discountValue || 0,
 						},
 						shippingCost: {
-							cost: shippingCost,
-							type: shippingType,
-							shippingService: shippingService,
+							cost: shippingCost || 0,
+							type: shippingType || "reguler",
+							shippingService: shippingService || "",
 						},
 					};
 
-					// Mengembalikan objek order yang sesuai dengan OrderWhereInput
+					// Mengembalikan objek order yang sesuai dengan Prisma OrderWhereInput
 					const data = {
-						code: orderCode,
 						orderDate: orderDate,
 						note: note,
-						OrdererCustomer: {
-							is: {
-								name: {
-									equals: ordererCustomer.name,
-								},
-							},
-						},
-						DeliveryTargetCustomer: {
-							is: {
-								name: {
-									equals: deliveryTargetCustomer.name,
-								},
-							},
-						},
-						DeliveryPlace: {
-							is: {
-								name: {
-									equals: deliveryPlace.name,
-								},
-							},
-						},
-						SalesChannel: {
-							is: {
-								name: {
-									equals: salesChannel.name,
-								},
-							},
-						},
+						OrdererCustomer: ordererCustomer as string,
+						DeliveryTargetCustomer: deliveryTargetCustomer as string,
+						DeliveryPlace: deliveryPlace as string,
+						SalesChannel: salesChannel as string,
 						OrderDetail: {
-							is: {
-								code: {
-									equals: orderCode,
-								},
-								paymentStatus: {
-									equals: paymentStatus,
-								},
-								paymentDate: paymentDate,
-								PaymentMethod: {
-									is: {
-										name: {
-											equals: paymentMethod.name,
-										},
-									},
-								},
-								finalPrice: {
-									equals: finalPrice,
-								},
-								receiptNumber: {
-									equals: row["Nomor Resi"] as string,
-								},
-								otherFees: {
-									equals: otherFeesJson,
-								},
-							},
+							code: orderCode,
+							paymentStatus: paymentStatus,
+							paymentDate: paymentDate,
+							PaymentMethod: paymentMethod as string,
+							finalPrice: finalPrice,
+							receiptNumber: row["Nomor Resi"] as string,
+							otherFees: otherFees,
 						},
 						ShippingServices: {
-							some: {
-								serviceName: {
-									equals: shippingService,
-								},
-								serviceType: {
-									equals: shippingType,
-								},
-								cost: {
-									equals: shippingCost,
-								},
-							},
+							serviceName: shippingService,
+							type: shippingType,
+							shippingCost: shippingCost,
 						},
 					};
 
-					return data;
+					return data as T;
 				},
 				async (data) => {
-					const createdOrders = [];
+					const { v4: uuidv4 } = require("uuid");
 
 					for (const item of data) {
-						const createdOrder = await this.orderRepo.client.order.create({
-							data: {
-								ordererCustomerId: item.OrdererCustomer?.id,
-								deliveryTargetCustomerId: item.DeliveryTargetCustomer?.id,
-								deliveryPlaceId: item.DeliveryPlace?.id,
-								salesChannelId: item.SalesChannel?.id,
-								orderDate: item.orderDate,
-								note: item.note,
-								OrderDetail: {
-									create: {
-										code: item?.OrderDetail?.code,
-										paymentStatus: item?.OrderDetail?.paymentStatus,
-										paymentDate: item?.OrderDetail?.paymentDate,
-										paymentMethodId: item?.OrderDetail?.PaymentMethod?.id,
-										finalPrice: item?.OrderDetail?.finalPrice,
-										receiptNumber: item?.OrderDetail?.receiptNumber,
-										otherFees: item?.OrderDetail?.otherFees,
-									},
-								},
-								ShippingServices: {
-									create: item?.ShippingServices
-										? item.ShippingServices.some
-											? item.ShippingServices.some.map((service: any) => ({
-													serviceName: service.serviceName?.equals,
-													serviceType: service.serviceType?.equals,
-													cost: service.cost?.equals,
-												}))
-											: []
-										: [],
+						console.log(item);
+
+						// TODO: orderer customer
+						const ordererCustomer = await this.customerRepo.findFirst({
+							where: {
+								name: {
+									equals: item.OrdererCustomer as string,
+									mode: "insensitive",
 								},
 							},
 						});
 
-						createdOrders.push(createdOrder);
-					}
+						let newOrdererCustomer = null;
+						if (!ordererCustomer) {
+							newOrdererCustomer = await this.customerRepo.create({
+								data: {
+									id: uuidv4(),
+									name: item.OrdererCustomer as string,
+									category: "CUSTOMER" as CustomerCategories,
+									status: "ACTIVE",
+									address: "",
+									subdistrict: "",
+									postalCode: "",
+									phoneNumber: "",
+									email: "",
+								},
+							});
+						}
 
-					return { count: createdOrders.length };
+						// TODO: Delivery Orderer Customer
+						const deliveryOrdererCustomer = await this.customerRepo.findFirst({
+							where: {
+								name: {
+									equals: item.DeliveryTargetCustomer as string,
+									mode: "insensitive",
+								},
+							},
+						});
+
+						let newDeliveryOrdererCustomer = null;
+						if (!deliveryOrdererCustomer) {
+							newDeliveryOrdererCustomer = await this.customerRepo.create({
+								data: {
+									id: uuidv4(),
+									name: item.DeliveryTargetCustomer as string,
+									category: "CUSTOMER" as CustomerCategories,
+									status: "ACTIVE",
+									address: "",
+									subdistrict: "",
+									postalCode: "",
+									phoneNumber: "",
+									email: "",
+								},
+							});
+						}
+
+						// TODO: Delivery Place
+						const deliveryPlace = await this.deliveryPlaceRepo.client.deliveryPlace.findFirst({
+							where: {
+								name: {
+									equals: item.DeliveryPlace as string,
+									mode: "insensitive",
+								},
+							},
+						});
+
+						let newDeliveryPlace = null;
+						if (!deliveryPlace) {
+							newDeliveryPlace = await this.deliveryPlaceRepo.client.deliveryPlace.create({
+								data: {
+									id: uuidv4(),
+									name: item.OrdererCustomer as string,
+									address: "",
+									subdistrict: "",
+									phoneNumber: "",
+									email: "",
+								},
+							});
+						}
+
+						// TODO: Sales Channel
+						const salesChannel = await this.salesChannelRepo.salesChannel.findFirst({
+							where: {
+								name: {
+									equals: item.SalesChannel as string,
+									mode: "insensitive",
+								},
+							},
+						});
+
+						let newSalesChannel = null;
+						if (!salesChannel) {
+							newSalesChannel = await this.salesChannelRepo.salesChannel.create({
+								data: {
+									id: uuidv4(),
+									name: item.SalesChannel as string,
+									isActive: true,
+								},
+							});
+						}
+
+						// TODO: Sales Channel
+						const paymentMethod = await this.paymentRepo.paymentMethodRepo.findFirst({
+							where: {
+								name: {
+									equals: item.OrderDetail?.PaymentMethod as string,
+									mode: "insensitive",
+								},
+							},
+						});
+
+						let newPaymentMethod = null;
+						if (!paymentMethod) {
+							newPaymentMethod = await this.paymentRepo.paymentMethodRepo.create({
+								data: {
+									id: uuidv4(),
+									name: null,
+									bankName: item.OrderDetail?.PaymentMethod as string,
+									bankBranch: null,
+									accountNumber: null,
+								},
+							});
+						}
+
+						const createdOrder = await this.orderRepo.client.order.create({
+							data: {
+								id: uuidv4(),
+								ordererCustomerId: ordererCustomer?.id || newOrdererCustomer?.id,
+								deliveryTargetCustomerId: deliveryOrdererCustomer?.id || newDeliveryOrdererCustomer?.id,
+								deliveryPlaceId: deliveryPlace?.id || newDeliveryPlace?.id,
+								salesChannelId: salesChannel?.id || newSalesChannel?.id,
+								orderDate: item.orderDate instanceof Date ? item.orderDate : new Date(item.orderDate as string),
+								note: (item.note as string) || "",
+								OrderDetail: {
+									create: {
+										id: uuidv4(),
+										code: item.OrderDetail?.code as string,
+										paymentStatus: (item.OrderDetail?.paymentStatus as PaymentStatus) || "PENDING",
+										paymentDate:
+											item.OrderDetail?.paymentDate instanceof Date
+												? item.OrderDetail?.paymentDate
+												: new Date(item.OrderDetail?.paymentDate as string),
+										paymentMethodId: paymentMethod?.id || newPaymentMethod?.id,
+										finalPrice: (item.OrderDetail?.finalPrice as number) || 0,
+										receiptNumber: (item.OrderDetail?.receiptNumber as string) || null,
+										otherFees: item.OrderDetail?.otherFees as Prisma.InputJsonValue | undefined,
+									},
+								},
+								ShippingServices: {
+									create: item?.ShippingServices?.some
+										? {
+												id: uuidv4(),
+												serviceName: item.ShippingServices.some.serviceName,
+												type: item.ShippingServices.some.type,
+												cost: item.ShippingServices.some.shippingCost,
+												weight: item.ShippingServices.some.weight,
+												isCod: item.ShippingServices.some.isCod,
+												shippingCost: item.ShippingServices.some.shippingCost,
+												shippingCashback: item.ShippingServices.some.shippingCashback,
+												shippingCostNet: item.ShippingServices.some.shippingCostNet,
+												grandtotal: item.ShippingServices.some.grandtotal,
+												serviceFee: item.ShippingServices.some.serviceFee,
+												netIncome: item.ShippingServices.some.netIncome,
+												etd: item.ShippingServices.some.etd,
+											}
+										: undefined,
+								},
+							},
+						});
+					}
 				},
 			);
 
 			return ServiceResponse.success("Berhasil mengimpor data order", importResult.responseObject, StatusCodes.OK);
 		} catch (error) {
 			logger.error(error);
-			return ServiceResponse.failure("Gagal mengimpor data pengeluaran", null, StatusCodes.INTERNAL_SERVER_ERROR);
+			return ServiceResponse.failure("Gagal mengimpor data order", null, StatusCodes.INTERNAL_SERVER_ERROR);
 		}
 	};
 }
