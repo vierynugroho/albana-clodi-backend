@@ -39,11 +39,7 @@ export function generateOpenAPIDocument(): OpenAPIDocument {
 			description: "Lihat Spesifikasi OpenAPI mentah dalam format JSON",
 			url: "/swagger.json",
 		},
-		security: [
-			{
-				bearerAuth: [],
-			},
-		],
+		// Tidak menerapkan security global, hanya pada endpoint yang memerlukan autentikasi
 	});
 
 	if (!documents.components) {
@@ -51,11 +47,9 @@ export function generateOpenAPIDocument(): OpenAPIDocument {
 	}
 
 	if (!documents.components.securitySchemes) {
-		// Pastikan securitySchemes ada
 		documents.components.securitySchemes = {};
 	}
 
-	// Tambahkan definisi bearerAuth ke securitySchemes
 	documents.components.securitySchemes = {
 		...documents.components.securitySchemes,
 		bearerAuth: {
