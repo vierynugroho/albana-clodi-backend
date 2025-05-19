@@ -8,7 +8,6 @@ export const ExpensesSchema = z.object({
 	itemName: z.string().optional(),
 	itemPrice: z.number().optional(),
 	qty: z.number().int().optional(),
-	totalPrice: z.number().optional(),
 	personResponsible: z.string().optional(),
 	note: z.string().optional(),
 });

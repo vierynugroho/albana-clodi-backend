@@ -24,8 +24,15 @@ class ExpenseService {
 
 	public createExpense = async (data: CreateExpensesType) => {
 		try {
+			const itemPrice = data?.body?.itemPrice || 0;
+			const qty = data?.body?.qty || 0;
+			const totalPrice = itemPrice * qty;
+
 			const result = await this.expenseRepo.client.expense.create({
-				data,
+				data: {
+					...data.body,
+					totalPrice,
+				},
 			});
 
 			return ServiceResponse.success("Berhasil menambahkan data pengeluaran", result, StatusCodes.CREATED);
@@ -37,10 +44,15 @@ class ExpenseService {
 
 	public updateExpense = async (id: string, data: Partial<UpdateExpensesType>) => {
 		try {
+			const itemPrice = data?.body?.itemPrice || 0;
+			const qty = data?.body?.qty || 0;
+			const totalPrice = itemPrice * qty;
+
 			const updatedExpense = await this.expenseRepo.client.expense.update({
 				where: { id },
 				data: {
 					...data,
+					totalPrice,
 					updatedAt: new Date(),
 				},
 			});
