@@ -239,9 +239,9 @@ orderRegistry.registerPath({
 });
 
 orderRegistry.registerPath({
-	method: "post",
+	method: "get",
 	path: "/orders/export/excel",
-	tags: ["Orders"],
+	tags: ["Order"],
 	request: {
 		query: z.object({
 			startDate: z.string().optional(),
@@ -257,6 +257,40 @@ orderRegistry.registerPath({
 			content: {
 				"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
 					schema: z.any(),
+				},
+			},
+		},
+	},
+});
+
+orderRegistry.registerPath({
+	method: "post",
+	path: "/orders/import/excel",
+	tags: ["Order"],
+	request: {
+		body: {
+			content: {
+				"multipart/form-data": {
+					schema: z.object({
+						orders_data: z.any().optional().describe("File Excel untuk diimpor"),
+					}),
+				},
+			},
+		},
+	},
+	responses: {
+		"200": {
+			description: "Success",
+			content: {
+				"application/json": {
+					schema: z.object({
+						success: z.boolean(),
+						message: z.string(),
+						responseObject: z.object({
+							totalImported: z.number(),
+						}),
+						statusCode: z.number(),
+					}),
 				},
 			},
 		},
