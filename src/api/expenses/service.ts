@@ -22,15 +22,15 @@ class ExpenseService {
 		this.expenseRepo = expenseRepository;
 	}
 
-	public createExpense = async (data: CreateExpensesType) => {
+	public createExpense = async (data: CreateExpensesType["body"]) => {
 		try {
-			const itemPrice = data?.body?.itemPrice || 0;
-			const qty = data?.body?.qty || 0;
+			const itemPrice = data?.itemPrice || 0;
+			const qty = data?.qty || 0;
 			const totalPrice = itemPrice * qty;
 
 			const result = await this.expenseRepo.client.expense.create({
 				data: {
-					...data.body,
+					...data,
 					totalPrice,
 				},
 			});
@@ -42,10 +42,10 @@ class ExpenseService {
 		}
 	};
 
-	public updateExpense = async (id: string, data: Partial<UpdateExpensesType>) => {
+	public updateExpense = async (id: string, data: Partial<UpdateExpensesType["body"]>) => {
 		try {
-			const itemPrice = data?.body?.itemPrice || 0;
-			const qty = data?.body?.qty || 0;
+			const itemPrice = data?.itemPrice || 0;
+			const qty = data?.qty || 0;
 			const totalPrice = itemPrice * qty;
 
 			const updatedExpense = await this.expenseRepo.client.expense.update({
