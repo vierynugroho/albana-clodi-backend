@@ -27,10 +27,12 @@ class ExpenseService {
 			const itemPrice = data?.itemPrice || 0;
 			const qty = data?.qty || 0;
 			const totalPrice = itemPrice * qty;
+			const expenseDate = data.expenseDate ? new Date(data.expenseDate) : undefined;
 
 			const result = await this.expenseRepo.client.expense.create({
 				data: {
 					...data,
+					expenseDate,
 					totalPrice,
 				},
 			});
@@ -47,11 +49,13 @@ class ExpenseService {
 			const itemPrice = data?.itemPrice || 0;
 			const qty = data?.qty || 0;
 			const totalPrice = itemPrice * qty;
+			const expenseDate = data.expenseDate ? new Date(data.expenseDate) : undefined;
 
 			const updatedExpense = await this.expenseRepo.client.expense.update({
 				where: { id },
 				data: {
 					...data,
+					expenseDate,
 					totalPrice,
 					updatedAt: new Date(),
 				},

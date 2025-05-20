@@ -14,4 +14,17 @@ export class ReportController {
 		});
 		res.status(serviceResponse.statusCode).send(serviceResponse);
 	};
+
+	public reportOrders: RequestHandler = async (req: Request, res: Response) => {
+		const { startDate, endDate, month, year, week } = req.query;
+
+		const serviceResponse = await reportService.summaryOrders({
+			startDate: startDate as string,
+			endDate: endDate as string,
+			month: month as string,
+			year: year as string,
+			week: week as string,
+		});
+		res.status(serviceResponse.statusCode).send(serviceResponse);
+	};
 }
