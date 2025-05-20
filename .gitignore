@@ -140,3 +140,5 @@ generated/
 
 
 generated/
+
+.env.heroku

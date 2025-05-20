@@ -8,9 +8,12 @@
 	"main": "index.ts",
 	"private": true,
 	"scripts": {
+		"postinstall": "prisma generate",
+		"heroku-postbuild": "npm install && npm run build && prisma generate",
 		"build": "prisma generate && tsc && tsup",
 		"start:dev": "node --import=tsx --watch src/index.ts",
 		"start:prod": "node dist/index.js",
+		"start": "node dist/index.js",
 		"lint": "biome lint --fix",
 		"format": "biome format --write",
 		"test": "prisma generate && vitest run",
@@ -60,14 +63,9 @@
 		"vitest": "3.1.2"
 	},
 	"tsup": {
-		"entry": [
-			"src/index.ts"
-		],
+		"entry": ["src/index.ts"],
 		"outDir": "dist",
-		"format": [
-			"esm",
-			"cjs"
-		],
+		"format": ["esm", "cjs"],
 		"target": "es2020",
 		"sourcemap": true,
 		"clean": true,
