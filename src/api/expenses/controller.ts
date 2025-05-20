@@ -28,7 +28,7 @@ export class ExpenseController {
 	};
 
 	public getAllExpenses: RequestHandler = async (req: Request, res: Response) => {
-		const { startDate, endDate, month, year, week } = req.query;
+		const { startDate, endDate, month, year, week, keyword } = req.query;
 
 		const serviceResponse = await expenseService.getAllExpenses({
 			startDate: startDate as string,
@@ -36,6 +36,7 @@ export class ExpenseController {
 			month: month as string,
 			year: year as string,
 			week: week as string,
+			keyword: keyword as string,
 		});
 		res.status(serviceResponse.statusCode).send(serviceResponse);
 	};

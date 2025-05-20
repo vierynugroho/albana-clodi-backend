@@ -13,6 +13,7 @@ interface GetAllExpensesParams {
 	month?: string;
 	year?: string;
 	week?: string;
+	keyword?: string;
 }
 
 class ExpenseService {
@@ -22,10 +23,19 @@ class ExpenseService {
 		this.expenseRepo = expenseRepository;
 	}
 
-	public createExpense = async (data: CreateExpensesType) => {
+	public createExpense = async (data: CreateExpensesType["body"]) => {
 		try {
+			const itemPrice = data?.itemPrice || 0;
+			const qty = data?.qty || 0;
+			const totalPrice = itemPrice * qty;
+			const expenseDate = data.expenseDate ? new Date(data.expenseDate) : undefined;
+
 			const result = await this.expenseRepo.client.expense.create({
-				data,
+				data: {
+					...data,
+					expenseDate,
+					totalPrice,
+				},
 			});
 
 			return ServiceResponse.success("Berhasil menambahkan data pengeluaran", result, StatusCodes.CREATED);
@@ -35,12 +45,19 @@ class ExpenseService {
 		}
 	};
 
-	public updateExpense = async (id: string, data: Partial<UpdateExpensesType>) => {
+	public updateExpense = async (id: string, data: Partial<UpdateExpensesType["body"]>) => {
 		try {
+			const itemPrice = data?.itemPrice || 0;
+			const qty = data?.qty || 0;
+			const totalPrice = itemPrice * qty;
+			const expenseDate = data.expenseDate ? new Date(data.expenseDate) : undefined;
+
 			const updatedExpense = await this.expenseRepo.client.expense.update({
 				where: { id },
 				data: {
 					...data,
+					expenseDate,
+					totalPrice,
 					updatedAt: new Date(),
 				},
 			});
@@ -84,9 +101,17 @@ class ExpenseService {
 
 	public getAllExpenses = async (params: GetAllExpensesParams) => {
 		try {
-			const { startDate, endDate, month, year, week } = params;
+			const { startDate, endDate, month, year, week, keyword } = params;
 
-			let where: { createdAt?: { gte?: Date; lte?: Date; lt?: Date } } = {};
+			let where: {
+				createdAt?: { gte?: Date; lte?: Date; lt?: Date };
+				personResponsible?: { contains?: string; mode?: "insensitive" };
+				itemName?: { contains?: string; mode?: "insensitive" };
+				OR?: Array<{
+					personResponsible?: { contains?: string; mode?: "insensitive" };
+					itemName?: { contains?: string; mode?: "insensitive" };
+				}>;
+			} = {};
 
 			// Filter by date range
 			if (startDate && endDate) {
@@ -152,15 +177,81 @@ class ExpenseService {
 				};
 			}
 
-			console.log(where);
-			const expenses = await this.expenseRepo.client.expense.findMany({
-				where: where as Prisma.ExpenseWhereInput,
-				orderBy: {
-					createdAt: "desc" as const,
-				},
-			});
+			if (keyword) {
+				where = {
+					...where,
+					OR: [
+						{
+							personResponsible: {
+								contains: keyword,
+								mode: "insensitive",
+							},
+						},
+						{
+							itemName: {
+								contains: keyword,
+								mode: "insensitive",
+							},
+						},
+					],
+				};
+			}
 
-			return ServiceResponse.success("Berhasil mendapatkan data pengeluaran", expenses, StatusCodes.OK);
+			console.log(where);
+			const [expenses, totalExpenses, count] = await Promise.all([
+				this.expenseRepo.client.expense.findMany({
+					where: where as Prisma.ExpenseWhereInput,
+					orderBy: {
+						createdAt: "desc" as const,
+					},
+				}),
+				this.expenseRepo.client.expense.aggregate({
+					where: where as Prisma.ExpenseWhereInput,
+					_sum: {
+						totalPrice: true,
+					},
+				}),
+				this.expenseRepo.client.expense.count({
+					where: where as Prisma.ExpenseWhereInput,
+				}),
+			]);
+
+			// Mendapatkan informasi filter yang digunakan
+			let filterInfo = "Semua data";
+			if (startDate && endDate) {
+				filterInfo = `Data dari ${startDate} sampai ${endDate}`;
+			} else if (month && year) {
+				const monthNames = [
+					"Januari",
+					"Februari",
+					"Maret",
+					"April",
+					"Mei",
+					"Juni",
+					"Juli",
+					"Agustus",
+					"September",
+					"Oktober",
+					"November",
+					"Desember",
+				];
+				filterInfo = `Data bulan ${monthNames[Number(month) - 1]} ${year}`;
+			} else if (year) {
+				filterInfo = `Data tahun ${year}`;
+			} else if (week) {
+				filterInfo = `Data minggu ke-${week} tahun ${year || new Date().getFullYear()}`;
+			}
+
+			return ServiceResponse.success(
+				"Berhasil mendapatkan data pengeluaran",
+				{
+					filterInfo,
+					totalExpenses: totalExpenses._sum.totalPrice || 0,
+					totalData: count,
+					data: expenses,
+				},
+				StatusCodes.OK,
+			);
 		} catch (error) {
 			logger.error(error);
 			return ServiceResponse.failure("Gagal mendapatkan data pengeluaran", null, StatusCodes.INTERNAL_SERVER_ERROR);

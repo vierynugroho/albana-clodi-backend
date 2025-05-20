@@ -23,6 +23,7 @@ expensesRegistry.registerPath({
 			month: z.string().optional().describe("Month number 1-12 (e.g. 1 for January)"),
 			year: z.string().optional().describe("Year in YYYY format (e.g. 2025)"),
 			week: z.string().optional().describe("Week number 1-52 (e.g. 1)"),
+			keyword: z.string().optional().describe("item name or person responsible"),
 		}),
 	},
 	responses: createApiResponse(z.array(ExpensesSchema), "Success"),
@@ -88,7 +89,7 @@ expensesRegistry.registerPath({
 });
 
 expensesRegistry.registerPath({
-	method: "post",
+	method: "get",
 	path: "/expenses/export/excel",
 	tags: ["Expenses"],
 	request: {
@@ -159,5 +160,5 @@ expensesRouter
 	.get(validateRequest(ExpenseParamsSchema), expenseController.getExpenseDetail)
 	.put(validateRequest(UpdateExpensesSchema), expenseController.updateExpense)
 	.delete(validateRequest(ExpenseParamsSchema), expenseController.deleteExpense);
-expensesRouter.route("/export/excel").post(expenseController.exportExpenses);
+expensesRouter.route("/export/excel").get(expenseController.exportExpenses);
 expensesRouter.route("/import/excel").post(upload.single("expenses_data"), expenseController.importExpenses);
