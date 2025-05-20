@@ -6,12 +6,14 @@
 	"repository": "edwinhern/express-typescript-2024",
 	"license": "MIT",
 	"main": "index.ts",
+	"engines": {
+		"node": "20.x"
+	},
 	"private": true,
 	"scripts": {
 		"postinstall": "prisma generate",
 		"heroku-postbuild": "npm install && npm run build && prisma generate",
 		"build": "prisma generate && tsc && tsup",
-		"build:dec": "prisma generate && tsc --project tsconfig.dev.json && tsup",
 		"start:dev": "node --import=tsx --watch src/index.ts",
 		"start:prod": "node dist/index.js",
 		"start": "node dist/index.js",
