@@ -142,3 +142,4 @@ generated/
 generated/
 
 .env.heroku
+pnpm-lock.yaml
