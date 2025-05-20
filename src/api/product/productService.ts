@@ -1,8 +1,9 @@
 import type { ProductTypeEnum } from "@/common/enums/product/productTypeEnum";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { exportData } from "@/common/utils/dataExporter";
+import { importData } from "@/common/utils/dataImporter";
 import { logger } from "@/server";
-import { type Prisma, PrismaClient } from "@prisma/client";
+import { type Prisma, PrismaClient, type ProductDiscount } from "@prisma/client";
 import type { DefaultArgs } from "@prisma/client/runtime/library";
 import { StatusCodes } from "http-status-codes";
 import type {
@@ -29,9 +30,11 @@ type VariantFieldType = {
 
 class ProductService {
 	private readonly productRepo: ProductRepository["productRepo"];
+	private readonly prisma;
 
-	constructor(productRepository = new ProductRepository(new PrismaClient())) {
+	constructor(productRepository = new ProductRepository(new PrismaClient()), initPrisma = new PrismaClient()) {
 		this.productRepo = productRepository.productRepo;
+		this.prisma = initPrisma;
 	}
 
 	public getAllProducts = async (query: RequestQueryProductType) => {
@@ -182,7 +185,6 @@ class ProductService {
 						productVariants: {
 							include: {
 								productPrices: true,
-								ProductWholesaler: true,
 							},
 						},
 					},
@@ -190,8 +192,20 @@ class ProductService {
 				this.productRepo.count(),
 			]);
 
+			const newProduct = products.flatMap((prod) =>
+				prod.productVariants.map((variant) => {
+					const { productVariants, ...restProduct } = prod;
+					const { productPrices, ...restVariant } = variant;
+					return {
+						product: restProduct,
+						variant: restVariant,
+						price: variant.productPrices[0],
+					};
+				}),
+			);
+
 			const response: PaginatedResponse<Product> = {
-				data: products as unknown as Product[],
+				data: newProduct as unknown as Product[],
 				meta: {
 					currentPage: page,
 					totalPages: Math.ceil(total / limit),
@@ -252,6 +266,15 @@ class ProductService {
 			return ServiceResponse.failure("Product already exists", null, StatusCodes.BAD_REQUEST);
 		}
 
+		// const foundCategory = await this.productRepo.findFirst({
+		// 	where: {
+		// 		id: req.product.categoryId,
+		// 	},
+		// });
+		// if (!foundCategory) {
+		// 	return ServiceResponse.failure("Category is not found", null, StatusCodes.NOT_FOUND);
+		// }
+
 		// Validate pricing: purchase price must be less than normal and reseller prices
 		const hasInvalidPrice = req.productVariants?.some(({ productPrices }) => {
 			const buy = productPrices?.buy;
@@ -269,24 +292,25 @@ class ProductService {
 		}
 
 		try {
-			const newProduct: Partial<Product> = {};
+			let newProduct: Partial<Product> = {};
 			// Use transaction to ensure data consistency across related tables
-			await prisma?.$transaction(async (tx: Prisma.TransactionClient) => {
+			await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
 				// Prepare product data with category connection
 				const createDataProduct: Prisma.ProductCreateInput = {
 					...req.product,
 					category: req.product.categoryId ? { connect: { id: req.product.categoryId } } : undefined,
+					ProductDiscount: req.productDiscount ? { create: req.productDiscount } : undefined,
 				};
 
 				// Create the main product record
-				const newProduct = await tx.product.create({
+				newProduct = (await tx.product.create({
 					data: { ...createDataProduct, ProductDiscount: { create: req.productDiscount ?? undefined } },
-				});
+				})) as Product;
 
 				// Create all product variants in parallel for better performance
 				await Promise.all(
 					req.productVariants.map(async (variant) => {
-						const { productWholesalers, productPrices, ...rest } = variant;
+						const { productPrices, ...rest } = variant;
 						return tx.productVariant.create({
 							data: {
 								...rest,
@@ -299,12 +323,6 @@ class ProductService {
 								productPrices: {
 									create: productPrices ?? undefined,
 								},
-								// Create wholesaler pricing if provided
-								ProductWholesaler: variant.productWholesalers?.length
-									? {
-											create: productWholesalers,
-										}
-									: undefined,
 							},
 						});
 					}),
@@ -356,6 +374,14 @@ class ProductService {
 					data: {
 						...req.product,
 						category: req.categoryId ? { connect: { id: req.categoryId } } : undefined,
+						ProductDiscount: req.productDiscount
+							? {
+									update: {
+										where: { id: req.productDiscount.id },
+										data: req.productDiscount,
+									},
+								}
+							: undefined,
 					},
 				});
 
@@ -379,7 +405,7 @@ class ProductService {
 					// Update existing variants or create new ones
 					await Promise.all(
 						(req.productVariants ?? []).map(async (variant) => {
-							const { id, productPrices, productWholesalers, ...rest } = variant;
+							const { id, productPrices, ...rest } = variant;
 
 							if (id) {
 								// Update existing variant
@@ -393,15 +419,6 @@ class ProductService {
 													update: productPrices,
 												} as unknown as Prisma.ProductPriceUncheckedUpdateManyWithoutProductVariantNestedInput)
 											: undefined,
-										// Update wholesaler pricing
-										ProductWholesaler: productWholesalers?.length
-											? ({
-													update: productWholesalers.map(({ id, ...rest }) => ({
-														where: { id },
-														data: rest,
-													})),
-												} as unknown as Prisma.ProductWholesalerUpdateManyWithoutProductVariantNestedInput)
-											: undefined,
 									},
 								});
 							} else {
@@ -411,13 +428,6 @@ class ProductService {
 										...rest,
 										productId: id,
 										productPrices: productPrices ? { create: productPrices } : undefined,
-										ProductWholesaler: productWholesalers?.length
-											? {
-													createMany: {
-														data: productWholesalers,
-													},
-												}
-											: undefined,
 									},
 								});
 							}
@@ -499,7 +509,6 @@ class ProductService {
 						productVariants: {
 							include: {
 								productPrices: true;
-								ProductWholesaler: true;
 							};
 						};
 						category: true;
@@ -516,7 +525,6 @@ class ProductService {
 							productVariants: {
 								include: {
 									productPrices: true,
-									ProductWholesaler: true,
 								},
 							},
 							category: true,
@@ -581,7 +589,11 @@ class ProductService {
 						"Harga Member": variantFields.member.join(", ") ?? null,
 						"Harga Agent": variantFields.agent.join(", ") ?? null,
 						"Harga Reseller": variantFields.reseller.join(", ") ?? null,
-						"Jumlah Stok": variantFields.stock ?? null,
+						"Jumlah Stok": variantFields.stock.join(", ") ?? null,
+						"Diskon Produk": product.ProductDiscount.map((discount: ProductDiscount) =>
+							discount.type === "NOMINAL" ? `Rp.${discount.value}` : `${Number(discount.value) * 100}%`,
+						).join(","),
+						"Tipe Diskon": product.ProductDiscount.map((disc) => disc.type).join(", "),
 						"Berat (gram)": product.weight ?? null,
 					};
 				},
@@ -598,7 +610,69 @@ class ProductService {
 		}
 	};
 
-	public importProducts = async () => {};
+	public importProducts = async (file: Buffer) => {
+		try {
+			const importResult = await importData<Prisma.ProductCreateInput>(
+				file,
+				(row) => {
+					const categoryName = row.Kategori as string;
+					return {
+						name: row["Nama Produk"] as string,
+						category: {
+							connectOrCreate: {
+								create: {
+									name: categoryName,
+								},
+								where: {
+									name: categoryName,
+								},
+							},
+						},
+						description: row.Deskripsi,
+						weight: row["Berat (gram)"],
+						productVariants: {
+							create: {
+								sku: row.SKU,
+								imageUrl: row.Gambar,
+								size: row.Size,
+								color: row.Warna,
+								stock: row["Jumlah Stok"],
+								productPrices: {
+									create: {
+										normal: row["Harga Jual"],
+										member: row["Harga Member"],
+										reseller: row["Harga Reseller"],
+										buy: row["Harga Beli (Harga Modal)"],
+										agent: row["Harga Agent"],
+									},
+								},
+							},
+						},
+						ProductDiscount: {
+							create: {
+								value: row["Tipe Diskon"] === "NOMINAL" ? (row["Diskon Prodok"] as string).split("") : null,
+							},
+						},
+					} as Prisma.ProductCreateInput;
+				},
+				async (data) => {
+					return this.productRepo.createMany({
+						data,
+						skipDuplicates: true,
+					});
+				},
+			);
+
+			return ServiceResponse.success("Berhasil mengimpor data product", importResult.responseObject, StatusCodes.OK);
+		} catch (ex) {
+			const errorMessage = `Error exporting product: ${(ex as Error).message}`;
+			return ServiceResponse.failure(
+				"An error occurred while exporting product.",
+				errorMessage,
+				StatusCodes.INTERNAL_SERVER_ERROR,
+			);
+		}
+	};
 }
 
 export const productService = new ProductService();

@@ -5,11 +5,7 @@ import { commonValidations } from "@/common/utils/commonValidation";
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { optional, z } from "zod";
 import { CreateCategorySchema } from "../category/categoryModel";
-import {
-	CreateProductWholesalerSchema,
-	UpdateProductWholesalerSchema,
-} from "../prodcut-wholesaler/productWholesaleModel";
-import { ProductDiscountSchema } from "../product-discount/productDiscountModel";
+import { CreateProductDiscountSchema, ProductDiscountSchema } from "../product-discount/productDiscountModel";
 import { CreateProductPriceSchema, UpdateProductPriceSchema } from "../product-price/productPriceModel";
 import {
 	CreateProductVariantSchema,
@@ -37,12 +33,11 @@ export const CreateProductSchema = z.object({
 	product: ProductSchema.extend({
 		categoryId: z.string().uuid().optional(),
 	}),
-	productDiscount: ProductDiscountSchema.optional(),
+	productDiscount: CreateProductDiscountSchema.optional(),
 	productVariants: z
 		.array(
 			CreateProductVariantSchema.extend({
 				productPrices: CreateProductPriceSchema.optional(),
-				productWholesalers: z.array(CreateProductWholesalerSchema).optional(),
 			}),
 		)
 		.min(1, { message: "Minimum 1 data product variant with array of object." }),
@@ -58,11 +53,11 @@ export type CreateProductType = z.infer<typeof CreateProductSchema>;
 export const UpdateProductSchema = z.object({
 	product: ProductSchema.partial().optional(),
 	categoryId: z.string().uuid().optional(),
+	productDiscount: UpdateProductPriceSchema.optional(),
 	productVariants: z
 		.array(
 			UpdateProductVariantSchema.extend({
 				productPrices: UpdateProductPriceSchema.partial().optional(),
-				productWholesalers: z.array(UpdateProductWholesalerSchema.partial()).optional(),
 			}),
 		)
 		.optional(),

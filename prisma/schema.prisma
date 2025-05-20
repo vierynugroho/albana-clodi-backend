@@ -106,21 +106,6 @@ model ProductDiscount {
   @@map("product_discounts")
 }
 
-model ProductWholesaler {
-  id               String   @id @default(uuid()) @db.Uuid
-  productVariantId String?  @map("product_variant_id") @db.Uuid
-  lowerLimitItem   Int?     @map("lower_limit_item")
-  upperLimitItem   Int?     @map("upper_limit_item")
-  unitPrice        Float?   @map("unit_price")
-  wholesalerPrice  Float?   @map("wholesaler_price")
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
-
-  productVariant ProductVariant? @relation(fields: [productVariantId], references: [id], onDelete: Cascade)
-
-  @@map("product_wholesaler")
-}
-
 model ProductPrice {
   id               String   @id @default(uuid()) @db.Uuid
   productVariantId String?  @map("product_variant_id") @db.Uuid
@@ -150,9 +135,8 @@ model ProductVariant {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  product           Product?            @relation(fields: [productId], references: [id], onDelete: Cascade)
-  productPrices     ProductPrice[]
-  ProductWholesaler ProductWholesaler[]
+  product       Product?       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productPrices ProductPrice[]
 
   @@index([productId])
   @@index([sku])

@@ -92,3 +92,5 @@ productRegistry.registerPath({
 	responses: createApiResponse(ProductSchema, "Success", StatusCodes.OK),
 });
 productRouter.get("/:id", validateRequest(GetProductRequestSchema), productController.getDetailProduct);
+
+productRouter.post("/export/excel", productController.exportProducts);
