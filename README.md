@@ -33,4 +33,4 @@ Albana Clodi Grosir
    total orders berdasarkan payment method
 
 9. graph
-   order (month:item_terjual)
+   order (month:item_terjual) 

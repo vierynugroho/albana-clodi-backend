@@ -13,6 +13,7 @@ interface GetAllExpensesParams {
 	month?: string;
 	year?: string;
 	week?: string;
+	keyword?: string;
 }
 
 class ExpenseService {
@@ -100,9 +101,17 @@ class ExpenseService {
 
 	public getAllExpenses = async (params: GetAllExpensesParams) => {
 		try {
-			const { startDate, endDate, month, year, week } = params;
+			const { startDate, endDate, month, year, week, keyword } = params;
 
-			let where: { createdAt?: { gte?: Date; lte?: Date; lt?: Date } } = {};
+			let where: {
+				createdAt?: { gte?: Date; lte?: Date; lt?: Date };
+				personResponsible?: { contains?: string; mode?: "insensitive" };
+				itemName?: { contains?: string; mode?: "insensitive" };
+				OR?: Array<{
+					personResponsible?: { contains?: string; mode?: "insensitive" };
+					itemName?: { contains?: string; mode?: "insensitive" };
+				}>;
+			} = {};
 
 			// Filter by date range
 			if (startDate && endDate) {
@@ -165,6 +174,26 @@ class ExpenseService {
 						gte: weekStart,
 						lte: weekEnd,
 					},
+				};
+			}
+
+			if (keyword) {
+				where = {
+					...where,
+					OR: [
+						{
+							personResponsible: {
+								contains: keyword,
+								mode: "insensitive",
+							},
+						},
+						{
+							itemName: {
+								contains: keyword,
+								mode: "insensitive",
+							},
+						},
+					],
 				};
 			}
 
