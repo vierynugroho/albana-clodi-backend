@@ -7,12 +7,6 @@ import { type CustomerCategories, type Prisma, PrismaClient } from "@prisma/clie
 import type { PaymentStatus } from "@prisma/client";
 import { StatusCodes } from "http-status-codes";
 import { v4 as uuidv4 } from "uuid";
-import { CustomerRepository } from "../customer/customerRepository";
-import { DeliveryPlaceRepository } from "../delivery-place/repository";
-import { PaymentMethodRepository } from "../payment-method/paymentMethodRepository";
-import { ProductVariantRepository } from "../product-variant/productVariantRepository";
-import { ProductRepository } from "../product/productRepository";
-import { SalesChannelRepository } from "../sales-channel/salesChannelRepository";
 import type { CreateOrderType, OrderQueryType, UpdateOrderType } from "./model";
 import { type OrderRepository, orderRepository } from "./repository";
 
@@ -26,28 +20,9 @@ interface GetAllOrdersParams {
 
 class OrderService {
 	private readonly orderRepo: OrderRepository;
-	private readonly customerRepo: CustomerRepository["customer"];
-	private readonly productRepo: ProductRepository;
-	private readonly salesChannelRepo: SalesChannelRepository;
-	private readonly deliveryPlaceRepo: DeliveryPlaceRepository;
-	private readonly productVariantRepo: ProductVariantRepository;
-	private readonly paymentRepo: PaymentMethodRepository;
 
-	constructor(
-		customerRepository = new CustomerRepository(new PrismaClient()),
-		productRepository = new ProductRepository(new PrismaClient()),
-		salesChannelRepository = new SalesChannelRepository(new PrismaClient()),
-		deliveryPlaceRepository = new DeliveryPlaceRepository(new PrismaClient()),
-		productVariantRepository = new ProductVariantRepository(new PrismaClient()),
-		paymentMethodRepository = new PaymentMethodRepository(new PrismaClient()),
-	) {
+	constructor() {
 		this.orderRepo = orderRepository;
-		this.customerRepo = customerRepository.customer;
-		this.productRepo = productRepository;
-		this.salesChannelRepo = salesChannelRepository;
-		this.deliveryPlaceRepo = deliveryPlaceRepository;
-		this.productVariantRepo = productVariantRepository;
-		this.paymentRepo = paymentMethodRepository;
 	}
 
 	public getAll = async (query: OrderQueryType["query"]) => {
@@ -1308,13 +1283,18 @@ class OrderService {
 				},
 				async (data) => {
 					for (const item of data) {
+						console.log(item);
+						console.log(item.OrderDetail?.code);
 						const existingOrder = await this.orderRepo.client.orderDetail.findFirst({
 							where: {
 								code: item.OrderDetail?.code,
 							},
 						});
+
+						// Skip jika order dengan kode yang sama sudah ada
 						if (existingOrder) {
-							return null;
+							console.log(`Order dengan kode ${item.OrderDetail?.code} sudah ada, dilewati.`);
+							continue;
 						}
 
 						// TODO: orderer customer
@@ -1502,31 +1482,43 @@ class OrderService {
 								productQty: product.productQty,
 							}));
 
+							const generated_order_id = uuidv4();
+							const generated_order_detail_id = uuidv4();
+
 							await tx.order.create({
 								data: {
-									id: uuidv4(),
+									id: generated_order_id,
 									ordererCustomerId: ordererCustomer?.id || newOrdererCustomer?.id,
 									deliveryTargetCustomerId: deliveryOrdererCustomer?.id || newDeliveryOrdererCustomer?.id,
 									deliveryPlaceId: deliveryPlace?.id || newDeliveryPlace?.id,
 									salesChannelId: salesChannel?.id || newSalesChannel?.id,
-									orderDate: item.orderDate instanceof Date ? item.orderDate : new Date(item.orderDate as string),
+									orderDate: item.orderDate
+										? item.orderDate instanceof Date
+											? item.orderDate
+											: typeof item.orderDate === "string" && item.orderDate.includes("/")
+												? new Date(item.orderDate.split("/").reverse().join("-"))
+												: new Date(item.orderDate as string)
+										: new Date(),
 									note: (item.note as string) || "",
 									OrderDetail: {
 										create: {
-											id: uuidv4(),
+											id: generated_order_detail_id,
 											code: item.OrderDetail?.code as string,
 											paymentStatus: (item.OrderDetail?.paymentStatus as PaymentStatus) || "PENDING",
 											paymentDate:
 												item.OrderDetail?.paymentDate instanceof Date
 													? item.OrderDetail?.paymentDate
-													: new Date(item.OrderDetail?.paymentDate as string),
+													: typeof item.OrderDetail?.paymentDate === "string" &&
+															item.OrderDetail?.paymentDate.includes("/")
+														? new Date(item.OrderDetail?.paymentDate.split("/").reverse().join("-"))
+														: new Date(item.OrderDetail?.paymentDate as string),
 											paymentMethodId: paymentMethod?.id || newPaymentMethod?.id,
 											finalPrice: (item.OrderDetail?.finalPrice as number) || 0,
 											receiptNumber: (item.OrderDetail?.receiptNumber as string) || null,
 											otherFees: item.OrderDetail?.otherFees as Prisma.InputJsonValue | undefined,
 											OrderProducts: {
 												create: orderProducts.map((product) => ({
-													orderId: uuidv4(),
+													orderId: generated_order_id,
 													Product: {
 														connect: {
 															id: product.productId,
