@@ -1496,7 +1496,9 @@ class OrderService {
 										? item.orderDate instanceof Date
 											? item.orderDate
 											: typeof item.orderDate === "string" && item.orderDate.includes("/")
-												? new Date(item.orderDate.split("/").reverse().join("-"))
+												? new Date(
+														`20${item.orderDate.split("/")[2]}-${item.orderDate.split("/")[1]}-${item.orderDate.split("/")[0]}`,
+													)
 												: new Date(item.orderDate as string)
 										: new Date(),
 									note: (item.note as string) || "",
@@ -1510,8 +1512,12 @@ class OrderService {
 													? item.OrderDetail?.paymentDate
 													: typeof item.OrderDetail?.paymentDate === "string" &&
 															item.OrderDetail?.paymentDate.includes("/")
-														? new Date(item.OrderDetail?.paymentDate.split("/").reverse().join("-"))
-														: new Date(item.OrderDetail?.paymentDate as string),
+														? new Date(
+																`20${item.OrderDetail?.paymentDate.split("/")[2]}-${item.OrderDetail?.paymentDate.split("/")[1]}-${item.OrderDetail?.paymentDate.split("/")[0]}`,
+															)
+														: item.OrderDetail?.paymentDate
+															? new Date(item.OrderDetail?.paymentDate as string)
+															: null,
 											paymentMethodId: paymentMethod?.id || newPaymentMethod?.id,
 											finalPrice: (item.OrderDetail?.finalPrice as number) || 0,
 											receiptNumber: (item.OrderDetail?.receiptNumber as string) || null,
