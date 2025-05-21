@@ -3,17 +3,17 @@ import type { OrderWithRelations } from "@/common/types/orderExport";
 import { exportData } from "@/common/utils/dataExporter";
 import { importData } from "@/common/utils/dataImporter";
 import { logger } from "@/server";
-import { type CustomerCategories, Order, type Prisma, PrismaClient } from "@prisma/client";
+import { type CustomerCategories, type Prisma, PrismaClient } from "@prisma/client";
 import type { PaymentStatus } from "@prisma/client";
 import { StatusCodes } from "http-status-codes";
-import xlsx from "xlsx";
+import { v4 as uuidv4 } from "uuid";
 import { CustomerRepository } from "../customer/customerRepository";
 import { DeliveryPlaceRepository } from "../delivery-place/repository";
 import { PaymentMethodRepository } from "../payment-method/paymentMethodRepository";
 import { ProductVariantRepository } from "../product-variant/productVariantRepository";
 import { ProductRepository } from "../product/productRepository";
 import { SalesChannelRepository } from "../sales-channel/salesChannelRepository";
-import type { CreateOrderType, OrderParamsType, OrderQueryType, UpdateOrderType } from "./model";
+import type { CreateOrderType, OrderQueryType, UpdateOrderType } from "./model";
 import { type OrderRepository, orderRepository } from "./repository";
 
 interface GetAllOrdersParams {
@@ -1307,8 +1307,6 @@ class OrderService {
 					return data as T;
 				},
 				async (data) => {
-					const { v4: uuidv4 } = require("uuid");
-
 					for (const item of data) {
 						const existingOrder = await this.orderRepo.client.orderDetail.findFirst({
 							where: {

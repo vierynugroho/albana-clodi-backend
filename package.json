@@ -43,6 +43,7 @@
 		"prisma": "^6.7.0",
 		"swagger-ui-express": "5.0.1",
 		"ts-node": "^10.9.2",
+		"uuid": "^11.1.0",
 		"xlsx": "^0.18.5",
 		"zod": "3.24.3"
 	},
@@ -66,9 +67,14 @@
 		"vitest": "3.1.2"
 	},
 	"tsup": {
-		"entry": ["src/index.ts"],
+		"entry": [
+			"src/index.ts"
+		],
 		"outDir": "dist",
-		"format": ["esm", "cjs"],
+		"format": [
+			"esm",
+			"cjs"
+		],
 		"target": "es2020",
 		"sourcemap": true,
 		"clean": true,
