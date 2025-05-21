@@ -145,3 +145,6 @@ generated/
 # pnpm
 pnpm-lock.yaml
 .pnpm-store/
+
+# Test files for API docs
+src/api-docs/__test__
