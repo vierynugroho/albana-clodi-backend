@@ -36,15 +36,83 @@ export const importData = async <T>(
 		}
 
 		const mappedData = jsonData.map(mapFunction);
+
+		console.log("====================================");
+		console.log(mappedData);
+		console.log("====================================");
+
+		// Validasi data yang telah di-map
+		const validateMappedData = (data: T[]) => {
+			for (let i = 0; i < data.length; i++) {
+				const item = data[i];
+
+				// Periksa apakah item adalah objek yang valid
+				if (!item || typeof item !== "object") {
+					logger.error(`Data pada baris ${i + 1} tidak valid: format data tidak sesuai`);
+					return {
+						isValid: false,
+						errorMessage: `Data pada baris ${i + 1} tidak valid: format data tidak sesuai`,
+					};
+				}
+
+				// Periksa nilai-nilai yang tidak valid (undefined, null, NaN)
+				// Fungsi rekursif untuk memeriksa nilai yang tidak valid di dalam objek bersarang
+				const checkInvalidValue = (value: unknown): boolean => {
+					if (value === undefined || value === null || (typeof value === "number" && Number.isNaN(value))) {
+						return true;
+					}
+
+					if (Array.isArray(value) && value.length === 0) {
+						return true;
+					}
+
+					if (typeof value === "object" && value !== null) {
+						// Periksa properti dalam objek bersarang
+						for (const [_, propValue] of Object.entries(value as Record<string, unknown>)) {
+							if (checkInvalidValue(propValue)) {
+								return true;
+							}
+						}
+					}
+
+					return false;
+				};
+
+				const invalidValues = Object.entries(item).filter(([_, value]) => checkInvalidValue(value));
+
+				if (invalidValues.length > 0) {
+					const invalidFields = invalidValues.map(([key]) => key).join(", ");
+					logger.error(`Data tidak valid pada baris ${i + 1}. Field yang bermasalah: ${invalidFields}`);
+					return {
+						isValid: false,
+						errorMessage: `Data pada baris ${i + 1} tidak valid: ${invalidFields} memiliki nilai yang tidak sesuai`,
+					};
+				}
+			}
+
+			return { isValid: true };
+		};
+
+		// Jalankan validasi
+		const validationResult = validateMappedData(mappedData);
+		if (!validationResult.isValid) {
+			return ServiceResponse.failure(
+				validationResult.errorMessage || "Data tidak valid",
+				null,
+				StatusCodes.BAD_REQUEST,
+			);
+		}
+
+		// Simpan data dalam batch untuk menghindari overload database
 		const BATCH_SIZE = 100;
+		let saveResult: unknown;
 
 		for (let i = 0; i < mappedData.length; i += BATCH_SIZE) {
 			const batch = mappedData.slice(i, i + BATCH_SIZE);
-			await saveIntoDB(batch);
+			saveResult = await saveIntoDB(batch);
 		}
 
 		return ServiceResponse.success("Berhasil mengimpor data", mappedData, StatusCodes.OK);
-		// return ServiceResponse.success("Berhasil mengimpor data", { totalImported: mappedData.length }, StatusCodes.OK);
 	} catch (error) {
 		logger.error(error);
 		return ServiceResponse.failure("Gagal mengimpor data", null, StatusCodes.INTERNAL_SERVER_ERROR);

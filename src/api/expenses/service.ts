@@ -324,12 +324,33 @@ class ExpenseService {
 							: null,
 				}),
 				async (data) => {
+					// Validasi data sebelum menyimpan ke database
+					const validatedData = data.filter((item) => {
+						if (!item.itemName || !item.itemPrice || !item.qty) {
+							return false;
+						}
+
+						if (Number.isNaN(Number(item.itemPrice)) || Number.isNaN(Number(item.qty))) {
+							return false;
+						}
+
+						return true;
+					});
+
 					return this.expenseRepo.client.expense.createMany({
-						data,
+						data: validatedData,
 						skipDuplicates: true,
 					});
 				},
 			);
+
+			if (!importResult.success || importResult.statusCode !== StatusCodes.OK) {
+				return ServiceResponse.failure(
+					`Gagal mengimpor data: ${importResult.message}`,
+					null,
+					importResult.statusCode || StatusCodes.BAD_REQUEST,
+				);
+			}
 
 			return ServiceResponse.success(
 				"Berhasil mengimpor data pengeluaran",

@@ -1207,22 +1207,24 @@ class OrderService {
 
 					// Data Product
 					const productList = row["Produk & Qty"] as string;
-					const products = productList
-						.split("\n")
-						.map((item) => {
-							const match = item.match(/(.*?)\s*\(SKU:\s*([^)]+)\)\s*x(\d+)/);
-							if (!match) return null;
+					const products = productList?.includes("\n")
+						? productList
+								.split("\n")
+								.map((item) => {
+									const match = item.match(/(.*?)\s*\(SKU:\s*([^)]+)\)\s*x(\d+)/);
+									if (!match) return null;
 
-							const [_, productName, skuList, quantity] = match;
-							const skus = skuList.split(",").map((sku) => sku.trim());
+									const [_, productName, skuList, quantity] = match;
+									const skus = skuList.split(",").map((sku) => sku.trim());
 
-							return {
-								productName,
-								skus,
-								quantity: Number.parseInt(quantity),
-							};
-						})
-						.filter(Boolean);
+									return {
+										productName,
+										skus,
+										quantity: Number.parseInt(quantity),
+									};
+								})
+								.filter(Boolean)
+						: [];
 
 					// Data pembayaran
 					const paymentStatus = row["Status Pembayaran"] as PaymentStatus;
@@ -1541,6 +1543,14 @@ class OrderService {
 					}
 				},
 			);
+
+			if (!importResult.success || importResult.statusCode !== StatusCodes.OK) {
+				return ServiceResponse.failure(
+					`Gagal mengimpor data: ${importResult.message}`,
+					null,
+					importResult.statusCode || StatusCodes.BAD_REQUEST,
+				);
+			}
 
 			return ServiceResponse.success("Berhasil mengimpor data order", importResult.responseObject, StatusCodes.OK);
 		} catch (error) {
