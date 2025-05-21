@@ -94,6 +94,22 @@ reportRegistry.registerPath({
 	responses: createApiResponse(z.array(ProductPriceSchema), "Success"),
 });
 
+reportRegistry.registerPath({
+	method: "get",
+	path: "/reports/products-sold",
+	tags: ["Report"],
+	request: {
+		query: z.object({
+			startDate: z.string().optional().describe("Format: YYYY-MM-DD (e.g. 2025-01-01)"),
+			endDate: z.string().optional().describe("Format: YYYY-MM-DD (e.g. 2025-12-31)"),
+			month: z.string().optional().describe("Month number 1-12 (e.g. 1 for January)"),
+			year: z.string().optional().describe("Year in YYYY format (e.g. 2025)"),
+			week: z.string().optional().describe("Week number 1-52 (e.g. 1)"),
+		}),
+	},
+	responses: createApiResponse(z.array(ProductPriceSchema), "Success"),
+});
+
 const reportController = new ReportController();
 
 reportRouter.route("/expenses").get(reportController.reportExpenses);
@@ -101,3 +117,4 @@ reportRouter.route("/orders").get(reportController.reportOrders);
 reportRouter.route("/products").get(reportController.reportProducts);
 reportRouter.route("/transactions").get(reportController.reportTransaction);
 reportRouter.route("/payments-transactions").get(reportController.reportPaymentsTransactions);
+reportRouter.route("/products-sold").get(reportController.reportProductsSold);

@@ -664,6 +664,7 @@ class ReportService {
 			let keuntungan = 0;
 
 			// Kelompokkan data berdasarkan periode
+			const dailyData: Record<string, { profit: number; count: number }> = {};
 			const weeklyData: Record<string, { profit: number; count: number }> = {};
 			const monthlyData: Record<string, { profit: number; count: number }> = {};
 			const yearlyData: Record<string, { profit: number; count: number }> = {};
@@ -715,30 +716,66 @@ class ReportService {
 								);
 								const orderMonth = orderDate.getMonth() + 1;
 								const orderYear = orderDate.getFullYear();
+								const orderDay = orderDate.getDate();
 
-								// Data mingguan
-								const weekKey = `${orderYear}-${orderMonth}-W:${orderWeek}`;
-								if (!weeklyData[weekKey]) {
-									weeklyData[weekKey] = { profit: 0, count: 0 };
-								}
-								weeklyData[weekKey].profit += profit;
-								weeklyData[weekKey].count += 1;
+								// Data harian (untuk filter range tanggal atau bulan)
+								if (startDate && endDate) {
+									// Harian
+									const dayKey = `${orderYear}-${orderMonth}-${orderDay}`;
+									if (!dailyData[dayKey]) {
+										dailyData[dayKey] = { profit: 0, count: 0 };
+									}
+									dailyData[dayKey].profit += profit;
+									dailyData[dayKey].count += 1;
 
-								// Data bulanan
-								const monthKey = `${orderYear}-${orderMonth}`;
-								if (!monthlyData[monthKey]) {
-									monthlyData[monthKey] = { profit: 0, count: 0 };
+									// Bulanan
+									const monthKey = `${orderYear}-${orderMonth}`;
+									if (!monthlyData[monthKey]) {
+										monthlyData[monthKey] = { profit: 0, count: 0 };
+									}
+									monthlyData[monthKey].profit += profit;
+									monthlyData[monthKey].count += 1;
 								}
-								monthlyData[monthKey].profit += profit;
-								monthlyData[monthKey].count += 1;
 
-								// Data tahunan
-								const yearKey = `${orderYear}`;
-								if (!yearlyData[yearKey]) {
-									yearlyData[yearKey] = { profit: 0, count: 0 };
+								// Data mingguan (untuk filter range tanggal atau tahun)
+								if ((startDate && endDate) || (year && !month)) {
+									const weekKey = `${orderYear}-W${orderWeek}`;
+									if (!weeklyData[weekKey]) {
+										weeklyData[weekKey] = { profit: 0, count: 0 };
+									}
+									weeklyData[weekKey].profit += profit;
+									weeklyData[weekKey].count += 1;
 								}
-								yearlyData[yearKey].profit += profit;
-								yearlyData[yearKey].count += 1;
+
+								// Data harian (untuk filter bulan)
+								if (month) {
+									const dayKey = `${orderDay}`;
+									if (!dailyData[dayKey]) {
+										dailyData[dayKey] = { profit: 0, count: 0 };
+									}
+									dailyData[dayKey].profit += profit;
+									dailyData[dayKey].count += 1;
+								}
+
+								// Data mingguan (untuk filter bulan)
+								if (month) {
+									const weekKey = `W${orderWeek}`;
+									if (!weeklyData[weekKey]) {
+										weeklyData[weekKey] = { profit: 0, count: 0 };
+									}
+									weeklyData[weekKey].profit += profit;
+									weeklyData[weekKey].count += 1;
+								}
+
+								// Data bulanan (untuk filter tahun)
+								if (year && !month) {
+									const monthKey = `${orderMonth}`;
+									if (!monthlyData[monthKey]) {
+										monthlyData[monthKey] = { profit: 0, count: 0 };
+									}
+									monthlyData[monthKey].profit += profit;
+									monthlyData[monthKey].count += 1;
+								}
 							}
 						}
 					}
@@ -746,7 +783,7 @@ class ReportService {
 			}
 
 			// Mendapatkan informasi filter yang digunakan
-			let filterInfo = "Semua data";
+			let filterInfo = "Data bulan ini";
 			if (startDate && endDate) {
 				filterInfo = `Data dari ${startDate} sampai ${endDate}`;
 			} else if (month && year) {
@@ -771,19 +808,84 @@ class ReportService {
 				filterInfo = `Data minggu ke-${week} tahun ${year || new Date().getFullYear()}`;
 			}
 
-			return ServiceResponse.success(
-				"Berhasil mendapatkan report transactions",
-				{
-					filterInfo,
-					// keuntungan (harga jual - harga beli)
-					keuntungan: keuntungan,
-					// data berdasarkan periode
-					keuntungan_per_minggu: weeklyData,
-					keuntungan_per_bulan: monthlyData,
-					keuntungan_per_tahun: yearlyData,
-				},
-				StatusCodes.OK,
-			);
+			// Urutkan data dari terlama ke terbaru
+			const sortedDailyData = Object.entries(dailyData)
+				.sort((a, b) => {
+					// Jika filter bulan, urutkan berdasarkan tanggal
+					if (month) {
+						return Number(a[0]) - Number(b[0]);
+					}
+					// Jika filter range tanggal, urutkan berdasarkan tanggal lengkap
+					const dateA = new Date(a[0]);
+					const dateB = new Date(b[0]);
+					return dateA.getTime() - dateB.getTime();
+				})
+				.reduce<Record<string, { profit: number; count: number }>>((acc, [key, value]) => {
+					acc[key] = value;
+					return acc;
+				}, {});
+
+			const sortedWeeklyData = Object.entries(weeklyData)
+				.sort((a, b) => {
+					// Jika filter bulan, urutkan berdasarkan minggu
+					if (month) {
+						return a[0].localeCompare(b[0]);
+					}
+					// Jika filter range tanggal atau tahun, urutkan berdasarkan tahun dan minggu
+					const [yearA, weekA] = a[0].split("-W");
+					const [yearB, weekB] = b[0].split("-W");
+					if (yearA !== yearB) return yearA.localeCompare(yearB);
+					return weekA.localeCompare(weekB);
+				})
+				.reduce<Record<string, { profit: number; count: number }>>((acc, [key, value]) => {
+					acc[key] = value;
+					return acc;
+				}, {});
+
+			const sortedMonthlyData = Object.entries(monthlyData)
+				.sort((a, b) => {
+					// Untuk filter tahun atau range tanggal, urutkan berdasarkan tahun dan bulan
+					if (startDate && endDate) {
+						const [yearA, monthA] = a[0].split("-");
+						const [yearB, monthB] = b[0].split("-");
+						if (yearA !== yearB) return yearA.localeCompare(yearB);
+						return monthA.localeCompare(monthB);
+					}
+					// Untuk filter tahun, urutkan berdasarkan bulan
+					return Number(a[0]) - Number(b[0]);
+				})
+				.reduce<Record<string, { profit: number; count: number }>>((acc, [key, value]) => {
+					acc[key] = value;
+					return acc;
+				}, {});
+
+			const responseData: {
+				filterInfo: string;
+				keuntungan: number;
+				keuntungan_per_hari?: Record<string, { profit: number; count: number }>;
+				keuntungan_per_minggu?: Record<string, { profit: number; count: number }>;
+				keuntungan_per_bulan?: Record<string, { profit: number; count: number }>;
+			} = {
+				filterInfo,
+				keuntungan: keuntungan,
+			};
+
+			if (startDate && endDate) {
+				responseData.keuntungan_per_hari = sortedDailyData;
+				responseData.keuntungan_per_minggu = sortedWeeklyData;
+				responseData.keuntungan_per_bulan = sortedMonthlyData;
+			} else if (month) {
+				responseData.keuntungan_per_hari = sortedDailyData;
+				responseData.keuntungan_per_minggu = sortedWeeklyData;
+			} else if (year && !month) {
+				responseData.keuntungan_per_minggu = sortedWeeklyData;
+				responseData.keuntungan_per_bulan = sortedMonthlyData;
+			} else {
+				// Default: data bulan ini
+				responseData.keuntungan_per_hari = sortedDailyData;
+			}
+
+			return ServiceResponse.success("Berhasil mendapatkan report transactions", responseData, StatusCodes.OK);
 		} catch (error) {
 			logger.error(error);
 			return ServiceResponse.failure("Gagal mendapatkan report orders", null, StatusCodes.INTERNAL_SERVER_ERROR);
@@ -973,6 +1075,248 @@ class ReportService {
 		} catch (error) {
 			logger.error(error);
 			return ServiceResponse.failure("Gagal mendapatkan report orders", null, StatusCodes.INTERNAL_SERVER_ERROR);
+		}
+	};
+
+	public summaryProductsSold = async (params: IReportParams) => {
+		try {
+			const { startDate, endDate, month, year, week } = params;
+
+			let where: { createdAt?: { gte?: Date; lte?: Date; lt?: Date } } = {};
+
+			// Filter by date range
+			if (startDate && endDate) {
+				where = {
+					...where,
+					createdAt: {
+						...(where.createdAt || {}),
+						gte: new Date(`${startDate}T00:00:00`),
+						lte: new Date(`${endDate}T23:59:59`),
+					},
+				};
+			}
+
+			if (month) {
+				const monthNumber = Number.parseInt(month, 10);
+				const yearValue = year ? Number.parseInt(year, 10) : new Date().getFullYear();
+
+				where = {
+					...where,
+					createdAt: {
+						...(where.createdAt || {}),
+						gte: new Date(yearValue, monthNumber - 1, 1),
+						lte: new Date(yearValue, monthNumber, 0),
+					},
+				};
+			}
+
+			if (year && !month && !week) {
+				const yearNumber = Number.parseInt(year, 10);
+				where = {
+					...where,
+					createdAt: {
+						...(where.createdAt || {}),
+						gte: new Date(yearNumber, 0, 1),
+						lt: new Date(yearNumber + 1, 0, 1),
+					},
+				};
+			}
+
+			if (week) {
+				const weekNumber = Number.parseInt(week, 10);
+				const yearNumber = year ? Number.parseInt(year, 10) : new Date().getFullYear();
+
+				const firstDayOfYear = new Date(yearNumber, 0, 1);
+
+				const daysToAdd = (weekNumber - 1) * 7;
+
+				// Calculate start and end dates for the week
+				const weekStart = new Date(firstDayOfYear);
+				weekStart.setDate(firstDayOfYear.getDate() + daysToAdd);
+
+				const weekEnd = new Date(weekStart);
+				weekEnd.setDate(weekStart.getDate() + 6);
+
+				where = {
+					...where,
+					createdAt: {
+						...(where.createdAt || {}),
+						gte: weekStart,
+						lte: weekEnd,
+					},
+				};
+			}
+
+			// Default: jika tidak ada parameter waktu, ambil data bulan ini
+			if (!startDate && !endDate && !month && !year && !week) {
+				const now = new Date();
+				const currentMonth = now.getMonth();
+				const currentYear = now.getFullYear();
+
+				where = {
+					...where,
+					createdAt: {
+						...(where.createdAt || {}),
+						gte: new Date(currentYear, currentMonth, 1),
+						lte: new Date(currentYear, currentMonth + 1, 0),
+					},
+				};
+			}
+
+			const orders = await this.reportRepo.client.order.findMany({
+				where: {
+					...(where as Prisma.OrderWhereInput),
+					OrderDetail: {
+						paymentStatus: "SETTLEMENT",
+					},
+				},
+				orderBy: {
+					createdAt: "desc" as const,
+				},
+				include: {
+					OrderDetail: {
+						include: {
+							OrderProducts: {
+								include: {
+									Product: true,
+								},
+							},
+						},
+					},
+				},
+			});
+
+			// Kelompokkan produk berdasarkan nama
+			const productGroups: Record<
+				string,
+				{
+					productId: string;
+					name: string;
+					totalQty: number;
+				}
+			> = {};
+
+			// Data untuk pengelompokan berdasarkan periode sesuai filter
+			const periodData: Record<string, number> = {};
+			let totalProductsSold = 0;
+
+			for (const order of orders) {
+				if (order.OrderDetail?.OrderProducts && order.OrderDetail.OrderProducts.length > 0) {
+					const orderDate = new Date(order.createdAt);
+
+					// Tentukan kunci periode berdasarkan filter yang digunakan
+					let periodKey = "";
+
+					if (startDate && endDate) {
+						// Jika menggunakan rentang tanggal, gunakan tanggal harian
+						periodKey = orderDate.toISOString().split("T")[0];
+					} else if (week) {
+						// Jika filter per minggu, gunakan hari dalam minggu tersebut
+						periodKey = `${orderDate.getDate()}`;
+					} else if (month) {
+						// Jika filter per bulan, gunakan tanggal dalam bulan
+						periodKey = `${orderDate.getDate()}`;
+					} else if (year && !month) {
+						// Jika filter per tahun, gunakan bulan dalam tahun
+						periodKey = `${orderDate.getMonth() + 1}`;
+					} else {
+						// Default: filter bulan ini, gunakan tanggal
+						periodKey = `${orderDate.getDate()}`;
+					}
+
+					for (const orderProduct of order.OrderDetail.OrderProducts) {
+						const productId = orderProduct.productId;
+						const productQty = orderProduct.productQty;
+						const productName = orderProduct.Product?.name || "Produk Tidak Diketahui";
+
+						// Tambahkan ke total produk terjual
+						totalProductsSold += productQty;
+
+						// Kelompokkan berdasarkan produk
+						if (!productGroups[productId]) {
+							productGroups[productId] = {
+								productId,
+								name: productName,
+								totalQty: 0,
+							};
+						}
+						productGroups[productId].totalQty += productQty;
+
+						// Kelompokkan berdasarkan periode yang sesuai dengan filter
+						periodData[periodKey] = (periodData[periodKey] || 0) + productQty;
+					}
+				}
+			}
+
+			// Konversi ke array dan urutkan sesuai dengan filter yang digunakan
+			let products_sold = [];
+
+			if (startDate && endDate) {
+				products_sold = Object.entries(periodData)
+					.map(([date, qty]) => ({ date, qty }))
+					.sort((a, b) => a.date.localeCompare(b.date));
+			} else if (week) {
+				products_sold = Object.entries(periodData)
+					.map(([day, qty]) => ({ day: Number.parseInt(day), qty }))
+					.sort((a, b) => a.day - b.day);
+			} else if (month) {
+				products_sold = Object.entries(periodData)
+					.map(([day, qty]) => ({ day: Number.parseInt(day), qty }))
+					.sort((a, b) => a.day - b.day);
+			} else if (year && !month) {
+				products_sold = Object.entries(periodData)
+					.map(([month, qty]) => ({ month: Number.parseInt(month), qty }))
+					.sort((a, b) => a.month - b.month);
+			} else {
+				// Default: filter bulan ini
+				products_sold = Object.entries(periodData)
+					.map(([day, qty]) => ({ day: Number.parseInt(day), qty }))
+					.sort((a, b) => a.day - b.day);
+			}
+
+			const products = Object.values(productGroups).sort((a, b) => b.totalQty - a.totalQty);
+
+			// Mendapatkan informasi filter yang digunakan
+			let filterInfo = "Data bulan ini";
+			if (startDate && endDate) {
+				filterInfo = `Data dari ${startDate} sampai ${endDate}`;
+			} else if (month) {
+				const monthNames = [
+					"Januari",
+					"Februari",
+					"Maret",
+					"April",
+					"Mei",
+					"Juni",
+					"Juli",
+					"Agustus",
+					"September",
+					"Oktober",
+					"November",
+					"Desember",
+				];
+				filterInfo = `Data bulan ${monthNames[Number(month) - 1]} ${new Date().getFullYear()}`;
+			} else if (year) {
+				filterInfo = `Data tahun ${year}`;
+			} else if (week) {
+				filterInfo = `Data minggu ke-${week} tahun ${year || new Date().getFullYear()}`;
+			}
+
+			const responseData = {
+				filterInfo,
+				totalProductsSold,
+				qty_product_sold: products_sold,
+				products,
+			};
+
+			return ServiceResponse.success("Berhasil mendapatkan report produk terjual", responseData, StatusCodes.OK);
+		} catch (error) {
+			logger.error(error);
+			return ServiceResponse.failure(
+				"Gagal mendapatkan report produk terjual",
+				null,
+				StatusCodes.INTERNAL_SERVER_ERROR,
+			);
 		}
 	};
 }
