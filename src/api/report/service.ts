@@ -534,7 +534,7 @@ class ReportService {
 		}
 	};
 
-	public summaryTransaction = async (params: IReportParams) => {
+	public summaryTranasaction = async (params: IReportParams) => {
 		try {
 			const { startDate, endDate, month, year, week, payment_method_id } = params;
 
@@ -604,16 +604,8 @@ class ReportService {
 				};
 			}
 
-			let whereOrderDetail = {};
-
-			if (payment_method_id) {
-				whereOrderDetail = {
-					paymentMethodId: payment_method_id,
-				};
-			}
-
 			console.log(where);
-			const [orders, ordersAmount, count] = await Promise.all([
+			const [orders, ordersAmount, count, expenses] = await Promise.all([
 				this.reportRepo.client.order.findMany({
 					where: where as Prisma.OrderWhereInput,
 					orderBy: {
@@ -621,13 +613,16 @@ class ReportService {
 					},
 					include: {
 						OrderDetail: {
-							where: whereOrderDetail,
 							include: {
 								OrderProducts: {
 									include: {
 										Product: {
 											include: {
-												productVariants: true,
+												productVariants: {
+													include: {
+														productPrices: true,
+													},
+												},
 											},
 										},
 									},
@@ -654,57 +649,99 @@ class ReportService {
 				this.reportRepo.client.order.count({
 					where: where as Prisma.OrderWhereInput,
 				}),
+				this.reportRepo.client.expense.aggregate({
+					_sum: {
+						totalPrice: true,
+					},
+					where: where as Prisma.ExpenseWhereInput,
+					_count: {
+						id: true,
+					},
+				}),
 			]);
 
-			// Menghitung total item terjual (hanya untuk order dengan status LUNAS)
-			let totalItemsSold = 0;
-			let penjualanKotor = 0;
-			let penjualanBersih = 0;
-			let labaKotor = 0;
+			// Menghitung keuntungan (harga jual - harga beli)
+			let keuntungan = 0;
+
+			// Kelompokkan data berdasarkan periode
+			const weeklyData: Record<string, { profit: number; count: number }> = {};
+			const monthlyData: Record<string, { profit: number; count: number }> = {};
+			const yearlyData: Record<string, { profit: number; count: number }> = {};
 
 			for (const order of orders) {
 				if (order.OrderDetail?.paymentStatus === ("SETTLEMENT" as PaymentStatus)) {
-					// Menghitung total item terjual
 					for (const orderProduct of order.OrderDetail.OrderProducts) {
-						totalItemsSold += orderProduct.productQty;
+						// Menghitung keuntungan (harga jual - harga beli)
+						const product = orderProduct.Product;
+						if (product?.productVariants?.length > 0) {
+							const variant = product.productVariants[0];
+							if (variant?.productPrices?.length > 0) {
+								let totalFees = 0;
+
+								if (typeof order.OrderDetail.otherFees === "object" && order.OrderDetail.otherFees !== null) {
+									if (
+										"insurance" in order.OrderDetail.otherFees &&
+										typeof order.OrderDetail.otherFees.insurance === "number"
+									) {
+										totalFees += order.OrderDetail.otherFees.insurance;
+									}
+									if (
+										"packaging" in order.OrderDetail.otherFees &&
+										typeof order.OrderDetail.otherFees.packaging === "number"
+									) {
+										totalFees += order.OrderDetail.otherFees.packaging;
+									}
+									if (
+										"shippingCost" in order.OrderDetail.otherFees &&
+										typeof order.OrderDetail.otherFees.shippingCost === "object" &&
+										order.OrderDetail.otherFees.shippingCost !== null &&
+										"cost" in order.OrderDetail.otherFees.shippingCost &&
+										typeof order.OrderDetail.otherFees.shippingCost.cost === "number"
+									) {
+										totalFees += order.OrderDetail.otherFees.shippingCost.cost;
+									}
+								}
+								const sellPrice = (order.OrderDetail?.finalPrice || 0) - totalFees;
+								const buyPrice = variant.productPrices[0]?.buy
+									? variant.productPrices[0].buy * orderProduct.productQty
+									: 0;
+								const profit = sellPrice - buyPrice;
+								keuntungan += profit;
+
+								// Kelompokkan berdasarkan periode
+								const orderDate = new Date(order.createdAt);
+								const orderWeek = Math.ceil(
+									(orderDate.getDate() + new Date(orderDate.getFullYear(), orderDate.getMonth(), 1).getDay()) / 7,
+								);
+								const orderMonth = orderDate.getMonth() + 1;
+								const orderYear = orderDate.getFullYear();
+
+								// Data mingguan
+								const weekKey = `${orderYear}-${orderMonth}-W:${orderWeek}`;
+								if (!weeklyData[weekKey]) {
+									weeklyData[weekKey] = { profit: 0, count: 0 };
+								}
+								weeklyData[weekKey].profit += profit;
+								weeklyData[weekKey].count += 1;
+
+								// Data bulanan
+								const monthKey = `${orderYear}-${orderMonth}`;
+								if (!monthlyData[monthKey]) {
+									monthlyData[monthKey] = { profit: 0, count: 0 };
+								}
+								monthlyData[monthKey].profit += profit;
+								monthlyData[monthKey].count += 1;
+
+								// Data tahunan
+								const yearKey = `${orderYear}`;
+								if (!yearlyData[yearKey]) {
+									yearlyData[yearKey] = { profit: 0, count: 0 };
+								}
+								yearlyData[yearKey].profit += profit;
+								yearlyData[yearKey].count += 1;
+							}
+						}
 					}
-				}
-
-				// Menghitung penjualan kotor (total amount / diambil dari final price)
-				if (order.OrderDetail?.finalPrice) {
-					penjualanKotor += order.OrderDetail.finalPrice;
-				}
-
-				// Menghitung penjualan bersih (final price dikurangi otherFees)
-				if (order.OrderDetail?.finalPrice && order.OrderDetail.otherFees) {
-					const otherFees = order.OrderDetail.otherFees;
-					let totalFees = 0;
-
-					if (typeof otherFees === "object" && otherFees !== null) {
-						if ("insurance" in otherFees && typeof otherFees.insurance === "number") {
-							totalFees += otherFees.insurance;
-						}
-						if ("packaging" in otherFees && typeof otherFees.packaging === "number") {
-							totalFees += otherFees.packaging;
-						}
-						if (
-							"shippingCost" in otherFees &&
-							typeof otherFees.shippingCost === "object" &&
-							otherFees.shippingCost !== null &&
-							"cost" in otherFees.shippingCost &&
-							typeof otherFees.shippingCost.cost === "number"
-						) {
-							totalFees += otherFees.shippingCost.cost;
-						}
-					}
-
-					const netSale = order.OrderDetail.finalPrice - totalFees;
-					penjualanBersih += netSale;
-
-					// Menghitung laba kotor (penjualan bersih setelah dikurangi harga pokok produk)
-					// Catatan: Dalam contoh ini, kita tidak memiliki informasi tentang harga pokok produk
-					// Jadi kita asumsikan laba kotor sama dengan penjualan bersih untuk sementara
-					labaKotor += netSale;
 				}
 			}
 
@@ -735,24 +772,21 @@ class ReportService {
 			}
 
 			return ServiceResponse.success(
-				"Berhasil mendapatkan report transaksi berdasarkan payment method",
+				"Berhasil mendapatkan report transactions",
 				{
 					filterInfo,
-					total_transactions: count,
-					total_item_terjual: totalItemsSold,
-					penjualan_kotor: penjualanKotor,
-					penjualan_bersih: penjualanBersih,
-					laba_kotor: labaKotor,
+					// keuntungan (harga jual - harga beli)
+					keuntungan: keuntungan,
+					// data berdasarkan periode
+					keuntungan_per_minggu: weeklyData,
+					keuntungan_per_bulan: monthlyData,
+					keuntungan_per_tahun: yearlyData,
 				},
 				StatusCodes.OK,
 			);
 		} catch (error) {
 			logger.error(error);
-			return ServiceResponse.failure(
-				"Gagal mendapatkan report transaksi berdasarkan payment method",
-				null,
-				StatusCodes.INTERNAL_SERVER_ERROR,
-			);
+			return ServiceResponse.failure("Gagal mendapatkan report orders", null, StatusCodes.INTERNAL_SERVER_ERROR);
 		}
 	};
 }
