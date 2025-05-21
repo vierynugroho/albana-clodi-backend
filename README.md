@@ -53,3 +53,12 @@ laba kotor (laba bersih, belum dikurangi pengeluaran)
 keuntungan
 harga order lunas
 keuntungan = all_jenis_harga - harga_beli
+
+all_jenis_harga WHEN checkout -> finalPrice WITHOUT otherFees
+
+ambil harga beli di tiap order_product.variant.productPrice.buy
+
+harga_beli = order_product.variant.productPrice.buy
+harga_jual = orderDetail.finalPrice WITHOUT otherFees
+
+keuntungan = total_harga_jual = total_harga_beli

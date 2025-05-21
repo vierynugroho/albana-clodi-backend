@@ -534,9 +534,9 @@ class ReportService {
 		}
 	};
 
-	public summaryTranasaction = async (params: IReportParams) => {
+	public summaryTransaction = async (params: IReportParams) => {
 		try {
-			const { startDate, endDate, month, year, week, payment_method_id } = params;
+			const { startDate, endDate, month, year, week } = params;
 
 			let where: { createdAt?: { gte?: Date; lte?: Date; lt?: Date } } = {};
 
@@ -781,6 +781,192 @@ class ReportService {
 					keuntungan_per_minggu: weeklyData,
 					keuntungan_per_bulan: monthlyData,
 					keuntungan_per_tahun: yearlyData,
+				},
+				StatusCodes.OK,
+			);
+		} catch (error) {
+			logger.error(error);
+			return ServiceResponse.failure("Gagal mendapatkan report orders", null, StatusCodes.INTERNAL_SERVER_ERROR);
+		}
+	};
+
+	public summaryPaymentsTransactions = async (params: IReportParams) => {
+		try {
+			const { startDate, endDate, month, year, week } = params;
+
+			let where: { createdAt?: { gte?: Date; lte?: Date; lt?: Date } } = {};
+
+			// Filter by date range
+			if (startDate && endDate) {
+				where = {
+					...where,
+					createdAt: {
+						...(where.createdAt || {}),
+						gte: new Date(`${startDate}T00:00:00`),
+						lte: new Date(`${endDate}T23:59:59`),
+					},
+				};
+			}
+
+			if (month) {
+				const monthNumber = Number.parseInt(month, 10);
+				const yearValue = year ? Number.parseInt(year, 10) : new Date().getFullYear();
+
+				where = {
+					...where,
+					createdAt: {
+						...(where.createdAt || {}),
+						gte: new Date(yearValue, monthNumber - 1, 1),
+						lte: new Date(yearValue, monthNumber, 0),
+					},
+				};
+			}
+
+			if (year && !month && !week) {
+				const yearNumber = Number.parseInt(year, 10);
+				console.log(yearNumber);
+				where = {
+					...where,
+					createdAt: {
+						...(where.createdAt || {}),
+						gte: new Date(yearNumber, 0, 1),
+						lt: new Date(yearNumber + 1, 0, 1),
+					},
+				};
+			}
+
+			if (week) {
+				const weekNumber = Number.parseInt(week, 10);
+				const yearNumber = year ? Number.parseInt(year, 10) : new Date().getFullYear();
+
+				const firstDayOfYear = new Date(yearNumber, 0, 1);
+
+				const daysToAdd = (weekNumber - 1) * 7;
+
+				// Calculate start and end dates for the week
+				const weekStart = new Date(firstDayOfYear);
+				weekStart.setDate(firstDayOfYear.getDate() + daysToAdd);
+
+				const weekEnd = new Date(weekStart);
+				weekEnd.setDate(weekStart.getDate() + 6);
+
+				where = {
+					...where,
+					createdAt: {
+						...(where.createdAt || {}),
+						gte: weekStart,
+						lte: weekEnd,
+					},
+				};
+			}
+
+			console.log(where);
+			const orders = await this.reportRepo.client.order.findMany({
+				where: where as Prisma.OrderWhereInput,
+				orderBy: {
+					createdAt: "desc" as const,
+				},
+				include: {
+					OrderDetail: {
+						include: {
+							OrderProducts: true,
+							PaymentMethod: true,
+						},
+					},
+				},
+			});
+
+			// Kelompokkan berdasarkan payment_method
+			const paymentMethodGroups: Record<
+				string,
+				{
+					count: number;
+					total: number;
+					name: string;
+				}
+			> = {};
+
+			for (const order of orders) {
+				// Kelompokkan berdasarkan metode pembayaran
+				if (order.OrderDetail?.PaymentMethod) {
+					const paymentMethodId = order.OrderDetail.PaymentMethod.id;
+					const paymentMethodName = await this.reportRepo.client.paymentMethod
+						.findUnique({
+							where: { id: paymentMethodId },
+						})
+						.then((method) => method?.bankName || "");
+
+					if (!paymentMethodGroups[paymentMethodId]) {
+						paymentMethodGroups[paymentMethodId] = {
+							count: 0,
+							total: 0,
+							name: paymentMethodName,
+						};
+					}
+
+					paymentMethodGroups[paymentMethodId].count += 1;
+
+					// Hitung total tanpa otherFees
+					if (order.OrderDetail.finalPrice && order.OrderDetail.otherFees) {
+						const otherFees = order.OrderDetail.otherFees;
+						let totalFees = 0;
+
+						if (typeof otherFees === "object" && otherFees !== null) {
+							if ("insurance" in otherFees && typeof otherFees.insurance === "number") {
+								totalFees += otherFees.insurance;
+							}
+							if ("packaging" in otherFees && typeof otherFees.packaging === "number") {
+								totalFees += otherFees.packaging;
+							}
+							if (
+								"shippingCost" in otherFees &&
+								typeof otherFees.shippingCost === "object" &&
+								otherFees.shippingCost !== null &&
+								"cost" in otherFees.shippingCost &&
+								typeof otherFees.shippingCost.cost === "number"
+							) {
+								totalFees += otherFees.shippingCost.cost;
+							}
+						}
+
+						const netAmount = order.OrderDetail.finalPrice - totalFees;
+						paymentMethodGroups[paymentMethodId].total += netAmount;
+					}
+				}
+			}
+
+			// Mendapatkan informasi filter yang digunakan
+			let filterInfo = "Semua data";
+			if (startDate && endDate) {
+				filterInfo = `Data dari ${startDate} sampai ${endDate}`;
+			} else if (month && year) {
+				const monthNames = [
+					"Januari",
+					"Februari",
+					"Maret",
+					"April",
+					"Mei",
+					"Juni",
+					"Juli",
+					"Agustus",
+					"September",
+					"Oktober",
+					"November",
+					"Desember",
+				];
+				filterInfo = `Data bulan ${monthNames[Number(month) - 1]} ${year}`;
+			} else if (year) {
+				filterInfo = `Data tahun ${year}`;
+			} else if (week) {
+				filterInfo = `Data minggu ke-${week} tahun ${year || new Date().getFullYear()}`;
+			}
+
+			return ServiceResponse.success(
+				"Berhasil mendapatkan report transaksi berdasarkan metode pembayaran",
+				{
+					filterInfo,
+					// payment methods
+					payment_methods: Object.values(paymentMethodGroups),
 				},
 				StatusCodes.OK,
 			);
