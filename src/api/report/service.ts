@@ -221,7 +221,7 @@ class ReportService {
 			}
 
 			console.log(where);
-			const [orders, ordersAmount, count] = await Promise.all([
+			const [orders, ordersAmount, count, expenses] = await Promise.all([
 				this.reportRepo.client.order.findMany({
 					where: where as Prisma.OrderWhereInput,
 					orderBy: {
@@ -261,13 +261,25 @@ class ReportService {
 				this.reportRepo.client.order.count({
 					where: where as Prisma.OrderWhereInput,
 				}),
+				this.reportRepo.client.expense.aggregate({
+					_sum: {
+						totalPrice: true,
+					},
+					where: where as Prisma.ExpenseWhereInput,
+					_count: {
+						id: true,
+					},
+				}),
 			]);
 
 			// Menghitung total item terjual (hanya untuk order dengan status LUNAS)
 			let totalItemsSold = 0;
-			let totalGrossSales = 0;
-			let totalNetSales = 0;
-			let totalGrossProfit = 0;
+			let penjualanKotor = 0;
+			let penjualanBersih = 0;
+			let labaKotor = 0;
+			let labaBersih = 0;
+			const totalExpenses = expenses._sum.totalPrice || 0;
+			const totalExpensesCount = expenses._count.id || 0;
 
 			for (const order of orders) {
 				if (order.OrderDetail?.paymentStatus === ("SETTLEMENT" as PaymentStatus)) {
@@ -279,9 +291,9 @@ class ReportService {
 
 				// Menghitung penjualan kotor (total amount / diambil dari final price)
 				if (order.OrderDetail?.finalPrice && order.OrderDetail?.paymentStatus === ("SETTLEMENT" as PaymentStatus)) {
-					totalGrossSales += order.OrderDetail.finalPrice;
+					penjualanKotor += order.OrderDetail.finalPrice;
 				} else {
-					totalGrossSales += 0;
+					penjualanKotor += 0;
 				}
 
 				// Menghitung penjualan bersih (final price dikurangi otherFees)
@@ -312,14 +324,15 @@ class ReportService {
 					}
 
 					const netSale = order.OrderDetail.finalPrice - totalFees;
-					totalNetSales += netSale;
+					penjualanBersih += netSale;
 
-					// Menghitung laba kotor (penjualan bersih setelah dikurangi harga pokok produk)
-					// Catatan: Dalam contoh ini, kita tidak memiliki informasi tentang harga pokok produk
-					// Jadi kita asumsikan laba kotor sama dengan penjualan bersih untuk sementara
-					totalGrossProfit += netSale;
+					// Menghitung laba kotor (total finalPrice dikurangi otherFees)
+					labaKotor += netSale;
 				}
 			}
+
+			// Menghitung laba bersih (penjualan bersih dikurangi expenses)
+			labaBersih = penjualanBersih - totalExpenses;
 
 			// Mendapatkan informasi filter yang digunakan
 			let filterInfo = "Semua data";
@@ -351,12 +364,29 @@ class ReportService {
 				"Berhasil mendapatkan report orders",
 				{
 					filterInfo,
+					// transactions
 					total_transactions: count,
 					total_item_terjual: totalItemsSold,
-					penjualan_kotor: totalGrossSales,
-					penjualan_bersih: totalNetSales,
-					laba_kotor: totalGrossProfit,
-					total_orders: orders.length,
+					total_transaction_pending: orders.filter(
+						(order) => order.OrderDetail?.paymentStatus === ("PENDING" as PaymentStatus),
+					).length,
+					total_transaction_success: orders.filter(
+						(order) => order.OrderDetail?.paymentStatus === ("SETTLEMENT" as PaymentStatus),
+					).length,
+					total_transaction_failed: orders.filter(
+						(order) => order.OrderDetail?.paymentStatus === ("CANCEL" as PaymentStatus),
+					).length,
+					total_transaction_installments: orders.filter(
+						(order) => order.OrderDetail?.paymentStatus === ("INSTALLMENTS" as PaymentStatus),
+					).length,
+					// expenses
+					total_expenses: totalExpensesCount,
+					expenses_amount: totalExpenses,
+					// sales
+					penjualan_kotor: penjualanKotor,
+					penjualan_bersih: penjualanBersih,
+					laba_kotor: labaKotor,
+					laba_bersih: labaBersih,
 				},
 				StatusCodes.OK,
 			);
@@ -628,9 +658,9 @@ class ReportService {
 
 			// Menghitung total item terjual (hanya untuk order dengan status LUNAS)
 			let totalItemsSold = 0;
-			let totalGrossSales = 0;
-			let totalNetSales = 0;
-			let totalGrossProfit = 0;
+			let penjualanKotor = 0;
+			let penjualanBersih = 0;
+			let labaKotor = 0;
 
 			for (const order of orders) {
 				if (order.OrderDetail?.paymentStatus === ("SETTLEMENT" as PaymentStatus)) {
@@ -642,7 +672,7 @@ class ReportService {
 
 				// Menghitung penjualan kotor (total amount / diambil dari final price)
 				if (order.OrderDetail?.finalPrice) {
-					totalGrossSales += order.OrderDetail.finalPrice;
+					penjualanKotor += order.OrderDetail.finalPrice;
 				}
 
 				// Menghitung penjualan bersih (final price dikurangi otherFees)
@@ -669,12 +699,12 @@ class ReportService {
 					}
 
 					const netSale = order.OrderDetail.finalPrice - totalFees;
-					totalNetSales += netSale;
+					penjualanBersih += netSale;
 
 					// Menghitung laba kotor (penjualan bersih setelah dikurangi harga pokok produk)
 					// Catatan: Dalam contoh ini, kita tidak memiliki informasi tentang harga pokok produk
 					// Jadi kita asumsikan laba kotor sama dengan penjualan bersih untuk sementara
-					totalGrossProfit += netSale;
+					labaKotor += netSale;
 				}
 			}
 
@@ -710,10 +740,9 @@ class ReportService {
 					filterInfo,
 					total_transactions: count,
 					total_item_terjual: totalItemsSold,
-					penjualan_kotor: totalGrossSales,
-					penjualan_bersih: totalNetSales,
-					laba_kotor: totalGrossProfit,
-					total_orders: orders.length,
+					penjualan_kotor: penjualanKotor,
+					penjualan_bersih: penjualanBersih,
+					laba_kotor: labaKotor,
 				},
 				StatusCodes.OK,
 			);
