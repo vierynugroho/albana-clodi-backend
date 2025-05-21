@@ -12,7 +12,7 @@
 	"private": true,
 	"scripts": {
 		"postinstall": "prisma generate",
-		"heroku-postbuild": "npm install && npm run build && prisma generate",
+		"heroku-postbuild": "npm run build && prisma generate",
 		"build": "prisma generate && tsc && tsup",
 		"start:dev": "node --import=tsx --watch src/index.ts",
 		"start:prod": "node dist/index.js",
