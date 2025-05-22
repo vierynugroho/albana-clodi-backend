@@ -290,15 +290,16 @@ model DeliveryPlace {
 }
 
 model Expense {
-  id                String   @id @default(uuid()) @db.Uuid
-  itemName          String?  @map("item_name")
-  itemPrice         Float?   @map("item_price")
-  qty               Int?     @map("item_total")
-  totalPrice        Float?   @map("total_price")
-  personResponsible String?  @map("person_responsible")
-  note              String?  @db.Text
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @updatedAt @map("updated_at")
+  id                String    @id @default(uuid()) @db.Uuid
+  itemName          String?   @map("item_name")
+  itemPrice         Float?    @map("item_price")
+  expenseDate       DateTime? @map("expense_date")
+  qty               Int?      @map("item_total")
+  totalPrice        Float?    @map("total_price")
+  personResponsible String?   @map("person_responsible")
+  note              String?   @db.Text
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
 
   @@index([personResponsible])
   @@map("expenses")

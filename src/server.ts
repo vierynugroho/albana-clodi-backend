@@ -18,6 +18,7 @@ import { orderRouter } from "./api/order/router";
 import { paymentMethodRouter } from "./api/payment-method/paymentMethodRouter";
 import { productRouter } from "./api/product/productRouter";
 import { regionRouter } from "./api/region/regionRouter";
+import { reportRouter } from "./api/report/router";
 import { salesChannelRouter } from "./api/sales-channel/salesChannelRouter";
 import { shippingCostRouter } from "./api/shipping-cost/router";
 
@@ -30,9 +31,14 @@ app.set("trust proxy", true);
 // Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
+app.use(
+	cors({
+		origin: env.CORS_ORIGIN.split(","),
+		credentials: true,
+	}),
+);
 app.use(helmet());
-app.use(rateLimiter);
+// app.use(rateLimiter);
 
 // Request logging
 app.use(requestLogger);
@@ -50,6 +56,7 @@ app.use("/payments", paymentMethodRouter);
 app.use("/sales-channels", salesChannelRouter);
 app.use("/shipping-cost", shippingCostRouter);
 app.use("/auth", authRouter);
+app.use("/reports", reportRouter);
 
 // Swagger UI
 app.use(openAPIRouter);

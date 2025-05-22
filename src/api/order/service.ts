@@ -3,17 +3,11 @@ import type { OrderWithRelations } from "@/common/types/orderExport";
 import { exportData } from "@/common/utils/dataExporter";
 import { importData } from "@/common/utils/dataImporter";
 import { logger } from "@/server";
-import { type CustomerCategories, Order, type Prisma, PrismaClient } from "@prisma/client";
+import { type CustomerCategories, type Prisma, PrismaClient } from "@prisma/client";
 import type { PaymentStatus } from "@prisma/client";
 import { StatusCodes } from "http-status-codes";
-import xlsx from "xlsx";
-import { CustomerRepository } from "../customer/customerRepository";
-import { DeliveryPlaceRepository } from "../delivery-place/repository";
-import { PaymentMethodRepository } from "../payment-method/paymentMethodRepository";
-import { ProductVariantRepository } from "../product-variant/productVariantRepository";
-import { ProductRepository } from "../product/productRepository";
-import { SalesChannelRepository } from "../sales-channel/salesChannelRepository";
-import type { CreateOrderType, OrderParamsType, OrderQueryType, UpdateOrderType } from "./model";
+import { v4 as uuidv4 } from "uuid";
+import type { CreateOrderType, OrderQueryType, UpdateOrderType } from "./model";
 import { type OrderRepository, orderRepository } from "./repository";
 
 interface GetAllOrdersParams {
@@ -26,28 +20,9 @@ interface GetAllOrdersParams {
 
 class OrderService {
 	private readonly orderRepo: OrderRepository;
-	private readonly customerRepo: CustomerRepository["customer"];
-	private readonly productRepo: ProductRepository;
-	private readonly salesChannelRepo: SalesChannelRepository;
-	private readonly deliveryPlaceRepo: DeliveryPlaceRepository;
-	private readonly productVariantRepo: ProductVariantRepository;
-	private readonly paymentRepo: PaymentMethodRepository;
 
-	constructor(
-		customerRepository = new CustomerRepository(new PrismaClient()),
-		productRepository = new ProductRepository(new PrismaClient()),
-		salesChannelRepository = new SalesChannelRepository(new PrismaClient()),
-		deliveryPlaceRepository = new DeliveryPlaceRepository(new PrismaClient()),
-		productVariantRepository = new ProductVariantRepository(new PrismaClient()),
-		paymentMethodRepository = new PaymentMethodRepository(new PrismaClient()),
-	) {
+	constructor() {
 		this.orderRepo = orderRepository;
-		this.customerRepo = customerRepository.customer;
-		this.productRepo = productRepository;
-		this.salesChannelRepo = salesChannelRepository;
-		this.deliveryPlaceRepo = deliveryPlaceRepository;
-		this.productVariantRepo = productVariantRepository;
-		this.paymentRepo = paymentMethodRepository;
 	}
 
 	public getAll = async (query: OrderQueryType["query"]) => {
@@ -95,14 +70,15 @@ class OrderService {
 			}
 
 			// Filter berdasarkan bulan dan tahun
-			if (queryParams.orderMonth && queryParams.orderYear) {
+			if (queryParams.orderMonth) {
 				const month = Number.parseInt(queryParams.orderMonth);
-				const year = Number.parseInt(queryParams.orderYear);
 				filter.orderDate = {
-					gte: new Date(year, month - 1, 1),
-					lte: new Date(year, month, 0, 23, 59, 59, 999),
+					gte: new Date(new Date().getFullYear(), month - 1, 1),
+					lte: new Date(new Date().getFullYear(), month, 0, 23, 59, 59, 999),
 				};
-			} else if (queryParams.orderYear) {
+			}
+
+			if (queryParams.orderYear) {
 				// Filter hanya berdasarkan tahun
 				const year = Number.parseInt(queryParams.orderYear);
 				filter.orderDate = {
@@ -1231,22 +1207,24 @@ class OrderService {
 
 					// Data Product
 					const productList = row["Produk & Qty"] as string;
-					const products = productList
-						.split("\n")
-						.map((item) => {
-							const match = item.match(/(.*?)\s*\(SKU:\s*([^)]+)\)\s*x(\d+)/);
-							if (!match) return null;
+					const products = productList?.includes("\n")
+						? productList
+								.split("\n")
+								.map((item) => {
+									const match = item.match(/(.*?)\s*\(SKU:\s*([^)]+)\)\s*x(\d+)/);
+									if (!match) return null;
 
-							const [_, productName, skuList, quantity] = match;
-							const skus = skuList.split(",").map((sku) => sku.trim());
+									const [_, productName, skuList, quantity] = match;
+									const skus = skuList.split(",").map((sku) => sku.trim());
 
-							return {
-								productName,
-								skus,
-								quantity: Number.parseInt(quantity),
-							};
-						})
-						.filter(Boolean);
+									return {
+										productName,
+										skus,
+										quantity: Number.parseInt(quantity),
+									};
+								})
+								.filter(Boolean)
+						: [];
 
 					// Data pembayaran
 					const paymentStatus = row["Status Pembayaran"] as PaymentStatus;
@@ -1306,16 +1284,19 @@ class OrderService {
 					return data as T;
 				},
 				async (data) => {
-					const { v4: uuidv4 } = require("uuid");
-
 					for (const item of data) {
+						console.log(item);
+						console.log(item.OrderDetail?.code);
 						const existingOrder = await this.orderRepo.client.orderDetail.findFirst({
 							where: {
 								code: item.OrderDetail?.code,
 							},
 						});
+
+						// Skip jika order dengan kode yang sama sudah ada
 						if (existingOrder) {
-							return null;
+							console.log(`Order dengan kode ${item.OrderDetail?.code} sudah ada, dilewati.`);
+							continue;
 						}
 
 						// TODO: orderer customer
@@ -1503,31 +1484,49 @@ class OrderService {
 								productQty: product.productQty,
 							}));
 
+							const generated_order_id = uuidv4();
+							const generated_order_detail_id = uuidv4();
+
 							await tx.order.create({
 								data: {
-									id: uuidv4(),
+									id: generated_order_id,
 									ordererCustomerId: ordererCustomer?.id || newOrdererCustomer?.id,
 									deliveryTargetCustomerId: deliveryOrdererCustomer?.id || newDeliveryOrdererCustomer?.id,
 									deliveryPlaceId: deliveryPlace?.id || newDeliveryPlace?.id,
 									salesChannelId: salesChannel?.id || newSalesChannel?.id,
-									orderDate: item.orderDate instanceof Date ? item.orderDate : new Date(item.orderDate as string),
+									orderDate: item.orderDate
+										? item.orderDate instanceof Date
+											? item.orderDate
+											: typeof item.orderDate === "string" && item.orderDate.includes("/")
+												? new Date(
+														`20${item.orderDate.split("/")[2]}-${item.orderDate.split("/")[1]}-${item.orderDate.split("/")[0]}`,
+													)
+												: new Date(item.orderDate as string)
+										: new Date(),
 									note: (item.note as string) || "",
 									OrderDetail: {
 										create: {
-											id: uuidv4(),
+											id: generated_order_detail_id,
 											code: item.OrderDetail?.code as string,
 											paymentStatus: (item.OrderDetail?.paymentStatus as PaymentStatus) || "PENDING",
 											paymentDate:
 												item.OrderDetail?.paymentDate instanceof Date
 													? item.OrderDetail?.paymentDate
-													: new Date(item.OrderDetail?.paymentDate as string),
+													: typeof item.OrderDetail?.paymentDate === "string" &&
+															item.OrderDetail?.paymentDate.includes("/")
+														? new Date(
+																`20${item.OrderDetail?.paymentDate.split("/")[2]}-${item.OrderDetail?.paymentDate.split("/")[1]}-${item.OrderDetail?.paymentDate.split("/")[0]}`,
+															)
+														: item.OrderDetail?.paymentDate
+															? new Date(item.OrderDetail?.paymentDate as string)
+															: null,
 											paymentMethodId: paymentMethod?.id || newPaymentMethod?.id,
 											finalPrice: (item.OrderDetail?.finalPrice as number) || 0,
 											receiptNumber: (item.OrderDetail?.receiptNumber as string) || null,
 											otherFees: item.OrderDetail?.otherFees as Prisma.InputJsonValue | undefined,
 											OrderProducts: {
 												create: orderProducts.map((product) => ({
-													orderId: uuidv4(),
+													orderId: generated_order_id,
 													Product: {
 														connect: {
 															id: product.productId,
@@ -1545,10 +1544,192 @@ class OrderService {
 				},
 			);
 
+			if (!importResult.success || importResult.statusCode !== StatusCodes.OK) {
+				return ServiceResponse.failure(
+					`Gagal mengimpor data: ${importResult.message}`,
+					null,
+					importResult.statusCode || StatusCodes.BAD_REQUEST,
+				);
+			}
+
 			return ServiceResponse.success("Berhasil mengimpor data order", importResult.responseObject, StatusCodes.OK);
 		} catch (error) {
 			logger.error(error);
 			return ServiceResponse.failure("Gagal mengimpor data order", null, StatusCodes.INTERNAL_SERVER_ERROR);
+		}
+	};
+
+	public getSummary = async (query: OrderQueryType["query"]) => {
+		try {
+			type OrderFilter = Prisma.OrderWhereInput;
+
+			console.log("==========QUERY=========");
+			console.log(query);
+			console.log("=========================");
+
+			const filter: OrderFilter = {};
+
+			const queryParams = {
+				salesChannelId: query.salesChannelId as string | undefined,
+				customerCategory: query.customerCategory as string | undefined,
+				paymentStatus: query.paymentStatus as PaymentStatus | undefined,
+				productId: query.productId as string | undefined,
+				paymentMethodId: query.paymentMethodId as string | undefined,
+				orderDate: query.orderDate as string | undefined,
+				orderMonth: query.orderMonth as string | undefined,
+				orderYear: query.orderYear as string | undefined,
+				startDate: query.startDate as string | undefined,
+				endDate: query.endDate as string | undefined,
+				ordererCustomerId: query.ordererCustomerId as string | undefined,
+				deliveryTargetCustomerId: query.deliveryTargetCustomerId as string | undefined,
+				deliveryPlaceId: query.deliveryPlaceId as string | undefined,
+				orderStatus: query.orderStatus as string | undefined,
+				search: query.search as string | undefined,
+				sort: query.sort as string | undefined,
+				order: query.order as "asc" | "desc" | undefined,
+			};
+
+			// Filter berdasarkan sales channel
+			if (queryParams.salesChannelId) {
+				filter.salesChannelId = queryParams.salesChannelId;
+			}
+
+			// Filter berdasarkan tanggal order
+			if (queryParams.orderDate) {
+				const date = new Date(queryParams.orderDate);
+				filter.orderDate = {
+					gte: new Date(date.setHours(0, 0, 0, 0)),
+					lte: new Date(date.setHours(23, 59, 59, 999)),
+				};
+			}
+
+			// Filter berdasarkan bulan dan tahun
+			if (queryParams.orderMonth) {
+				const month = Number.parseInt(queryParams.orderMonth);
+				filter.orderDate = {
+					gte: new Date(new Date().getFullYear(), month - 1, 1),
+					lte: new Date(new Date().getFullYear(), month, 0, 23, 59, 59, 999),
+				};
+			}
+
+			if (queryParams.orderYear) {
+				// Filter hanya berdasarkan tahun
+				const year = Number.parseInt(queryParams.orderYear);
+				filter.orderDate = {
+					gte: new Date(year, 0, 1),
+					lte: new Date(year, 11, 31, 23, 59, 59, 999),
+				};
+			}
+
+			// Filter berdasarkan range tanggal
+			if (queryParams.startDate && queryParams.endDate) {
+				filter.orderDate = {
+					gte: new Date(new Date(queryParams.startDate).setHours(0, 0, 0, 0)),
+					lte: new Date(new Date(queryParams.endDate).setHours(23, 59, 59, 999)),
+				};
+			}
+
+			// Filter berdasarkan kategori customer
+			if (queryParams.customerCategory) {
+				filter.OR = [
+					{
+						OrdererCustomer: {
+							is: { category: { equals: queryParams.customerCategory as CustomerCategories } },
+						},
+					},
+					{
+						DeliveryTargetCustomer: {
+							is: { category: { equals: queryParams.customerCategory as CustomerCategories } },
+						},
+					},
+				];
+			}
+
+			// Filter berdasarkan orderer customer
+			if (queryParams.ordererCustomerId) {
+				filter.ordererCustomerId = queryParams.ordererCustomerId;
+			}
+
+			// Filter berdasarkan delivery target customer
+			if (queryParams.deliveryTargetCustomerId) {
+				filter.deliveryTargetCustomerId = queryParams.deliveryTargetCustomerId;
+			}
+
+			// Filter berdasarkan delivery place
+			if (queryParams.deliveryPlaceId) {
+				filter.deliveryPlaceId = queryParams.deliveryPlaceId;
+			}
+
+			// Filter berdasarkan status order
+			if (queryParams.orderStatus) {
+				// Validasi nilai status order
+				const validPaymentStatuses = ["settlement", "pending", "cancel", "installments"];
+				const paymentStatus = validPaymentStatuses.includes(queryParams.orderStatus)
+					? (queryParams.orderStatus as PaymentStatus)
+					: undefined;
+
+				if (paymentStatus) {
+					if (filter.OrderDetail) {
+						filter.OrderDetail.paymentStatus = paymentStatus;
+					} else {
+						filter.OrderDetail = {
+							paymentStatus: paymentStatus,
+						};
+					}
+				}
+			}
+
+			const result = await this.orderRepo.client.order.findMany({
+				where: filter,
+				include: {
+					SalesChannel: true,
+					DeliveryPlace: true,
+					OrdererCustomer: true,
+					DeliveryTargetCustomer: true,
+					OrderDetail: {
+						include: {
+							OrderProducts: {
+								where: queryParams.productId ? { productId: queryParams.productId } : undefined,
+								include: {
+									Product: {
+										include: {
+											productVariants: true,
+										},
+									},
+								},
+							},
+							PaymentMethod:
+								queryParams.paymentMethodId || queryParams.paymentStatus
+									? {
+											where: {
+												...(queryParams.paymentMethodId && { id: queryParams.paymentMethodId }),
+												...(queryParams.paymentStatus && { status: queryParams.paymentStatus }),
+											},
+										}
+									: true,
+						},
+					},
+					ShippingServices: true,
+				},
+			});
+
+			// Filter hasil jika ada filter untuk payment method atau product
+			let filteredResult = result;
+
+			if (queryParams.paymentMethodId || queryParams.paymentStatus) {
+				filteredResult = result.filter((order) => order.OrderDetail && order.OrderDetail.PaymentMethod !== null);
+			}
+
+			if (queryParams.productId) {
+				filteredResult = filteredResult.filter(
+					(order) => order.OrderDetail && order.OrderDetail.OrderProducts.length > 0,
+				);
+			}
+
+			return ServiceResponse.success("Berhasil mengambil data order", filteredResult, StatusCodes.OK);
+		} catch (error) {
+			logger.error(error);
+			return ServiceResponse.failure("Gagal mengambil data order", null, StatusCodes.INTERNAL_SERVER_ERROR);
 		}
 	};
 }

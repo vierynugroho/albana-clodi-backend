@@ -8,6 +8,7 @@ import { locationRegistry } from "@/api/location/router";
 import { orderRegistry } from "@/api/order/router";
 import { productRegistry } from "@/api/product/productRouter";
 import { regionRegistry } from "@/api/region/regionRouter";
+import { reportRegistry } from "@/api/report/router";
 import { shippingCostRegistry } from "@/api/shipping-cost/router";
 import { userRegistry } from "@/api/user/userRouter";
 
@@ -25,6 +26,7 @@ export function generateOpenAPIDocument(): OpenAPIDocument {
 		deliveryPlaceRegistry,
 		orderRegistry,
 		regionRegistry,
+		reportRegistry,
 	]);
 	const generator = new OpenApiGeneratorV3(registry.definitions);
 
@@ -39,11 +41,7 @@ export function generateOpenAPIDocument(): OpenAPIDocument {
 			description: "Lihat Spesifikasi OpenAPI mentah dalam format JSON",
 			url: "/swagger.json",
 		},
-		security: [
-			{
-				bearerAuth: [],
-			},
-		],
+		// Tidak menerapkan security global, hanya pada endpoint yang memerlukan autentikasi
 	});
 
 	if (!documents.components) {
@@ -51,11 +49,9 @@ export function generateOpenAPIDocument(): OpenAPIDocument {
 	}
 
 	if (!documents.components.securitySchemes) {
-		// Pastikan securitySchemes ada
 		documents.components.securitySchemes = {};
 	}
 
-	// Tambahkan definisi bearerAuth ke securitySchemes
 	documents.components.securitySchemes = {
 		...documents.components.securitySchemes,
 		bearerAuth: {
