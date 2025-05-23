@@ -1,7 +1,5 @@
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
-import { ProductWholesalerSchema } from "../prodcut-wholesaler/productWholesaleModel";
-import { ProductPriceSchema } from "../product-price/productPriceModel";
 
 extendZodWithOpenApi(z);
 

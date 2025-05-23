@@ -80,7 +80,7 @@ model Product {
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")
 
-  category        Category?         @relation(fields: [categoryId], references: [id])
+  category        Category?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   productVariants ProductVariant[]
   orderDetails    OrderDetail[]
   ProductDiscount ProductDiscount[]
