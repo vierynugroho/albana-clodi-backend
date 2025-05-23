@@ -23,7 +23,6 @@
 		"test:cov": "vitest run --coverage",
 		"check": "pnpm lint && pnpm format && pnpm build && pnpm test",
 		"seed": "tsx prisma/seeders/main.ts",
-		"prepare": "npm install && npm run build"
 	},
 	"dependencies": {
 		"@asteasolutions/zod-to-openapi": "7.3.0",
