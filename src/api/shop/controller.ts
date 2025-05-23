@@ -9,13 +9,14 @@ export class ShopController {
 
 		// Menangani file dari multer
 		const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+		console.log(files);
 
 		if (files?.logo?.length > 0) {
-			shopSettingData.logo = files.logo[0].buffer.toString("base64");
+			shopSettingData.logo = files.logo[0];
 		}
 
 		if (files?.banner?.length > 0) {
-			shopSettingData.banner = files.banner[0].buffer.toString("base64");
+			shopSettingData.banner = files.banner[0];
 		}
 
 		const serviceResponse = await shopService.createShopSetting(shopSettingData);
@@ -34,11 +35,11 @@ export class ShopController {
 		const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
 		if (files?.logo?.length > 0) {
-			updateData.logo = files.logo[0].buffer.toString("base64");
+			updateData.logo = files.logo[0];
 		}
 
 		if (files?.banner?.length > 0) {
-			updateData.banner = files.banner[0].buffer.toString("base64");
+			updateData.banner = files.banner[0];
 		}
 
 		const serviceResponse = await shopService.updateShopSetting(updateData);

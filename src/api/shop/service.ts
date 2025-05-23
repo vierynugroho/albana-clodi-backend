@@ -1,10 +1,26 @@
+import { AwsService } from "@/common/libs/awsService";
 import { ServiceResponse } from "@/common/models/serviceResponse";
+import { env } from "@/common/utils/envConfig";
 import type { Roles } from "@prisma/client";
 import { StatusCodes } from "http-status-codes";
 import type { CreateShopSettingType, UpdateShopSettingType } from "./model";
 import { shopRepository } from "./repository";
 
 class ShopService {
+	private readonly awsService;
+
+	constructor(
+		initAws = new AwsService({
+			cloudCubeAccessKey: env.CLOUDCUBE_ACCESS_KEY,
+			cloudCubeBucket: env.CLOUDCUBE_BUCKET,
+			cloudCubeRegion: env.CLOUDCUBE_REGION,
+			cloudCubeSecretKey: env.CLOUDCUBE_SECRET_KEY,
+			cloudCubeUrl: env.CLOUDCUBE_URL,
+		}),
+	) {
+		this.awsService = initAws;
+	}
+
 	public async createShopSetting(data: CreateShopSettingType["body"]) {
 		try {
 			const existingSettings = await shopRepository.client.shopSetting.findFirst();
@@ -12,6 +28,14 @@ class ShopService {
 			if (existingSettings) {
 				return ServiceResponse.failure("Pengaturan toko sudah ada", null, StatusCodes.BAD_REQUEST);
 			}
+
+			console.log(data.logo);
+
+			// Upload logo dan banner ke AWS jika ada
+			const logoUrl = data.logo ? await this.awsService.uploadFile(data.logo as unknown as Express.Multer.File) : null;
+			const bannerUrl = data.banner
+				? await this.awsService.uploadFile(data.banner as unknown as Express.Multer.File)
+				: null;
 
 			const shopSetting = await shopRepository.client.shopSetting.create({
 				data: {
@@ -21,8 +45,8 @@ class ShopService {
 					phoneNumber: data.phoneNumber,
 					address: data.address,
 					owner: data.owner,
-					logo: data.logo,
-					banner: data.banner,
+					logo: logoUrl,
+					banner: bannerUrl,
 				},
 			});
 
@@ -62,9 +86,32 @@ class ShopService {
 				return ServiceResponse.failure("Pengaturan toko belum dibuat", null, StatusCodes.NOT_FOUND);
 			}
 
+			// Upload logo dan banner ke AWS jika ada
+			const logoUrl = updateData.logo
+				? await this.awsService.uploadFile(updateData.logo as unknown as Express.Multer.File)
+				: existingSettings.logo;
+			const bannerUrl = updateData.banner
+				? await this.awsService.uploadFile(updateData.banner as unknown as Express.Multer.File)
+				: existingSettings.banner;
+
+			// Hapus gambar lama jika ada gambar baru
+			if (updateData.logo && existingSettings.logo) {
+				const logoKey = this.awsService.extractKeyFromUrl(existingSettings.logo);
+				await this.awsService.deleteFile(logoKey);
+			}
+
+			if (updateData.banner && existingSettings.banner) {
+				const bannerKey = this.awsService.extractKeyFromUrl(existingSettings.banner);
+				await this.awsService.deleteFile(bannerKey);
+			}
+
 			const updatedShopSetting = await shopRepository.client.shopSetting.update({
 				where: { id: existingSettings.id },
-				data: updateData,
+				data: {
+					...updateData,
+					logo: logoUrl,
+					banner: bannerUrl,
+				},
 			});
 
 			return ServiceResponse.success("Berhasil mengupdate pengaturan toko", updatedShopSetting, StatusCodes.OK);

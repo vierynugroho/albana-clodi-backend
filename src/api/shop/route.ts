@@ -51,6 +51,7 @@ shopRegistry.registerPath({
 	method: "get",
 	path: "/shop",
 	tags: ["Shop"],
+	security: [{ bearerAuth: [] }],
 	responses: createApiResponse(
 		z.object({
 			id: z.string().uuid(),
@@ -110,7 +111,7 @@ shopRouter.post(
 	validateRequest(CreateShopSettingSchema),
 	shopController.createShopSetting,
 );
-shopRouter.get("/", shopController.getShopSetting);
+shopRouter.get("/", authenticate, authorizeRoles([Roles.SUPERADMIN]), shopController.getShopSetting);
 shopRouter.patch(
 	"/",
 	authenticate,
