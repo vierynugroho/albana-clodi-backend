@@ -17,6 +17,7 @@ import { expensesRouter } from "./api/expenses/router";
 import { orderRouter } from "./api/order/router";
 import { paymentMethodRouter } from "./api/payment-method/paymentMethodRouter";
 import { productRouter } from "./api/product/productRouter";
+import { receiptRouter } from "./api/receipt/router";
 import { regionRouter } from "./api/region/regionRouter";
 import { reportRouter } from "./api/report/router";
 import { salesChannelRouter } from "./api/sales-channel/salesChannelRouter";
@@ -57,6 +58,7 @@ app.use("/sales-channels", salesChannelRouter);
 app.use("/shipping-cost", shippingCostRouter);
 app.use("/auth", authRouter);
 app.use("/reports", reportRouter);
+app.use("/receipts", receiptRouter);
 
 // Swagger UI
 app.use(openAPIRouter);

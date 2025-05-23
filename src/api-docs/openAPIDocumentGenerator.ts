@@ -6,9 +6,12 @@ import { expensesRegistry } from "@/api/expenses/router";
 import { healthCheckRegistry } from "@/api/healthCheck/healthCheckRouter";
 import { locationRegistry } from "@/api/location/router";
 import { orderRegistry } from "@/api/order/router";
+import { paymentMethodRegistry } from "@/api/payment-method/paymentMethodRouter";
 import { productRegistry } from "@/api/product/productRouter";
+import { receiptRegistry } from "@/api/receipt/router";
 import { regionRegistry } from "@/api/region/regionRouter";
 import { reportRegistry } from "@/api/report/router";
+import { salesChannelRegistry } from "@/api/sales-channel/salesChannelRouter";
 import { shippingCostRegistry } from "@/api/shipping-cost/router";
 import { userRegistry } from "@/api/user/userRouter";
 
@@ -27,6 +30,9 @@ export function generateOpenAPIDocument(): OpenAPIDocument {
 		orderRegistry,
 		regionRegistry,
 		reportRegistry,
+		receiptRegistry,
+		paymentMethodRegistry,
+		salesChannelRegistry,
 	]);
 	const generator = new OpenApiGeneratorV3(registry.definitions);
 

@@ -46,7 +46,7 @@ salesChannelRegistry.registerPath({
 			},
 		},
 	},
-	responses: createApiResponse({} as ZodTypeAny, "Success", StatusCodes.OK),
+	responses: createApiResponse(SalesChannelSchema, "Success", StatusCodes.OK),
 });
 salesChannelRouter.post(
 	"",
@@ -67,7 +67,7 @@ salesChannelRegistry.registerPath({
 			},
 		},
 	},
-	responses: createApiResponse({} as ZodTypeAny, "Success", StatusCodes.OK),
+	responses: createApiResponse(SalesChannelSchema, "Success", StatusCodes.OK),
 });
 salesChannelRouter.put("/:id", validateRequest(UpdateCustomerRequestSchema), salesChannelController.updateSalesChannel);
 
@@ -78,7 +78,7 @@ salesChannelRegistry.registerPath({
 	request: {
 		params: DeleteCustomerRequestSchema.pick({ params: true }),
 	},
-	responses: createApiResponse({} as ZodTypeAny, "Success", StatusCodes.OK),
+	responses: createApiResponse(SalesChannelSchema, "Success", StatusCodes.OK),
 });
 salesChannelRouter.delete(
 	"/:id",

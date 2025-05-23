@@ -54,7 +54,7 @@ paymentMethodRegistry.registerPath({
 			},
 		},
 	},
-	responses: createApiResponse({} as ZodTypeAny, "Success", StatusCodes.CREATED),
+	responses: createApiResponse(PaymentMethodSchema, "Success", StatusCodes.CREATED),
 });
 paymentMethodRouter.post("", validateRequest(CreatePaymentMethodRequestSchema), paymentMethodController.createPayment);
 
@@ -72,7 +72,7 @@ paymentMethodRegistry.registerPath({
 		},
 		params: UpdatePaymentMethodRequestSchema.pick({ params: true }),
 	},
-	responses: createApiResponse({} as ZodTypeAny, "Success", StatusCodes.CREATED),
+	responses: createApiResponse(PaymentMethodSchema, "Success", StatusCodes.CREATED),
 });
 paymentMethodRouter.put(
 	"/:id",
@@ -87,7 +87,7 @@ paymentMethodRegistry.registerPath({
 	request: {
 		params: DeletePaymentMethodRequestShema.pick({ params: true }),
 	},
-	responses: createApiResponse({} as ZodTypeAny, "Success", StatusCodes.CREATED),
+	responses: createApiResponse(PaymentMethodSchema, "Success", StatusCodes.CREATED),
 });
 paymentMethodRouter.delete(
 	"/:id",

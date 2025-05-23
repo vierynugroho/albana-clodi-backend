@@ -1,9 +1,9 @@
 import type { PrismaClient } from "@prisma/client";
 
 export class ProductRepository {
-	public readonly client: PrismaClient;
+	public readonly productRepo: PrismaClient["product"];
 
 	constructor(private readonly prismaInit: PrismaClient) {
-		this.client = prismaInit;
+		this.productRepo = prismaInit.product;
 	}
 }
