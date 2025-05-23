@@ -13,6 +13,7 @@ import { regionRegistry } from "@/api/region/regionRouter";
 import { reportRegistry } from "@/api/report/router";
 import { salesChannelRegistry } from "@/api/sales-channel/salesChannelRouter";
 import { shippingCostRegistry } from "@/api/shipping-cost/router";
+import { shopRegistry } from "@/api/shop/route";
 import { userRegistry } from "@/api/user/userRouter";
 
 export type OpenAPIDocument = ReturnType<OpenApiGeneratorV3["generateDocument"]>;
@@ -33,6 +34,7 @@ export function generateOpenAPIDocument(): OpenAPIDocument {
 		receiptRegistry,
 		paymentMethodRegistry,
 		salesChannelRegistry,
+		shopRegistry,
 	]);
 	const generator = new OpenApiGeneratorV3(registry.definitions);
 

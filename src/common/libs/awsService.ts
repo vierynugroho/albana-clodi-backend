@@ -14,6 +14,7 @@ export class AwsService {
 	private readonly cubeUrl: string;
 
 	constructor(config: AwsConfig) {
+		console.log({ config });
 		this.bucket = config.cloudCubeBucket;
 		this.cubeUrl = config.cloudCubeUrl;
 

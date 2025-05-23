@@ -3,7 +3,7 @@ import type { Roles } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { StatusCodes } from "http-status-codes";
 import jwt from "jsonwebtoken";
-import type { LoginType, RegisterType } from "./model";
+import type { LoginType, RegisterType, UpdateProfileType } from "./model";
 import { authRepository } from "./repository";
 
 class AuthService {
@@ -30,6 +30,7 @@ class AuthService {
 					email: data.email,
 					password: hashedPassword,
 					fullname: data.name,
+					role: "ADMIN" as Roles,
 				},
 			});
 
@@ -116,15 +117,42 @@ class AuthService {
 		}
 	}
 
-	public async updateUser(userId: string, updateData: { fullname?: string; email?: string }) {
+	public async updateUser(userId: string, updateData: UpdateProfileType["body"]) {
 		try {
+			const updatedUserData: {
+				fullname?: string;
+				email?: string;
+				password?: string;
+				phoneNumber?: string;
+				confirmPassword?: string;
+			} = {
+				...updateData,
+			};
+
+			if (updateData.password) {
+				if (!updateData.confirmPassword) {
+					return ServiceResponse.failure("Konfirmasi password harus diisi", null, StatusCodes.BAD_REQUEST);
+				}
+
+				if (updateData.password !== updateData.confirmPassword) {
+					return ServiceResponse.failure("Password dan konfirmasi password tidak sama", null, StatusCodes.BAD_REQUEST);
+				}
+
+				const hashedPassword = await bcrypt.hash(updateData.password, 10);
+				updatedUserData.password = hashedPassword;
+			}
+
+			// Hapus confirmPassword dari data yang akan diupdate
+			const { confirmPassword, ...dataToUpdate } = updatedUserData;
+
 			const user = await authRepository.client.user.update({
 				where: { id: userId },
-				data: updateData,
+				data: dataToUpdate,
 				select: {
 					id: true,
 					email: true,
 					fullname: true,
+					phoneNumber: true,
 					role: true,
 				},
 			});
@@ -134,6 +162,7 @@ class AuthService {
 				{
 					id: user.id,
 					email: user.email as string,
+					phoneNumber: user.phoneNumber as string,
 					fullname: user.fullname as string,
 					role: user.role as Roles,
 				},

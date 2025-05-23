@@ -22,6 +22,7 @@ import { regionRouter } from "./api/region/regionRouter";
 import { reportRouter } from "./api/report/router";
 import { salesChannelRouter } from "./api/sales-channel/salesChannelRouter";
 import { shippingCostRouter } from "./api/shipping-cost/router";
+import { shopRouter } from "./api/shop/route";
 
 const logger = pino({ name: "server start" });
 const app: Express = express();
@@ -59,6 +60,7 @@ app.use("/shipping-cost", shippingCostRouter);
 app.use("/auth", authRouter);
 app.use("/reports", reportRouter);
 app.use("/receipts", receiptRouter);
+app.use("/shop", shopRouter);
 
 // Swagger UI
 app.use(openAPIRouter);
