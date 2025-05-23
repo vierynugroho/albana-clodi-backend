@@ -24,16 +24,17 @@ class ReportService {
 		try {
 			const { startDate, endDate, month, year, week } = params;
 
+			console.log(params);
 			let where: { createdAt?: { gte?: Date; lte?: Date; lt?: Date } } = {};
 
 			// Filter by date range
-			if (startDate && endDate) {
+			if (startDate || endDate) {
 				where = {
 					...where,
 					createdAt: {
 						...(where.createdAt || {}),
-						gte: new Date(`${startDate}T00:00:00`),
-						lte: new Date(`${endDate}T23:59:59`),
+						...(startDate && { gte: new Date(`${startDate}T00:00:00`) }),
+						...(endDate && { lte: new Date(`${endDate}T23:59:59`) }),
 					},
 				};
 			}
@@ -156,14 +157,13 @@ class ReportService {
 
 			let where: { createdAt?: { gte?: Date; lte?: Date; lt?: Date } } = {};
 
-			// Filter by date range
-			if (startDate && endDate) {
+			if (startDate || endDate) {
 				where = {
 					...where,
 					createdAt: {
 						...(where.createdAt || {}),
-						gte: new Date(`${startDate}T00:00:00`),
-						lte: new Date(`${endDate}T23:59:59`),
+						...(startDate && { gte: new Date(`${startDate}T00:00:00`) }),
+						...(endDate && { lte: new Date(`${endDate}T23:59:59`) }),
 					},
 				};
 			}
@@ -403,13 +403,13 @@ class ReportService {
 			let where: { createdAt?: { gte?: Date; lte?: Date; lt?: Date } } = {};
 
 			// Filter by date range
-			if (startDate && endDate) {
+			if (startDate || endDate) {
 				where = {
 					...where,
 					createdAt: {
 						...(where.createdAt || {}),
-						gte: new Date(`${startDate}T00:00:00`),
-						lte: new Date(`${endDate}T23:59:59`),
+						...(startDate && { gte: new Date(`${startDate}T00:00:00`) }),
+						...(endDate && { lte: new Date(`${endDate}T23:59:59`) }),
 					},
 				};
 			}
@@ -540,14 +540,13 @@ class ReportService {
 
 			let where: { createdAt?: { gte?: Date; lte?: Date; lt?: Date } } = {};
 
-			// Filter by date range
-			if (startDate && endDate) {
+			if (startDate || endDate) {
 				where = {
 					...where,
 					createdAt: {
 						...(where.createdAt || {}),
-						gte: new Date(`${startDate}T00:00:00`),
-						lte: new Date(`${endDate}T23:59:59`),
+						...(startDate && { gte: new Date(`${startDate}T00:00:00`) }),
+						...(endDate && { lte: new Date(`${endDate}T23:59:59`) }),
 					},
 				};
 			}
@@ -898,14 +897,13 @@ class ReportService {
 
 			let where: { createdAt?: { gte?: Date; lte?: Date; lt?: Date } } = {};
 
-			// Filter by date range
-			if (startDate && endDate) {
+			if (startDate || endDate) {
 				where = {
 					...where,
 					createdAt: {
 						...(where.createdAt || {}),
-						gte: new Date(`${startDate}T00:00:00`),
-						lte: new Date(`${endDate}T23:59:59`),
+						...(startDate && { gte: new Date(`${startDate}T00:00:00`) }),
+						...(endDate && { lte: new Date(`${endDate}T23:59:59`) }),
 					},
 				};
 			}
@@ -1084,14 +1082,13 @@ class ReportService {
 
 			let where: { createdAt?: { gte?: Date; lte?: Date; lt?: Date } } = {};
 
-			// Filter by date range
-			if (startDate && endDate) {
+			if (startDate || endDate) {
 				where = {
 					...where,
 					createdAt: {
 						...(where.createdAt || {}),
-						gte: new Date(`${startDate}T00:00:00`),
-						lte: new Date(`${endDate}T23:59:59`),
+						...(startDate && { gte: new Date(`${startDate}T00:00:00`) }),
+						...(endDate && { lte: new Date(`${endDate}T23:59:59`) }),
 					},
 				};
 			}
