@@ -89,6 +89,7 @@ export const RequestQueryProduct = z.object({
 	page: z.number().min(1).optional(),
 	limit: z.number().min(5).optional(),
 	type: z.nativeEnum(ProductTypeEnum).optional(),
+	search: z.string().optional(),
 	categoryId: z.string().uuid().optional(),
 	productDiscountId: z.string().uuid().optional(),
 	sort: z.string().optional(),

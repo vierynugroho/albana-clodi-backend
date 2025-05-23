@@ -1,7 +1,10 @@
 import type { ProductTypeEnum } from "@/common/enums/product/productTypeEnum";
+import { AwsService } from "@/common/libs/awsService";
 import { ServiceResponse } from "@/common/models/serviceResponse";
+import { generateBarcode } from "@/common/utils/bwipService";
 import { exportData } from "@/common/utils/dataExporter";
 import { importData } from "@/common/utils/dataImporter";
+import { env } from "@/common/utils/envConfig";
 import { logger } from "@/server";
 import { type Prisma, PrismaClient, type ProductDiscount } from "@prisma/client";
 import type { DefaultArgs } from "@prisma/client/runtime/library";
@@ -31,10 +34,22 @@ type VariantFieldType = {
 class ProductService {
 	private readonly productRepo: ProductRepository["productRepo"];
 	private readonly prisma;
+	private readonly awsService;
 
-	constructor(productRepository = new ProductRepository(new PrismaClient()), initPrisma = new PrismaClient()) {
+	constructor(
+		productRepository = new ProductRepository(new PrismaClient()),
+		initPrisma = new PrismaClient(),
+		initAws = new AwsService({
+			cloudCubeAccessKey: env.CLOUDCUBE_ACCESS_KEY,
+			cloudCubeBucket: env.CLOUDCUBE_BUCKET,
+			cloudCubeRegion: env.CLOUDCUBE_REGION,
+			cloudCubeSecretKey: env.CLOUDCUBE_SECRET_KEY,
+			cloudCubeUrl: env.CLOUDCUBE_URL,
+		}),
+	) {
 		this.productRepo = productRepository.productRepo;
 		this.prisma = initPrisma;
+		this.awsService = initAws;
 	}
 
 	public getAllProducts = async (query: RequestQueryProductType) => {
@@ -52,6 +67,7 @@ class ProductService {
 				endDate,
 				month,
 				week,
+				search,
 				year,
 			} = query;
 			const skip = (page - 1) * limit;
@@ -105,6 +121,30 @@ class ProductService {
 
 				createdAt.gte = weekStart;
 				createdAt.lte = new Date(weekEnd.setHours(23, 59, 59));
+			}
+
+			if (search) {
+				queryArgs.where = {
+					...queryArgs.where,
+					OR: [
+						{
+							name: {
+								contains: search,
+								mode: "insensitive",
+							},
+						},
+						{
+							productVariants: {
+								some: {
+									sku: {
+										contains: search,
+										mode: "insensitive",
+									},
+								},
+							},
+						},
+					],
+				};
 			}
 
 			if (type) {
@@ -234,7 +274,6 @@ class ProductService {
 					productVariants: {
 						include: {
 							productPrices: true,
-							ProductWholesaler: true,
 						},
 					},
 				},
@@ -254,26 +293,40 @@ class ProductService {
 		}
 	};
 
-	public createProduct = async (req: CreateProductType) => {
+	public createProduct = async (req: CreateProductType, file: Express.Multer.File) => {
 		// Check if product with the same name already exists
 		const foundProduct = await this.productRepo.findFirst({
 			where: {
-				name: req.product.name,
+				OR: [
+					{
+						name: req.product.name,
+					},
+					{
+						productVariants: {
+							some: {
+								sku: {
+									in: req.productVariants.map((variant) => variant.sku),
+								},
+							},
+						},
+					},
+				],
 			},
 		});
+
 		// check if found product
 		if (foundProduct) {
 			return ServiceResponse.failure("Product already exists", null, StatusCodes.BAD_REQUEST);
 		}
 
-		// const foundCategory = await this.productRepo.findFirst({
-		// 	where: {
-		// 		id: req.product.categoryId,
-		// 	},
-		// });
-		// if (!foundCategory) {
-		// 	return ServiceResponse.failure("Category is not found", null, StatusCodes.NOT_FOUND);
-		// }
+		const foundCategory = await this.productRepo.findFirst({
+			where: {
+				id: req.product.categoryId,
+			},
+		});
+		if (!foundCategory) {
+			return ServiceResponse.failure("Category is not found", null, StatusCodes.NOT_FOUND);
+		}
 
 		// Validate pricing: purchase price must be less than normal and reseller prices
 		const hasInvalidPrice = req.productVariants?.some(({ productPrices }) => {
@@ -295,6 +348,16 @@ class ProductService {
 			let newProduct: Partial<Product> = {};
 			// Use transaction to ensure data consistency across related tables
 			await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+				const barcodeBuffer = (req.product.name && (await generateBarcode(req.product.name))) ?? null;
+				const barcodeUrl =
+					(barcodeBuffer && (await this.awsService.uploadFile(barcodeBuffer as unknown as Express.Multer.File))) ??
+					null;
+				const imageUrl = await Promise.all(
+					req.productVariants.map(async (variant) => {
+						return variant && (await this.awsService.uploadFile(variant.imageUrl as unknown as Express.Multer.File));
+					}),
+				);
+
 				// Prepare product data with category connection
 				const createDataProduct: Prisma.ProductCreateInput = {
 					...req.product,
@@ -309,20 +372,20 @@ class ProductService {
 
 				// Create all product variants in parallel for better performance
 				await Promise.all(
-					req.productVariants.map(async (variant) => {
+					req.productVariants.map(async (variant, index) => {
 						const { productPrices, ...rest } = variant;
 						return tx.productVariant.create({
 							data: {
 								...rest,
+								imageUrl: imageUrl[index],
+								barcode: barcodeUrl,
 								product: {
 									connect: {
 										id: newProduct.id,
 									},
 								},
 								// Create related pricing information
-								productPrices: {
-									create: productPrices ?? undefined,
-								},
+								productPrices: productPrices ? { create: productPrices } : undefined,
 							},
 						});
 					}),
@@ -340,11 +403,14 @@ class ProductService {
 		}
 	};
 
-	public updateProduct = async (req: UpdateProductType, productId: string) => {
+	public updateProduct = async (req: UpdateProductType, productId: string, file: Express.Multer.File) => {
 		try {
 			// Verify product exists before attempting update
 			const existingProduct = await this.productRepo.findUnique({
 				where: { id: productId },
+				include: {
+					productVariants: true,
+				},
 			});
 
 			if (!existingProduct) {
@@ -366,6 +432,36 @@ class ProductService {
 				);
 			}
 
+			await Promise.all(
+				existingProduct.productVariants.flatMap((variant) => {
+					const tasks = [];
+					if (variant.imageUrl) {
+						const imageKey = this.awsService.extractKeyFromUrl(variant.imageUrl);
+						tasks.push(this.awsService.deleteFile(imageKey));
+					}
+					if (variant.barcode) {
+						const barcodeKey = this.awsService.extractKeyFromUrl(variant.barcode);
+						tasks.push(this.awsService.deleteFile(barcodeKey));
+					}
+
+					return tasks;
+				}),
+			);
+
+			// Generate barcode
+			const barcodeBuffer = (req.product?.name && (await generateBarcode(req.product.name))) ?? null;
+			const barcodeUrl =
+				(barcodeBuffer && (await this.awsService.uploadFile(barcodeBuffer as unknown as Express.Multer.File))) ?? null;
+
+			// Upload new images
+			const imageUrl = await Promise.all(
+				req.productVariants?.map(async (variant) => {
+					return variant.imageUrl
+						? await this.awsService.uploadFile(variant.imageUrl as unknown as Express.Multer.File)
+						: null;
+				}) ?? [],
+			);
+
 			// Use transaction to ensure data consistency during update
 			await prisma?.$transaction(async (tx: Prisma.TransactionClient) => {
 				// Update main product information
@@ -386,25 +482,9 @@ class ProductService {
 				});
 
 				if (req.productVariants?.length) {
-					// Identify variants to be deleted (those in DB but not in request)
-					const existingVariants = await tx.productVariant.findMany({
-						where: { productId },
-						select: { id: true },
-					});
-					const oldIds = existingVariants.map((v) => v.id);
-					const newIds = (req.productVariants ?? []).map((v) => v.id).filter(Boolean);
-					const toDeleteIds = oldIds.filter((id) => !newIds.includes(id));
-
-					// Delete variants that are no longer needed
-					if (toDeleteIds.length > 0) {
-						await tx.productVariant.deleteMany({
-							where: { id: { in: toDeleteIds } },
-						});
-					}
-
 					// Update existing variants or create new ones
 					await Promise.all(
-						(req.productVariants ?? []).map(async (variant) => {
+						(req.productVariants ?? []).map(async (variant, index) => {
 							const { id, productPrices, ...rest } = variant;
 
 							if (id) {
@@ -413,6 +493,8 @@ class ProductService {
 									where: { id },
 									data: {
 										...rest,
+										barcode: barcodeUrl,
+										imageUrl: imageUrl[index],
 										// Update pricing information
 										productPrices: productPrices
 											? ({
@@ -426,7 +508,8 @@ class ProductService {
 								await tx.productVariant.create({
 									data: {
 										...rest,
-										productId: id,
+										barcode: barcodeUrl,
+										imageUrl: imageUrl[index],
 										productPrices: productPrices ? { create: productPrices } : undefined,
 									},
 								});
@@ -650,7 +733,10 @@ class ProductService {
 						},
 						ProductDiscount: {
 							create: {
-								value: row["Tipe Diskon"] === "NOMINAL" ? (row["Diskon Prodok"] as string).split("") : null,
+								value:
+									row["Tipe Diskon"] === "NOMINAL"
+										? (row["Diskon Produkk"] as string).split("Rp.")[1]
+										: (row["Diskon Produkk"] as string).split("%")[0],
 							},
 						},
 					} as Prisma.ProductCreateInput;

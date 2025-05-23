@@ -4,6 +4,7 @@ import express, { type Router } from "express";
 import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
 import { validateRequest } from "@/common/utils/httpHandlers";
 import { StatusCodes } from "http-status-codes";
+import multer from "multer";
 import { type ZodAny, z } from "zod";
 import { productController } from "./productController";
 import {
@@ -17,6 +18,7 @@ import {
 
 export const productRegistry = new OpenAPIRegistry();
 export const productRouter: Router = express.Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
 productRegistry.register("Product", ProductSchema);
 
@@ -94,3 +96,4 @@ productRegistry.registerPath({
 productRouter.get("/:id", validateRequest(GetProductRequestSchema), productController.getDetailProduct);
 
 productRouter.post("/export/excel", productController.exportProducts);
+productRouter.post("/import/excel", upload.single("produk_data"), productController.importProducts);

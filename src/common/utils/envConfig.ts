@@ -15,6 +15,17 @@ const envSchema = z.object({
 	COMMON_RATE_LIMIT_MAX_REQUESTS: z.coerce.number().int().positive().default(1000),
 
 	COMMON_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(1000),
+
+	// AWS CloudCube variables
+	CLOUDCUBE_BUCKET: z.string().min(1),
+
+	CLOUDCUBE_URL: z.string().url(),
+
+	CLOUDCUBE_REGION: z.string().min(1),
+
+	CLOUDCUBE_ACCESS_KEY: z.string().min(1),
+
+	CLOUDCUBE_SECRET_KEY: z.string().min(1),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);
