@@ -281,7 +281,8 @@ class ExpenseService {
 					"Total Harga": expense.totalPrice ?? 0,
 					"Penanggung Jawab": expense.personResponsible ?? "",
 					Catatan: expense.note ?? "",
-					Tanggal: expense.createdAt ? formatter.format(new Date(expense.createdAt)) : "",
+					"Tanggal Pengeluaran": expense.expenseDate ? formatter.format(new Date(expense.expenseDate)) : "",
+					"Tanggal Dibuat": expense.createdAt ? formatter.format(new Date(expense.createdAt)) : "",
 				}),
 				"Pengeluaran",
 				"Tidak ada data pengeluaran untuk diekspor",
@@ -303,14 +304,53 @@ class ExpenseService {
 					totalPrice: Number(row["Total Harga"]),
 					personResponsible: row["Penanggung Jawab"] as string,
 					note: row.Catatan as string,
+					expenseDate:
+						row["Tanggal Pengeluaran"] && row["Tanggal Pengeluaran"] !== ""
+							? (() => {
+									try {
+										const dateParts = String(row["Tanggal Pengeluaran"]).split("/");
+										if (dateParts.length === 3) {
+											// Format dd/mm/yyyy to yyyy-mm-dd
+											const day = dateParts[0].padStart(2, "0");
+											const month = dateParts[1].padStart(2, "0");
+											const year = dateParts[2].length === 2 ? `20${dateParts[2]}` : dateParts[2];
+											return new Date(`${year}-${month}-${day}`);
+										}
+										return new Date(String(row["Tanggal Pengeluaran"]));
+									} catch (error) {
+										return null;
+									}
+								})()
+							: null,
 				}),
 				async (data) => {
+					// Validasi data sebelum menyimpan ke database
+					const validatedData = data.filter((item) => {
+						if (!item.itemName || !item.itemPrice || !item.qty) {
+							return false;
+						}
+
+						if (Number.isNaN(Number(item.itemPrice)) || Number.isNaN(Number(item.qty))) {
+							return false;
+						}
+
+						return true;
+					});
+
 					return this.expenseRepo.client.expense.createMany({
-						data,
+						data: validatedData,
 						skipDuplicates: true,
 					});
 				},
 			);
+
+			if (!importResult.success || importResult.statusCode !== StatusCodes.OK) {
+				return ServiceResponse.failure(
+					`Gagal mengimpor data: ${importResult.message}`,
+					null,
+					importResult.statusCode || StatusCodes.BAD_REQUEST,
+				);
+			}
 
 			return ServiceResponse.success(
 				"Berhasil mengimpor data pengeluaran",

@@ -33,4 +33,32 @@ Albana Clodi Grosir
    total orders berdasarkan payment method
 
 9. graph
-   order (month:item_terjual) 
+   order (month:item_terjual)
+
+   dari beli ke penjualan
+
+harga jual = harga normal
+contoh: 100k ke enduser
+
+harga kulak = harga
+contoh: beli 60k
+
+harga agent :70k
+
+keuntungan 10k
+
+laba bersih (sudah semua, kecuali ongkir (dari customer))
+laba kotor (laba bersih, belum dikurangi pengeluaran)
+
+keuntungan
+harga order lunas
+keuntungan = all_jenis_harga - harga_beli
+
+all_jenis_harga WHEN checkout -> finalPrice WITHOUT otherFees
+
+ambil harga beli di tiap order_product.variant.productPrice.buy
+
+harga_beli = order_product.variant.productPrice.buy
+harga_jual = orderDetail.finalPrice WITHOUT otherFees
+
+keuntungan = total_harga_jual = total_harga_beli

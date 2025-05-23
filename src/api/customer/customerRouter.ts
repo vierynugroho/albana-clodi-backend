@@ -68,7 +68,7 @@ customerRegistry.registerPath({
 			},
 		},
 	},
-	responses: createApiResponse({} as ZodTypeAny, "Success", StatusCodes.CREATED),
+	responses: createApiResponse(CustomerSchema, "Success", StatusCodes.CREATED),
 });
 customerRouter.post("", validateRequest(CreateCustomerRequestSchema), customerController.createCustomer);
 
@@ -85,7 +85,7 @@ customerRegistry.registerPath({
 			},
 		},
 	},
-	responses: createApiResponse({} as ZodTypeAny, "Success", StatusCodes.CREATED),
+	responses: createApiResponse(CustomerSchema, "Success", StatusCodes.CREATED),
 });
 customerRouter.put("/:id", validateRequest(UpdateCustomerRequestSchema), customerController.updateCustomer);
 
@@ -106,5 +106,72 @@ customerRegistry.registerPath({
 });
 customerRouter.delete("/:id", validateRequest(DeleteCustomerRequestSchema), customerController.deleteCustomer);
 
+customerRegistry.registerPath({
+	method: "post",
+	path: "/customers/export/excel",
+	tags: ["Customer"],
+	request: {
+		body: {
+			content: {
+				"multipart/form-data": {
+					schema: z.object({
+						customers_data: z.any().optional().describe("File Excel untuk diimpor"),
+					}),
+				},
+			},
+		},
+	},
+	responses: {
+		"200": {
+			description: "Success",
+			content: {
+				"application/json": {
+					schema: z.object({
+						success: z.boolean(),
+						message: z.string(),
+						responseObject: z.object({
+							totalImported: z.number(),
+						}),
+						statusCode: z.number(),
+					}),
+				},
+			},
+		},
+	},
+});
 customerRouter.post("/export/excel", customerController.exportCustomers);
-customerRouter.post("/import/excel", upload.single("customer_data"), customerController.importCustomers);
+
+customerRegistry.registerPath({
+	method: "post",
+	path: "/customers/import/excel",
+	tags: ["Customer"],
+	request: {
+		body: {
+			content: {
+				"multipart/form-data": {
+					schema: z.object({
+						customers_data: z.any().optional().describe("File Excel untuk diimpor"),
+					}),
+				},
+			},
+		},
+	},
+	responses: {
+		"200": {
+			description: "Success",
+			content: {
+				"application/json": {
+					schema: z.object({
+						success: z.boolean(),
+						message: z.string(),
+						responseObject: z.object({
+							totalImported: z.number(),
+						}),
+						statusCode: z.number(),
+					}),
+				},
+			},
+		},
+	},
+});
+customerRouter.post("/import/excel", upload.single("customers_data"), customerController.importCustomers);

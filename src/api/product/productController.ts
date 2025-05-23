@@ -17,13 +17,15 @@ class ProductController {
 	};
 
 	public createProduct: RequestHandler = async (req: Request, res: Response) => {
-		const serviceResponse = await productService.createProduct(req.body);
+		const multerFile = req.file as Express.Multer.File;
+		const serviceResponse = await productService.createProduct(req.body, multerFile);
 		res.status(serviceResponse.statusCode).send(serviceResponse);
 	};
 
 	public updateProduct: RequestHandler = async (req: Request, res: Response) => {
 		const id = req.params.id;
-		const serviceResponse = await productService.updateProduct(req.body, id);
+		const multerFile = req.file as Express.Multer.File;
+		const serviceResponse = await productService.updateProduct(req.body, id, multerFile);
 		res.status(serviceResponse.statusCode).send(serviceResponse);
 	};
 

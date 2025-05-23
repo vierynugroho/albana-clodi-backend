@@ -6,7 +6,7 @@ import Villages from "../../public/data/villages_convert.json";
 
 const prisma = new PrismaClient();
 
-const BATCH_SIZE = 1000;
+const BATCH_SIZE = 100;
 
 const batchInsert = async <T>(
 	model: { createMany: (args: { data: T[]; skipDuplicates?: boolean }) => Promise<{ count: number }> },

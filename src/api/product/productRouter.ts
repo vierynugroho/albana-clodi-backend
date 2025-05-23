@@ -29,13 +29,13 @@ productRegistry.registerPath({
 	request: {
 		body: {
 			content: {
-				"application/json": {
-					schema: CreateProductRequestSchema,
+				"multipart/form-data": {
+					schema: CreateProductRequestSchema.pick({ body: true }),
 				},
 			},
 		},
 	},
-	responses: createApiResponse({} as ZodAny, "Success", StatusCodes.CREATED),
+	responses: createApiResponse(ProductSchema, "Success", StatusCodes.CREATED),
 });
 productRouter.post("/", validateRequest(CreateProductRequestSchema), productController.createProduct);
 
@@ -46,13 +46,13 @@ productRegistry.registerPath({
 	request: {
 		body: {
 			content: {
-				"application/json": {
-					schema: UpdateProductRequestSchema,
+				"multipart/form-data": {
+					schema: UpdateProductRequestSchema.pick({ body: true }),
 				},
 			},
 		},
 	},
-	responses: createApiResponse({} as ZodAny, "Success", StatusCodes.OK),
+	responses: createApiResponse(ProductSchema, "Success", StatusCodes.OK),
 });
 productRouter.put("/:id", validateRequest(UpdateProductRequestSchema), productController.updateProduct);
 
@@ -64,12 +64,12 @@ productRegistry.registerPath({
 		body: {
 			content: {
 				"application/json": {
-					schema: DeleteProductRequestSchema,
+					schema: DeleteProductRequestSchema.pick({ body: true }),
 				},
 			},
 		},
 	},
-	responses: createApiResponse({} as ZodAny, "Success", StatusCodes.OK),
+	responses: createApiResponse(ProductSchema, "Success", StatusCodes.OK),
 });
 productRouter.delete("/:id", validateRequest(DeleteProductRequestSchema), productController.deleteProduct);
 
@@ -78,7 +78,7 @@ productRegistry.registerPath({
 	path: "/products",
 	tags: ["Product"],
 	request: {
-		query: GetAllProductsRequestSchema,
+		query: GetAllProductsRequestSchema.pick({ query: true }),
 	},
 	responses: createApiResponse(z.array(ProductSchema), "Success", StatusCodes.OK),
 });
@@ -89,11 +89,69 @@ productRegistry.registerPath({
 	path: "/products/{id}",
 	tags: ["Product"],
 	request: {
-		params: GetProductRequestSchema,
+		params: GetProductRequestSchema.pick({ params: true }),
 	},
 	responses: createApiResponse(ProductSchema, "Success", StatusCodes.OK),
 });
 productRouter.get("/:id", validateRequest(GetProductRequestSchema), productController.getDetailProduct);
 
+productRegistry.registerPath({
+	method: "post",
+	path: "/products/export/excel",
+	tags: ["Product"],
+	request: {
+		query: z.object({
+			startDate: z.string().optional(),
+			endDate: z.string().optional(),
+			month: z.string().optional(),
+			year: z.string().optional(),
+			week: z.string().optional(),
+		}),
+	},
+	responses: {
+		"200": {
+			description: "Success",
+			content: {
+				"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+					schema: z.any(),
+				},
+			},
+		},
+	},
+});
 productRouter.post("/export/excel", productController.exportProducts);
-productRouter.post("/import/excel", upload.single("produk_data"), productController.importProducts);
+
+productRegistry.registerPath({
+	method: "post",
+	path: "/products/import/excel",
+	tags: ["Product"],
+	request: {
+		body: {
+			content: {
+				"multipart/form-data": {
+					schema: z.object({
+						product_data: z.any().optional().describe("File Excel untuk diimpor"),
+					}),
+				},
+			},
+		},
+	},
+	responses: {
+		"200": {
+			description: "Success",
+			content: {
+				"application/json": {
+					schema: z.object({
+						success: z.boolean(),
+						message: z.string(),
+						responseObject: z.object({
+							totalImported: z.number(),
+						}),
+						statusCode: z.number(),
+					}),
+				},
+			},
+		},
+	},
+});
+productRouter.post("/import/excel", upload.single("products_data"), productController.importProducts);
