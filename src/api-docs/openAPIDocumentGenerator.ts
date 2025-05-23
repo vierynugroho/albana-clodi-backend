@@ -7,6 +7,7 @@ import { healthCheckRegistry } from "@/api/healthCheck/healthCheckRouter";
 import { locationRegistry } from "@/api/location/router";
 import { orderRegistry } from "@/api/order/router";
 import { productRegistry } from "@/api/product/productRouter";
+import { receiptRegistry } from "@/api/receipt/router";
 import { regionRegistry } from "@/api/region/regionRouter";
 import { reportRegistry } from "@/api/report/router";
 import { shippingCostRegistry } from "@/api/shipping-cost/router";
@@ -27,6 +28,7 @@ export function generateOpenAPIDocument(): OpenAPIDocument {
 		orderRegistry,
 		regionRegistry,
 		reportRegistry,
+		receiptRegistry,
 	]);
 	const generator = new OpenApiGeneratorV3(registry.definitions);
 
