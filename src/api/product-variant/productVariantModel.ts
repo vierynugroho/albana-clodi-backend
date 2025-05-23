@@ -1,7 +1,5 @@
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
-import { ProductWholesalerSchema } from "../prodcut-wholesaler/productWholesaleModel";
-import { ProductPriceSchema } from "../product-price/productPriceModel";
 
 extendZodWithOpenApi(z);
 
@@ -15,8 +13,6 @@ export const ProductVariantSchema = z.object({
 	color: z.string(),
 	imageUrl: z.string(),
 	barcode: z.string().optional(),
-	productPrices: ProductPriceSchema,
-	productWholesaler: ProductWholesalerSchema,
 	createdAt: z.date(),
 	updatedAt: z.date(),
 });
@@ -26,14 +22,10 @@ export const CreateProductVariantSchema = ProductVariantSchema.omit({
 	productId: true,
 	createdAt: true,
 	updatedAt: true,
-	productPrices: true,
-	productWholesaler: true,
 });
 
 export const UpdateProductVariantSchema = ProductVariantSchema.omit({
 	productId: true,
 	createdAt: true,
 	updatedAt: true,
-	productPrices: true,
-	productWholesaler: true,
 });
