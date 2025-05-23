@@ -7,7 +7,7 @@ import { Roles } from "@prisma/client";
 import express, { type Request, type Response, type Router } from "express";
 import { z } from "zod";
 import { AuthController } from "./controller";
-import { LoginSchema, RegisterSchema } from "./model";
+import { LoginSchema, RegisterSchema, UpdateProfileSchema } from "./model";
 
 export const authRegistry = new OpenAPIRegistry();
 export const authRouter: Router = express.Router();
@@ -81,17 +81,14 @@ authRegistry.registerPath({
 
 authRegistry.registerPath({
 	method: "patch",
-	path: "/auth/update",
+	path: "/auth/me",
 	tags: ["Auth"],
 	security: [{ bearerAuth: [] }],
 	request: {
 		body: {
 			content: {
 				"application/json": {
-					schema: z.object({
-						fullname: z.string().optional(),
-						email: z.string().email().optional(),
-					}),
+					schema: UpdateProfileSchema.shape.body,
 				},
 			},
 		},
@@ -102,6 +99,7 @@ authRegistry.registerPath({
 			email: z.string().email(),
 			fullname: z.string(),
 			role: z.enum(["ADMIN", "SUPERADMIN"]),
+			phoneNumber: z.string().optional(),
 		}),
 		"Berhasil mengupdate data user",
 	),
