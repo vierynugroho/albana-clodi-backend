@@ -6,7 +6,12 @@ import { StatusCodes } from "http-status-codes";
 import { type ZodTypeAny, z } from "zod";
 import { DeleteCustomerRequestSchema, UpdateCustomerRequestSchema } from "../customer/customerModel";
 import { salesChannelController } from "./salesChannelController";
-import { CreateSalesChannelRequestSchema, GetSalesChannelRequestSchema, SalesChannelSchema } from "./salesChannelModel";
+import {
+	CreateSalesChannelRequestSchema,
+	GetSalesChannelRequestSchema,
+	SalesChannelSchema,
+	UpdateSalesChannelRequestSchema,
+} from "./salesChannelModel";
 
 export const salesChannelRegistry = new OpenAPIRegistry();
 export const salesChannelRouter: Router = express.Router();
@@ -66,6 +71,7 @@ salesChannelRegistry.registerPath({
 				},
 			},
 		},
+		params: UpdateSalesChannelRequestSchema.pick({ params: true }),
 	},
 	responses: createApiResponse(SalesChannelSchema, "Success", StatusCodes.OK),
 });

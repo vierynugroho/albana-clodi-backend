@@ -51,6 +51,7 @@ productRegistry.registerPath({
 				},
 			},
 		},
+		params: UpdateProductRequestSchema.pick({ params: true }),
 	},
 	responses: createApiResponse(ProductSchema, "Success", StatusCodes.OK),
 });
