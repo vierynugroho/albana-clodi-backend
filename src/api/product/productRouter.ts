@@ -39,7 +39,12 @@ productRegistry.registerPath({
 	},
 	responses: createApiResponse(ProductSchema, "Success", StatusCodes.CREATED),
 });
-productRouter.post("/", validateRequest(CreateProductRequestSchema), productController.createProduct);
+productRouter.post(
+	"/",
+	upload.single("image"),
+	validateRequest(CreateProductRequestSchema),
+	productController.createProduct,
+);
 
 productRegistry.registerPath({
 	method: "put",
@@ -58,7 +63,13 @@ productRegistry.registerPath({
 	},
 	responses: createApiResponse(ProductSchema, "Success", StatusCodes.OK),
 });
-productRouter.put("/:id", validateStock, validateRequest(UpdateProductRequestSchema), productController.updateProduct);
+productRouter.put(
+	"/:id",
+	validateStock,
+	validateRequest(UpdateProductRequestSchema),
+	upload.single("image"),
+	productController.updateProduct,
+);
 
 productRegistry.registerPath({
 	method: "delete",
