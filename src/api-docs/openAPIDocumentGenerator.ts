@@ -6,7 +6,6 @@ import { customerRegistry } from "@/api/customer/customerRouter";
 import { deliveryPlaceRegistry } from "@/api/delivery-place/router";
 import { expensesRegistry } from "@/api/expenses/router";
 import { healthCheckRegistry } from "@/api/healthCheck/healthCheckRouter";
-import { locationRegistry } from "@/api/location/router";
 import { orderRegistry } from "@/api/order/router";
 import { paymentMethodRegistry } from "@/api/payment-method/paymentMethodRouter";
 import { productRegistry } from "@/api/product/productRouter";
@@ -16,7 +15,6 @@ import { reportRegistry } from "@/api/report/router";
 import { salesChannelRegistry } from "@/api/sales-channel/salesChannelRouter";
 import { shippingCostRegistry } from "@/api/shipping-cost/router";
 import { shopRegistry } from "@/api/shop/route";
-import { userRegistry } from "@/api/user/userRouter";
 
 export type OpenAPIDocument = ReturnType<OpenApiGeneratorV3["generateDocument"]>;
 
@@ -24,10 +22,8 @@ export function generateOpenAPIDocument(): OpenAPIDocument {
 	const registry = new OpenAPIRegistry([
 		authRegistry,
 		healthCheckRegistry,
-		userRegistry,
 		expensesRegistry,
 		productRegistry,
-		locationRegistry,
 		shippingCostRegistry,
 		deliveryPlaceRegistry,
 		orderRegistry,

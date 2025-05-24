@@ -25,6 +25,7 @@ regionRegistry.register("Region", ProvinceSchema);
 regionRegistry.registerPath({
 	method: "get",
 	path: "/province",
+	security: [{ bearerAuth: [] }],
 	request: {
 		query: RequestQueryProvince,
 	},
@@ -35,6 +36,7 @@ regionRouter.get("/provinces", validateRequest(GetProvinceRequestSchema), region
 regionRegistry.registerPath({
 	method: "get",
 	path: "/cities/{id}",
+	security: [{ bearerAuth: [] }],
 	request: {
 		query: GetCityRequestSchema.pick({ query: true }),
 		params: GetCityRequestSchema.pick({ params: true }),
@@ -46,6 +48,7 @@ regionRouter.get("/cities/:id", validateRequest(GetCityRequestSchema), regionCon
 regionRegistry.registerPath({
 	method: "get",
 	path: "/districts/{id}",
+	security: [{ bearerAuth: [] }],
 	request: {
 		query: GetDistrictRequestSchema.pick({ query: true }),
 		params: GetDistrictRequestSchema.pick({ params: true }),
@@ -57,6 +60,7 @@ regionRouter.get("/districts/:id", validateRequest(GetDistrictRequestSchema), re
 regionRegistry.registerPath({
 	method: "get",
 	path: "/villages/{id}",
+	security: [{ bearerAuth: [] }],
 	request: {
 		query: GetVillageRequestSchema.pick({ query: true }),
 		params: GetVillageRequestSchema.pick({ params: true }),

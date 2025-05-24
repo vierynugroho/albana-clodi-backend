@@ -16,6 +16,7 @@ orderRegistry.registerPath({
 	method: "get",
 	path: "/orders",
 	tags: ["Order"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		query: z.object({
 			ordererCustomerId: z
@@ -67,6 +68,7 @@ orderRegistry.registerPath({
 	method: "get",
 	path: "/orders/{id}",
 	tags: ["Order"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		params: z.object({
 			id: z.string().uuid().describe("ID order"),
@@ -79,6 +81,7 @@ orderRegistry.registerPath({
 	method: "post",
 	path: "/orders",
 	tags: ["Order"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		body: {
 			content: {
@@ -153,6 +156,7 @@ orderRegistry.registerPath({
 	method: "put",
 	path: "/orders/{id}",
 	tags: ["Order"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		params: z.object({
 			id: z.string().describe("ID order"),
@@ -230,6 +234,7 @@ orderRegistry.registerPath({
 	method: "delete",
 	path: "/orders/{id}",
 	tags: ["Order"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		params: z.object({
 			id: z.string().describe("ID order"),
@@ -242,6 +247,7 @@ orderRegistry.registerPath({
 	method: "get",
 	path: "/orders/export/excel",
 	tags: ["Order"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		query: z.object({
 			startDate: z.string().optional(),
@@ -267,6 +273,7 @@ orderRegistry.registerPath({
 	method: "post",
 	path: "/orders/import/excel",
 	tags: ["Order"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		body: {
 			content: {

@@ -20,6 +20,7 @@ reportRegistry.registerPath({
 	method: "get",
 	path: "/reports/expenses",
 	tags: ["Report"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		query: z.object({
 			startDate: z.string().optional().describe("Format: YYYY-MM-DD (e.g. 2025-01-01)"),
@@ -36,6 +37,7 @@ reportRegistry.registerPath({
 	method: "get",
 	path: "/reports/orders",
 	tags: ["Report"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		query: z.object({
 			startDate: z.string().optional().describe("Format: YYYY-MM-DD (e.g. 2025-01-01)"),
@@ -52,6 +54,7 @@ reportRegistry.registerPath({
 	method: "get",
 	path: "/reports/products",
 	tags: ["Report"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		query: z.object({
 			startDate: z.string().optional().describe("Format: YYYY-MM-DD (e.g. 2025-01-01)"),
@@ -68,6 +71,7 @@ reportRegistry.registerPath({
 	method: "get",
 	path: "/reports/transactions",
 	tags: ["Report"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		query: z.object({
 			startDate: z.string().optional().describe("Format: YYYY-MM-DD (e.g. 2025-01-01)"),
@@ -84,6 +88,7 @@ reportRegistry.registerPath({
 	method: "get",
 	path: "/reports/payments-transactions",
 	tags: ["Report"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		query: z.object({
 			startDate: z.string().optional().describe("Format: YYYY-MM-DD (e.g. 2025-01-01)"),
@@ -100,6 +105,7 @@ reportRegistry.registerPath({
 	method: "get",
 	path: "/reports/products-sold",
 	tags: ["Report"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		query: z.object({
 			startDate: z.string().optional().describe("Format: YYYY-MM-DD (e.g. 2025-01-01)"),

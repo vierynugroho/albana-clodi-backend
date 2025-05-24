@@ -15,6 +15,7 @@ shippingCostRegistry.registerPath({
 	method: "get",
 	path: "/shipping-cost",
 	tags: ["ShippingCost"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		query: z.object({
 			shipper_destination_id: z.number().int().describe("ID destinasi pengirim, hasil dari destination_id"),

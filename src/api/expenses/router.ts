@@ -16,6 +16,7 @@ expensesRegistry.registerPath({
 	method: "get",
 	path: "/expenses",
 	tags: ["Expenses"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		query: z.object({
 			startDate: z.string().optional().describe("Format: YYYY-MM-DD (e.g. 2025-01-01)"),
@@ -33,6 +34,7 @@ expensesRegistry.registerPath({
 	method: "get",
 	path: "/expenses/{id}",
 	tags: ["Expenses"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		params: z.object({
 			id: z.string().uuid(),
@@ -45,6 +47,7 @@ expensesRegistry.registerPath({
 	method: "post",
 	path: "/expenses",
 	tags: ["Expenses"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		body: {
 			content: {
@@ -61,6 +64,7 @@ expensesRegistry.registerPath({
 	method: "put",
 	path: "/expenses/{id}",
 	tags: ["Expenses"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		params: z.object({
 			id: z.string().uuid(),
@@ -80,6 +84,7 @@ expensesRegistry.registerPath({
 	method: "delete",
 	path: "/expenses/{id}",
 	tags: ["Expenses"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		params: z.object({
 			id: z.string().uuid(),
@@ -92,6 +97,7 @@ expensesRegistry.registerPath({
 	method: "get",
 	path: "/expenses/export/excel",
 	tags: ["Expenses"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		query: z.object({
 			startDate: z.string().optional(),
@@ -117,6 +123,7 @@ expensesRegistry.registerPath({
 	method: "post",
 	path: "/expenses/import/excel",
 	tags: ["Expenses"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		body: {
 			content: {

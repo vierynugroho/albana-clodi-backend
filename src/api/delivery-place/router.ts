@@ -20,6 +20,7 @@ deliveryPlaceRegistry.registerPath({
 	method: "get",
 	path: "/delivery-places",
 	tags: ["DeliveryPlaces"],
+	security: [{ bearerAuth: [] }],
 	responses: createApiResponse(z.array(DeliveryPlaceSchema), "Berhasil mengambil semua tempat pengiriman"),
 });
 
@@ -27,6 +28,7 @@ deliveryPlaceRegistry.registerPath({
 	method: "get",
 	path: "/delivery-places/{id}",
 	tags: ["DeliveryPlaces"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		params: z.object({
 			id: z.string().uuid().describe("ID tempat pengiriman"),
@@ -39,6 +41,7 @@ deliveryPlaceRegistry.registerPath({
 	method: "post",
 	path: "/delivery-places",
 	tags: ["DeliveryPlaces"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		body: {
 			content: {
@@ -55,6 +58,7 @@ deliveryPlaceRegistry.registerPath({
 	method: "put",
 	path: "/delivery-places/{id}",
 	tags: ["DeliveryPlaces"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		params: z.object({
 			id: z.string().describe("ID tempat pengiriman"),
@@ -74,6 +78,7 @@ deliveryPlaceRegistry.registerPath({
 	method: "delete",
 	path: "/delivery-places/{id}",
 	tags: ["DeliveryPlaces"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		params: z.object({
 			id: z.string().describe("ID tempat pengiriman"),

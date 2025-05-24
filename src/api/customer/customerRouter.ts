@@ -23,7 +23,7 @@ customerRegistry.register("Customer", CustomerSchema);
 
 customerRegistry.registerPath({
 	method: "get",
-	path: "/cutstomers",
+	path: "/customers",
 	tags: ["Customer"],
 	security: [{ bearerAuth: [] }],
 	request: {
@@ -37,11 +37,11 @@ customerRegistry.registerPath({
 	},
 	responses: createApiResponse(z.array(CustomerSchema), "Success", StatusCodes.CREATED),
 });
-customerRouter.get("", validateRequest(GetAllCustomerRequestSchema), customerController.getAllCustomers);
+customerRouter.get("/", validateRequest(GetAllCustomerRequestSchema), customerController.getAllCustomers);
 
 customerRegistry.registerPath({
 	method: "get",
-	path: "/cutstomers",
+	path: "/customers",
 	tags: ["Customer"],
 	security: [{ bearerAuth: [] }],
 	request: {
@@ -59,7 +59,7 @@ customerRouter.get("/:id", validateRequest(GetCustomerRequestSchema), customerCo
 
 customerRegistry.registerPath({
 	method: "post",
-	path: "/cutstomesr",
+	path: "/customers",
 	tags: ["Customer"],
 	security: [{ bearerAuth: [] }],
 	request: {
@@ -73,7 +73,7 @@ customerRegistry.registerPath({
 	},
 	responses: createApiResponse(CustomerSchema, "Success", StatusCodes.CREATED),
 });
-customerRouter.post("", validateRequest(CreateCustomerRequestSchema), customerController.createCustomer);
+customerRouter.post("/", validateRequest(CreateCustomerRequestSchema), customerController.createCustomer);
 
 customerRegistry.registerPath({
 	method: "put",

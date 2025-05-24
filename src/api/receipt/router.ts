@@ -14,6 +14,7 @@ receiptRegistry.registerPath({
 	method: "get",
 	path: "/receipts/{orderId}",
 	tags: ["receipt"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		params: z.object({
 			orderId: z.string().describe("ID pesanan untuk mendapatkan receipt"),
