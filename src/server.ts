@@ -65,7 +65,7 @@ app.use("/sales-channels", salesChannelRouter);
 app.use("/shipping-cost", shippingCostRouter);
 app.use("/reports", reportRouter);
 app.use("/receipts", receiptRouter);
-app.use("/shop", shopRouter);
+app.use("/shop", authorizeRoles([Roles.SUPERADMIN]), shopRouter);
 
 // Swagger UI
 app.use(openAPIRouter);
