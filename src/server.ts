@@ -49,6 +49,7 @@ app.use(helmet());
 app.use(requestLogger);
 
 // Routes
+app.use(openAPIRouter);
 app.use("/health-check", healthCheckRouter);
 app.use("/auth", authRouter);
 app.use(authenticate);
@@ -66,9 +67,6 @@ app.use("/shipping-cost", shippingCostRouter);
 app.use("/reports", reportRouter);
 app.use("/receipts", receiptRouter);
 app.use("/shop", authorizeRoles([Roles.SUPERADMIN]), shopRouter);
-
-// Swagger UI
-app.use(openAPIRouter);
 
 // Error handlers
 app.use(errorHandler());
