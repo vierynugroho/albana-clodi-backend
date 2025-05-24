@@ -18,7 +18,7 @@ import { expensesRouter } from "./api/expenses/router";
 import { orderRouter } from "./api/order/router";
 import { paymentMethodRouter } from "./api/payment-method/paymentMethodRouter";
 import { productRouter } from "./api/product/productRouter";
-import { categoryRouter } from "./api/product/categoryRouter";
+import { categoryRouter } from "./api/category/categoryRouter";
 import { receiptRouter } from "./api/receipt/router";
 import { regionRouter } from "./api/region/regionRouter";
 import { reportRouter } from "./api/report/router";
