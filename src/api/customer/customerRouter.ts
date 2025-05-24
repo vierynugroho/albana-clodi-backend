@@ -25,6 +25,7 @@ customerRegistry.registerPath({
 	method: "get",
 	path: "/cutstomers",
 	tags: ["Customer"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		body: {
 			content: {
@@ -42,6 +43,7 @@ customerRegistry.registerPath({
 	method: "get",
 	path: "/cutstomers",
 	tags: ["Customer"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		body: {
 			content: {
@@ -59,6 +61,7 @@ customerRegistry.registerPath({
 	method: "post",
 	path: "/cutstomesr",
 	tags: ["Customer"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		body: {
 			content: {
@@ -76,6 +79,7 @@ customerRegistry.registerPath({
 	method: "put",
 	path: "/customers/{id}",
 	tags: ["Customer"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		body: {
 			content: {
@@ -93,6 +97,7 @@ customerRegistry.registerPath({
 	method: "delete",
 	path: "/customers/{id}",
 	tags: ["Customer"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		body: {
 			content: {
@@ -110,6 +115,7 @@ customerRegistry.registerPath({
 	method: "post",
 	path: "/customers/export/excel",
 	tags: ["Customer"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		body: {
 			content: {
@@ -145,6 +151,7 @@ customerRegistry.registerPath({
 	method: "post",
 	path: "/customers/import/excel",
 	tags: ["Customer"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		body: {
 			content: {

@@ -22,6 +22,7 @@ paymentMethodRegistry.registerPath({
 	method: "get",
 	path: "/paymentMethods",
 	tags: ["Payment Method"],
+	security: [{ bearerAuth: [] }],
 	responses: createApiResponse(z.array(PaymentMethodSchema), "Success", StatusCodes.OK),
 });
 paymentMethodRouter.get("", paymentMethodController.getAllPayments);
@@ -30,6 +31,7 @@ paymentMethodRegistry.registerPath({
 	method: "get",
 	path: "/payments/{id}",
 	tags: ["Payment Method"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		params: GetPaymentMethodRequestShema.pick({ params: true }),
 	},
@@ -45,6 +47,7 @@ paymentMethodRegistry.registerPath({
 	method: "post",
 	path: "/payments",
 	tags: ["Payment Method"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		body: {
 			content: {
@@ -62,6 +65,7 @@ paymentMethodRegistry.registerPath({
 	method: "put",
 	path: "/paymens/{id}",
 	tags: ["Payment Method"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		body: {
 			content: {
@@ -84,6 +88,7 @@ paymentMethodRegistry.registerPath({
 	method: "delete",
 	path: "/paymens/{id}",
 	tags: ["Payment Method"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		params: DeletePaymentMethodRequestShema.pick({ params: true }),
 	},

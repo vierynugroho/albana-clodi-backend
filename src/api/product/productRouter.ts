@@ -27,6 +27,7 @@ productRegistry.registerPath({
 	method: "post",
 	path: "/products",
 	tags: ["Product"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		body: {
 			content: {
@@ -44,6 +45,7 @@ productRegistry.registerPath({
 	method: "put",
 	path: "/products/{id}",
 	tags: ["Product"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		body: {
 			content: {
@@ -62,6 +64,7 @@ productRegistry.registerPath({
 	method: "delete",
 	path: "/products/{id}",
 	tags: ["Product"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		body: {
 			content: {
@@ -79,6 +82,7 @@ productRegistry.registerPath({
 	method: "get",
 	path: "/products",
 	tags: ["Product"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		query: GetAllProductsRequestSchema.pick({ query: true }),
 	},
@@ -90,6 +94,7 @@ productRegistry.registerPath({
 	method: "get",
 	path: "/products/{id}",
 	tags: ["Product"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		params: GetProductRequestSchema.pick({ params: true }),
 	},
@@ -101,6 +106,7 @@ productRegistry.registerPath({
 	method: "post",
 	path: "/products/export/excel",
 	tags: ["Product"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		query: z.object({
 			startDate: z.string().optional(),
@@ -127,6 +133,7 @@ productRegistry.registerPath({
 	method: "post",
 	path: "/products/import/excel",
 	tags: ["Product"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		body: {
 			content: {
