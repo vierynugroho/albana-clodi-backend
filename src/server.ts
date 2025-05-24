@@ -49,7 +49,6 @@ app.use(helmet());
 app.use(requestLogger);
 
 // Routes
-app.use(openAPIRouter);
 app.use("/health-check", healthCheckRouter);
 app.use("/auth", authRouter);
 app.use("/users", authenticate, authorizeRoles([Roles.ADMIN, Roles.SUPERADMIN]), userRouter);
@@ -65,6 +64,8 @@ app.use("/shipping-cost", authenticate, authorizeRoles([Roles.ADMIN, Roles.SUPER
 app.use("/reports", authenticate, authorizeRoles([Roles.ADMIN, Roles.SUPERADMIN]), reportRouter);
 app.use("/receipts", authenticate, authorizeRoles([Roles.ADMIN, Roles.SUPERADMIN]), receiptRouter);
 app.use("/shop", authenticate, authorizeRoles([Roles.SUPERADMIN]), shopRouter);
+
+app.use(openAPIRouter);
 
 // Error handlers
 app.use(errorHandler());
