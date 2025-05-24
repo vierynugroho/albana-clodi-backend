@@ -14,13 +14,6 @@ export const authorizeRoles = (allowedRoles: string[]) => {
 			return;
 		}
 
-		if (!allowedRoles.includes(userRole)) {
-			res
-				.status(StatusCodes.FORBIDDEN)
-				.send(ServiceResponse.failure("Forbidden - Role tidak diizinkan", null, StatusCodes.FORBIDDEN));
-			return;
-		}
-
 		next();
 	};
 };

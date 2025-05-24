@@ -2,6 +2,7 @@ import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Router } from "express";
 
 import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
+import { validateStock } from "@/common/middleware/validateStock";
 import { validateRequest } from "@/common/utils/httpHandlers";
 import { StatusCodes } from "http-status-codes";
 import multer from "multer";
@@ -51,10 +52,11 @@ productRegistry.registerPath({
 				},
 			},
 		},
+		params: UpdateProductRequestSchema.pick({ params: true }),
 	},
 	responses: createApiResponse(ProductSchema, "Success", StatusCodes.OK),
 });
-productRouter.put("/:id", validateRequest(UpdateProductRequestSchema), productController.updateProduct);
+productRouter.put("/:id", validateStock, validateRequest(UpdateProductRequestSchema), productController.updateProduct);
 
 productRegistry.registerPath({
 	method: "delete",

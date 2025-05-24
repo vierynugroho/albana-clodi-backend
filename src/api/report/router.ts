@@ -1,6 +1,8 @@
 import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
+import { authorizeRoles } from "@/common/middleware/authorizeRoles";
 import { validateRequest } from "@/common/utils/httpHandlers";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
+import { Roles } from "@prisma/client";
 import express, { type Request, type Response, type Router } from "express";
 import multer from "multer";
 import { z } from "zod";
@@ -113,8 +115,8 @@ reportRegistry.registerPath({
 const reportController = new ReportController();
 
 reportRouter.route("/expenses").get(reportController.reportExpenses);
-reportRouter.route("/orders").get(reportController.reportOrders);
+reportRouter.route("/orders").get(authorizeRoles([Roles.SUPERADMIN]), reportController.reportOrders);
 reportRouter.route("/products").get(reportController.reportProducts);
-reportRouter.route("/transactions").get(reportController.reportTransaction);
+reportRouter.route("/transactions").get(authorizeRoles([Roles.SUPERADMIN]), reportController.reportTransaction);
 reportRouter.route("/payments-transactions").get(reportController.reportPaymentsTransactions);
 reportRouter.route("/products-sold").get(reportController.reportProductsSold);

@@ -10,6 +10,7 @@ import errorHandler from "@/common/middleware/errorHandler";
 import rateLimiter from "@/common/middleware/rateLimiter";
 import requestLogger from "@/common/middleware/requestLogger";
 import { env } from "@/common/utils/envConfig";
+import { Roles } from "@prisma/client";
 import { authRouter } from "./api/auth/route";
 import { customerRouter } from "./api/customer/customerRouter";
 import { deliveryPlaceRouter } from "./api/delivery-place/router";
@@ -23,6 +24,8 @@ import { reportRouter } from "./api/report/router";
 import { salesChannelRouter } from "./api/sales-channel/salesChannelRouter";
 import { shippingCostRouter } from "./api/shipping-cost/router";
 import { shopRouter } from "./api/shop/route";
+import { authenticate } from "./common/middleware/authenticate";
+import { authorizeRoles } from "./common/middleware/authorizeRoles";
 
 const logger = pino({ name: "server start" });
 const app: Express = express();
@@ -47,6 +50,9 @@ app.use(requestLogger);
 
 // Routes
 app.use("/health-check", healthCheckRouter);
+app.use("/auth", authRouter);
+app.use(authenticate);
+app.use(authorizeRoles([Roles.ADMIN, Roles.SUPERADMIN]));
 app.use("/users", userRouter);
 app.use("/expenses", expensesRouter);
 app.use("/products", productRouter);
@@ -57,10 +63,9 @@ app.use("/customers", customerRouter);
 app.use("/payments", paymentMethodRouter);
 app.use("/sales-channels", salesChannelRouter);
 app.use("/shipping-cost", shippingCostRouter);
-app.use("/auth", authRouter);
 app.use("/reports", reportRouter);
 app.use("/receipts", receiptRouter);
-app.use("/shop", shopRouter);
+app.use("/shop", authorizeRoles([Roles.SUPERADMIN]), shopRouter);
 
 // Swagger UI
 app.use(openAPIRouter);

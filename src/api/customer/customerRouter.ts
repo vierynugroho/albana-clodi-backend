@@ -102,7 +102,7 @@ customerRegistry.registerPath({
 			},
 		},
 	},
-	responses: createApiResponse({} as ZodTypeAny, "Success", StatusCodes.CREATED),
+	responses: createApiResponse(CustomerSchema, "Success", StatusCodes.CREATED),
 });
 customerRouter.delete("/:id", validateRequest(DeleteCustomerRequestSchema), customerController.deleteCustomer);
 
