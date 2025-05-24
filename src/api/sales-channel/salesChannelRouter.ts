@@ -19,6 +19,7 @@ export const salesChannelRouter: Router = express.Router();
 salesChannelRegistry.registerPath({
 	method: "get",
 	path: "/sales-channels",
+	security: [{ bearerAuth: [] }],
 	responses: createApiResponse(z.array(SalesChannelSchema), "Success", StatusCodes.OK),
 });
 salesChannelRouter.get("", salesChannelController.getAllSalesChannel);
@@ -27,6 +28,7 @@ salesChannelRegistry.registerPath({
 	method: "get",
 	path: "/sales-channels/{id}",
 	tags: ["Sales Channel"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		params: GetSalesChannelRequestSchema.pick({ params: true }),
 	},
@@ -42,6 +44,7 @@ salesChannelRegistry.registerPath({
 	method: "post",
 	path: "/sales-channels",
 	tags: ["Sales Channel"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		body: {
 			content: {
@@ -63,6 +66,7 @@ salesChannelRegistry.registerPath({
 	method: "put",
 	path: "/sales-channels/{id}",
 	tags: ["Sales Channel"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		body: {
 			content: {
@@ -81,6 +85,7 @@ salesChannelRegistry.registerPath({
 	method: "delete",
 	path: "/sales-channels/{id}",
 	tags: ["Sales Channel"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		params: DeleteCustomerRequestSchema.pick({ params: true }),
 	},

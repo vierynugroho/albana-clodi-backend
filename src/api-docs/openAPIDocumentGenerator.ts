@@ -2,6 +2,7 @@ import { OpenAPIRegistry, OpenApiGeneratorV3 } from "@asteasolutions/zod-to-open
 
 import { authRegistry } from "@/api/auth/route";
 import { categoryRegistry } from "@/api/category/categoryRouter";
+import { customerRegistry } from "@/api/customer/customerRouter";
 import { deliveryPlaceRegistry } from "@/api/delivery-place/router";
 import { expensesRegistry } from "@/api/expenses/router";
 import { healthCheckRegistry } from "@/api/healthCheck/healthCheckRouter";
@@ -37,6 +38,7 @@ export function generateOpenAPIDocument(): OpenAPIDocument {
 		salesChannelRegistry,
 		categoryRegistry,
 		shopRegistry,
+		customerRegistry,
 	]);
 	const generator = new OpenApiGeneratorV3(registry.definitions);
 

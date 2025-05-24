@@ -20,6 +20,7 @@ categoryRegistry.registerPath({
 	method: "get",
 	path: "/categories",
 	tags: ["Category"],
+	security: [{ bearerAuth: [] }],
 	responses: createApiResponse(z.array(CategorySchema), "Success", StatusCodes.OK),
 });
 categoryRouter.get("", categoryController.GetAll);
@@ -28,6 +29,7 @@ categoryRegistry.registerPath({
 	method: "get",
 	path: "/categories/{id}",
 	tags: ["Category"],
+	security: [{ bearerAuth: [] }],
 	responses: createApiResponse(z.array(CategorySchema), "Success", StatusCodes.OK),
 });
 categoryRouter.get("/:id", validateRequest(GetCategoryRequestSchema), categoryController.Detail);
@@ -36,6 +38,7 @@ categoryRegistry.registerPath({
 	method: "post",
 	path: "/categories",
 	tags: ["Category"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		body: {
 			content: {
@@ -53,6 +56,7 @@ categoryRegistry.registerPath({
 	method: "put",
 	path: "/categories/{id}",
 	tags: ["Category"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		body: {
 			content: {
@@ -71,6 +75,7 @@ categoryRegistry.registerPath({
 	method: "delete",
 	path: "/categories/{id}",
 	tags: ["Category"],
+	security: [{ bearerAuth: [] }],
 	request: {
 		params: UpdateCategoryRequestSchema.pick({ params: true }),
 	},

@@ -235,10 +235,9 @@ class ProductService {
 			const newProduct = products.flatMap((prod) =>
 				prod.productVariants.map((variant) => {
 					const { productVariants, ...restProduct } = prod;
-					const { productPrices, ...restVariant } = variant;
 					return {
 						product: restProduct,
-						variant: restVariant,
+						variant: productVariants,
 						price: variant.productPrices[0],
 					};
 				}),
