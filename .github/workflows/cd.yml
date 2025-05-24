@@ -3,7 +3,7 @@ name: Deploy TypeScript Express to Heroku on Tag
 on:
   push:
     tags:
-      - "v*"
+      - 'v*'
 
 jobs:
   deploy:
@@ -18,7 +18,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: '20.x'
 
       - name: Install dependencies
         run: npm install

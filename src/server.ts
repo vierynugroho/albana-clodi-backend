@@ -25,6 +25,8 @@ import { salesChannelRouter } from "./api/sales-channel/salesChannelRouter";
 import { shippingCostRouter } from "./api/shipping-cost/router";
 import { authenticate } from "./common/middleware/authenticate";
 import { authorizeRoles } from "./common/middleware/authorizeRoles";
+import { shopRouter } from "./api/shop/route";
+
 
 const logger = pino({ name: "server start" });
 const app: Express = express();
@@ -64,6 +66,7 @@ app.use("/sales-channels", salesChannelRouter);
 app.use("/shipping-cost", shippingCostRouter);
 app.use("/reports", reportRouter);
 app.use("/receipts", receiptRouter);
+app.use("/shop", shopRouter);
 
 // Swagger UI
 app.use(openAPIRouter);
