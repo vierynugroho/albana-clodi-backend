@@ -18,6 +18,7 @@ import { expensesRouter } from "./api/expenses/router";
 import { orderRouter } from "./api/order/router";
 import { paymentMethodRouter } from "./api/payment-method/paymentMethodRouter";
 import { productRouter } from "./api/product/productRouter";
+import { categoryRouter } from "./api/product/categoryRouter";
 import { receiptRouter } from "./api/receipt/router";
 import { regionRouter } from "./api/region/regionRouter";
 import { reportRouter } from "./api/report/router";
@@ -64,6 +65,7 @@ app.use("/shipping-cost", authenticate, authorizeRoles([Roles.ADMIN, Roles.SUPER
 app.use("/reports", authenticate, authorizeRoles([Roles.ADMIN, Roles.SUPERADMIN]), reportRouter);
 app.use("/receipts", authenticate, authorizeRoles([Roles.ADMIN, Roles.SUPERADMIN]), receiptRouter);
 app.use("/shop", authenticate, authorizeRoles([Roles.SUPERADMIN]), shopRouter);
+app.use("/categories", authenticate, authorizeRoles([Roles.SUPERADMIN]), categoryRouter);
 
 app.use(openAPIRouter);
 
