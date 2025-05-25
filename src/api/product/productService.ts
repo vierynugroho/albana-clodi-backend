@@ -431,6 +431,7 @@ class ProductService {
 	};
 
 	public updateProduct = async (req: UpdateProductType, productId: string, files: Express.Multer.File[]) => {
+		const prisma = new PrismaClient();
 		try {
 			// Verify product exists before attempting update
 			const existingProduct = await this.productRepo.findUnique({
