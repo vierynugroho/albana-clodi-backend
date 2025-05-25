@@ -32,6 +32,8 @@ type VariantFieldType = {
 	agent: number[];
 };
 
+const prisma = new PrismaClient();
+
 class ProductService {
 	private readonly productRepo: ProductRepository["productRepo"];
 	private readonly prisma;
@@ -319,7 +321,7 @@ class ProductService {
 			return ServiceResponse.failure("Product already exists", null, StatusCodes.BAD_REQUEST);
 		}
 
-		const foundCategory = await this.productRepo.findFirst({
+		const foundCategory = await prisma.category.findFirst({
 			where: {
 				id: req.product.categoryId,
 			},
@@ -384,11 +386,14 @@ class ProductService {
 					imageUrls.push(...Array(req.productVariants?.length || 0).fill(null));
 				}
 
-				// Prepare product data with category connection
+				console.log(req.product.categoryId);
+
+				const { categoryId, ...productDataWithoutCategoryId } = req.product;
+
 				const createDataProduct: Prisma.ProductCreateInput = {
-					...req.product,
+					...productDataWithoutCategoryId,
 					isPublish: Boolean(req.product.isPublish),
-					category: req.product.categoryId ? { connect: { id: req.product.categoryId } } : undefined,
+					category: categoryId ? { connect: { id: categoryId } } : undefined,
 					ProductDiscount: req.productDiscount ? { create: req.productDiscount } : undefined,
 				};
 
@@ -431,7 +436,6 @@ class ProductService {
 	};
 
 	public updateProduct = async (req: UpdateProductType, productId: string, files: Express.Multer.File[]) => {
-		const prisma = new PrismaClient();
 		try {
 			// Verify product exists before attempting update
 			const existingProduct = await this.productRepo.findUnique({

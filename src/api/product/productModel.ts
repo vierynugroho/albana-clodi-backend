@@ -86,8 +86,8 @@ const ProductPriceLevelEnum = z.nativeEnum(ProductPriceEnum);
 
 // GET ALL REQUEST SCHEMA
 export const RequestQueryProduct = z.object({
-	page: z.number().min(1).optional(),
-	limit: z.number().min(5).optional(),
+	page: z.coerce.number().min(1).optional(),
+	limit: z.coerce.number().min(5).optional(),
 	type: z.nativeEnum(ProductTypeEnum).optional(),
 	search: z.string().optional(),
 	categoryId: z.string().uuid().optional(),
