@@ -22,7 +22,20 @@ export class CustomerService {
 
 	public getAllCustomers = async (reqQuery: RequestQueryCustomerType) => {
 		try {
-			const { page = 1, limit = 10, category, sort, status, order, startDate, endDate, month, year, week } = reqQuery;
+			const {
+				page = 1,
+				limit = 10,
+				category,
+				sort,
+				status,
+				search,
+				order,
+				startDate,
+				endDate,
+				month,
+				year,
+				week,
+			} = reqQuery;
 			const skip = (page - 1) * limit;
 			const query: Prisma.CustomerFindManyArgs = {};
 			const sortableFields = ["createdAt", "name", "email"];
@@ -64,6 +77,18 @@ export class CustomerService {
 
 				createdAt.gte = weekStart;
 				createdAt.lte = new Date(weekEnd.setHours(23, 59, 59));
+			}
+
+			// TODO:: filter berdasarkan nama alamat no hp
+			if (search) {
+				query.where = {
+					OR: [
+						{ name: { contains: search, mode: "insensitive" } },
+						{ email: { contains: search, mode: "insensitive" } },
+						{ phoneNumber: { contains: search, mode: "insensitive" } },
+						{ address: { contains: search, mode: "insensitive" } },
+					],
+				};
 			}
 
 			if (category) {
@@ -143,8 +168,7 @@ export class CustomerService {
 				return ServiceResponse.failure("Customer already exists", null, StatusCodes.BAD_REQUEST);
 			}
 
-			const destinationId = await this.getDestinationIdFromAPI(req.subdistrict.split(","), req.postalCode);
-
+			const destinationId = await this.getDestinationIdFromAPI(req.village, req.district, req.city, req.postalCode);
 			const response = await this.customerRepo.create({ data: { ...req, destinationId } });
 
 			return ServiceResponse.success("Customer created successfully", response, StatusCodes.CREATED);
@@ -203,7 +227,7 @@ export class CustomerService {
 				await this.customerRepo.deleteMany({ where: { id: { in: req.customerIds } } });
 			} else {
 				responses = (await this.customerRepo.findUnique({ where: { id: customerId } })) as unknown as Customer[];
-				if (!responses[0]) {
+				if (!responses) {
 					return ServiceResponse.failure("Customer not found", null, StatusCodes.NOT_FOUND);
 				}
 
@@ -221,30 +245,28 @@ export class CustomerService {
 		}
 	};
 
-	private getDestinationIdFromAPI = async (region: string[], postalCode: string) => {
+	private getDestinationIdFromAPI = async (village: string, district: string, city: string, postalCode: string) => {
 		const API_KEY = process.env.RAJAONGKIR_SHIPPING_DELIVERY_API_KEY;
 		const BASE_URL = process.env.RAJAONGKIR_BASE_URL;
-		console.log(region);
 
-		const regionTrimmed = region.slice(0, -1);
+		const removePrefix = (text: string): string => {
+			const prefixes = ["Kota", "Kabupaten", "Kecamatan", "Kelurahan"];
+			const result = text.trim();
 
-		const prefixes = ["Kota ", "Kabupaten ", "Kab. "];
-
-		const cleanedRegion = regionTrimmed.map((item, index) => {
-			const trimmedItem = item.trim();
-
-			if (index === regionTrimmed.length - 1) {
-				const lowercasedItem = trimmedItem.toLowerCase();
-				for (const prefix of prefixes) {
-					if (lowercasedItem.startsWith(prefix.toLowerCase())) {
-						return trimmedItem.slice(prefix.length);
-					}
+			for (const prefix of prefixes) {
+				if (result.toLowerCase().startsWith(prefix.toLowerCase())) {
+					return result.slice(prefix.length).trim();
 				}
 			}
-			return trimmedItem;
-		});
 
-		const keyword = `${cleanedRegion.join(" ").toLowerCase()} ${postalCode}`;
+			return result;
+		};
+
+		const cleanVillage = removePrefix(village);
+		const cleanDistrict = removePrefix(district);
+		const cleanCity = removePrefix(city);
+
+		const keyword = `${cleanDistrict} ${cleanCity} ${postalCode}`;
 		console.log(keyword);
 
 		const query = new URLSearchParams();
@@ -258,8 +280,6 @@ export class CustomerService {
 		});
 
 		const data = await response.json();
-		console.log(data);
-
 		return data.data.length === 1 ? data.data[0].id : null;
 	};
 
@@ -289,10 +309,10 @@ export class CustomerService {
 					Nama: customer.name ?? null,
 					Kategori: customer.category ?? null,
 					Alamat: customer.address ?? null,
-					Provinsi: customer.subdistrict?.split(",")[3] ?? null,
-					"Kota/Kabupaten": customer.subdistrict?.split(",")[2] ?? null,
-					Kecamatan: customer.subdistrict?.split(",")[1] ?? null,
-					Kelurahan: customer.subdistrict?.split(",")[0] ?? null,
+					Provinsi: customer.province ?? null,
+					"Kota/Kabupaten": customer.city ?? null,
+					Kecamatan: customer.district ?? null,
+					Kelurahan: customer.village ?? null,
 					"Kode Pos": customer.postalCode ?? null,
 					Email: customer.email ?? null,
 					"No. Telp": customer.phoneNumber ?? null,
@@ -317,7 +337,10 @@ export class CustomerService {
 				file,
 				(row, index) => ({
 					name: row.Nama as string,
-					subdistrict: `${row.Kelurahan}, ${row.Kecamatan}, ${row["Kota/Kabupaten"]}, ${row.Provinsi}`,
+					province: row.Provinsi as string,
+					city: row["Kota/Kabupaten"] as string,
+					district: row.Kecamatan as string,
+					village: row.Kelurahan as string,
 					address: row.Alamat as string,
 					category: row.Kategori as CustomerCategories,
 					email: row.Email as string,

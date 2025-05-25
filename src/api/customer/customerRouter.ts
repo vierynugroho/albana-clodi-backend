@@ -1,4 +1,7 @@
 import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
+import { CustomerCategoryEnum } from "@/common/enums/customer/customerCategoryEnum";
+import { CustomerStatusEnum } from "@/common/enums/customer/customerStatusEnum";
+import { OrderPaginationEnum } from "@/common/enums/orderPaginationEnum";
 import { validateRequest } from "@/common/utils/httpHandlers";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Router } from "express";
@@ -27,13 +30,29 @@ customerRegistry.registerPath({
 	tags: ["Customer"],
 	security: [{ bearerAuth: [] }],
 	request: {
-		body: {
-			content: {
-				"application/json": {
-					schema: CreateCustomerRequestSchema,
-				},
-			},
-		},
+		query: z.object({
+			age: z.coerce.number().min(1).optional(),
+			search: z.string().optional(),
+			limit: z.coerce.number().min(5).optional(),
+			category: z.string().optional(),
+			status: z.string().optional(),
+			sort: z.string().optional(),
+			order: z.string().optional(),
+			startDate: z.coerce.date().optional(),
+			endDate: z.coerce.date().optional(),
+			month: z.coerce
+				.string()
+				.regex(/^\d{1,2}$/)
+				.optional(),
+			year: z.coerce
+				.string()
+				.regex(/^\d{4}$/)
+				.optional(),
+			week: z.coerce
+				.string()
+				.regex(/^\d{1,2}$/)
+				.optional(),
+		}),
 	},
 	responses: createApiResponse(z.array(CustomerSchema), "Success", StatusCodes.CREATED),
 });
@@ -41,18 +60,9 @@ customerRouter.get("/", validateRequest(GetAllCustomerRequestSchema), customerCo
 
 customerRegistry.registerPath({
 	method: "get",
-	path: "/customers",
+	path: "/customers/{id}",
 	tags: ["Customer"],
 	security: [{ bearerAuth: [] }],
-	request: {
-		body: {
-			content: {
-				"application/json": {
-					schema: CreateCustomerRequestSchema,
-				},
-			},
-		},
-	},
 	responses: createApiResponse(CustomerSchema, "Success", StatusCodes.OK),
 });
 customerRouter.get("/:id", validateRequest(GetCustomerRequestSchema), customerController.getDetailCustomer);
@@ -66,7 +76,7 @@ customerRegistry.registerPath({
 		body: {
 			content: {
 				"application/json": {
-					schema: CreateCustomerRequestSchema,
+					schema: CreateCustomerRequestSchema.pick({ body: true }),
 				},
 			},
 		},
@@ -84,7 +94,7 @@ customerRegistry.registerPath({
 		body: {
 			content: {
 				"application/json": {
-					schema: UpdateCustomerRequestSchema,
+					schema: UpdateCustomerRequestSchema.pick({ body: true }),
 				},
 			},
 		},
@@ -102,7 +112,7 @@ customerRegistry.registerPath({
 		body: {
 			content: {
 				"application/json": {
-					schema: DeleteCustomerRequestSchema,
+					schema: DeleteCustomerRequestSchema.pick({ body: true }),
 				},
 			},
 		},

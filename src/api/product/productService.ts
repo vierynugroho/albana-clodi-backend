@@ -607,7 +607,7 @@ class ProductService {
 					where: { id: productId },
 				})) as unknown as Product[];
 
-				if (!foundProducts[0]) {
+				if (!foundProducts) {
 					return ServiceResponse.failure("Product not found.", null, StatusCodes.NOT_FOUND);
 				}
 

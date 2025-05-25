@@ -9,7 +9,10 @@ export const CustomerSchema = z.object({
 	name: z.string(),
 	category: z.nativeEnum(CustomerCategoryEnum),
 	address: z.string(),
-	subdistrict: z.string(),
+	province: z.string(),
+	city: z.string(),
+	district: z.string(),
+	village: z.string(),
 	postalCode: z.string(),
 	phoneNumber: z.string(),
 	email: z.string(),
@@ -43,6 +46,7 @@ export type DeleteCustomerSchema = z.infer<typeof DeleteCustomerSchema>;
 
 export const RequestQueryCustomer = z.object({
 	page: z.coerce.number().min(1).optional(),
+	search: z.string().optional(),
 	limit: z.coerce.number().min(5).optional(),
 	category: z.nativeEnum(CustomerCategoryEnum).optional(),
 	status: z.nativeEnum(CustomerStatusEnum).optional(),
