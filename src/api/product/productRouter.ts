@@ -2,6 +2,7 @@ import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Router } from "express";
 
 import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
+import { parseNestedBody } from "@/common/middleware/parseNestedFormData";
 import { validateStock } from "@/common/middleware/validateStock";
 import { validateRequest } from "@/common/utils/httpHandlers";
 import { StatusCodes } from "http-status-codes";
@@ -41,7 +42,8 @@ productRegistry.registerPath({
 });
 productRouter.post(
 	"/",
-	upload.single("image"),
+	upload.array("images"),
+	parseNestedBody,
 	validateRequest(CreateProductRequestSchema),
 	productController.createProduct,
 );

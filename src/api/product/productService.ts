@@ -1,3 +1,4 @@
+import type { Readable } from "node:stream";
 import type { ProductTypeEnum } from "@/common/enums/product/productTypeEnum";
 import { AwsService } from "@/common/libs/awsService";
 import { ServiceResponse } from "@/common/models/serviceResponse";
@@ -292,7 +293,7 @@ class ProductService {
 		}
 	};
 
-	public createProduct = async (req: CreateProductType, file: Express.Multer.File) => {
+	public createProduct = async (req: CreateProductType, files: Express.Multer.File[]) => {
 		// Check if product with the same name already exists
 		const foundProduct = await this.productRepo.findFirst({
 			where: {
@@ -347,19 +348,46 @@ class ProductService {
 			let newProduct: Partial<Product> = {};
 			// Use transaction to ensure data consistency across related tables
 			await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-				const barcodeBuffer = (req.product.name && (await generateBarcode(req.product.name))) ?? null;
-				const barcodeUrl =
-					(barcodeBuffer && (await this.awsService.uploadFile(barcodeBuffer as unknown as Express.Multer.File))) ??
-					null;
-				const imageUrl = await Promise.all(
-					req.productVariants.map(async (variant) => {
-						return variant && (await this.awsService.uploadFile(variant.imageUrl as unknown as Express.Multer.File));
-					}),
-				);
+				// Generate barcode
+				let barcodeUrl: string | null = null;
+				if (req.product?.name) {
+					const barcodeBuffer = await generateBarcode(req.product.name);
+					if (barcodeBuffer) {
+						const barcodeFile: Express.Multer.File = {
+							fieldname: "barcode",
+							originalname: `${req.product.name}-barcode.png`,
+							encoding: "7bit",
+							mimetype: "image/png",
+							size: barcodeBuffer.length,
+							buffer: barcodeBuffer,
+							destination: "",
+							filename: "",
+							path: "",
+							stream: {} as unknown as Readable,
+						};
+						barcodeUrl = await this.awsService.uploadFile(barcodeFile);
+					}
+				}
+
+				// Upload new images
+				const imageUrls: (string | null)[] = [];
+				if (req.productVariants?.length && files.length > 0) {
+					for (let i = 0; i < req.productVariants.length; i++) {
+						if (files[i]) {
+							const uploadedUrl = await this.awsService.uploadFile(files[i]);
+							imageUrls.push(uploadedUrl);
+						} else {
+							imageUrls.push(null);
+						}
+					}
+				} else {
+					imageUrls.push(...Array(req.productVariants?.length || 0).fill(null));
+				}
 
 				// Prepare product data with category connection
 				const createDataProduct: Prisma.ProductCreateInput = {
 					...req.product,
+					isPublish: Boolean(req.product.isPublish),
 					category: req.product.categoryId ? { connect: { id: req.product.categoryId } } : undefined,
 					ProductDiscount: req.productDiscount ? { create: req.productDiscount } : undefined,
 				};
@@ -376,7 +404,7 @@ class ProductService {
 						return tx.productVariant.create({
 							data: {
 								...rest,
-								imageUrl: imageUrl[index],
+								imageUrl: imageUrls[index],
 								barcode: barcodeUrl,
 								product: {
 									connect: {
@@ -402,7 +430,7 @@ class ProductService {
 		}
 	};
 
-	public updateProduct = async (req: UpdateProductType, productId: string, file: Express.Multer.File) => {
+	public updateProduct = async (req: UpdateProductType, productId: string, files: Express.Multer.File[]) => {
 		try {
 			// Verify product exists before attempting update
 			const existingProduct = await this.productRepo.findUnique({
@@ -448,18 +476,40 @@ class ProductService {
 			);
 
 			// Generate barcode
-			const barcodeBuffer = (req.product?.name && (await generateBarcode(req.product.name))) ?? null;
-			const barcodeUrl =
-				(barcodeBuffer && (await this.awsService.uploadFile(barcodeBuffer as unknown as Express.Multer.File))) ?? null;
+			let barcodeUrl: string | null = null;
+			if (req.product?.name) {
+				const barcodeBuffer = await generateBarcode(req.product.name);
+				if (barcodeBuffer) {
+					const barcodeFile: Express.Multer.File = {
+						fieldname: "barcode",
+						originalname: `${req.product.name}-barcode.png`,
+						encoding: "7bit",
+						mimetype: "image/png",
+						size: barcodeBuffer.length,
+						buffer: barcodeBuffer,
+						destination: "",
+						filename: "",
+						path: "",
+						stream: {} as unknown as Readable,
+					};
+					barcodeUrl = await this.awsService.uploadFile(barcodeFile);
+				}
+			}
 
 			// Upload new images
-			const imageUrl = await Promise.all(
-				req.productVariants?.map(async (variant) => {
-					return variant.imageUrl
-						? await this.awsService.uploadFile(variant.imageUrl as unknown as Express.Multer.File)
-						: null;
-				}) ?? [],
-			);
+			const imageUrls: (string | null)[] = [];
+			if (req.productVariants?.length && files.length > 0) {
+				for (let i = 0; i < req.productVariants.length; i++) {
+					if (files[i]) {
+						const uploadedUrl = await this.awsService.uploadFile(files[i]);
+						imageUrls.push(uploadedUrl);
+					} else {
+						imageUrls.push(null);
+					}
+				}
+			} else {
+				imageUrls.push(...Array(req.productVariants?.length || 0).fill(null));
+			}
 
 			// Use transaction to ensure data consistency during update
 			await prisma?.$transaction(async (tx: Prisma.TransactionClient) => {
@@ -493,7 +543,7 @@ class ProductService {
 									data: {
 										...rest,
 										barcode: barcodeUrl,
-										imageUrl: imageUrl[index],
+										imageUrl: imageUrls[index],
 										// Update pricing information
 										productPrices: productPrices
 											? ({
@@ -508,7 +558,7 @@ class ProductService {
 									data: {
 										...rest,
 										barcode: barcodeUrl,
-										imageUrl: imageUrl[index],
+										imageUrl: imageUrls[index],
 										productPrices: productPrices ? { create: productPrices } : undefined,
 									},
 								});

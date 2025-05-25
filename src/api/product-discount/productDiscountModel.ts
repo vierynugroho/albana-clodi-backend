@@ -5,7 +5,7 @@ export const ProductDiscountSchema = z.object({
 	id: z.string(),
 	productId: z.string(),
 	type: z.nativeEnum(ProductDiscountTypeEnum),
-	value: z.number(),
+	value: z.coerce.number(),
 	startDate: z.date().optional(),
 	endDate: z.date().optional(),
 	createdAt: z.date(),
