@@ -7,11 +7,11 @@ export type ProductPrice = z.infer<typeof ProductPriceSchema>;
 export const ProductPriceSchema = z.object({
 	id: z.string(),
 	productVariantId: z.string(),
-	normal: z.number(),
-	buy: z.number(),
-	reseller: z.number(),
-	agent: z.number(),
-	member: z.number(),
+	normal: z.coerce.number(),
+	buy: z.coerce.number(),
+	reseller: z.coerce.number(),
+	agent: z.coerce.number(),
+	member: z.coerce.number(),
 	createdAt: z.date(),
 	updatedAt: z.date(),
 });

@@ -22,8 +22,8 @@ export const ProductSchema = z.object({
 	name: z.string(),
 	description: z.string(),
 	type: z.nativeEnum(ProductTypeEnum),
-	isPublish: z.boolean().default(true),
-	weight: z.number(),
+	isPublish: z.coerce.boolean(),
+	weight: z.coerce.number(),
 	createdAt: z.date().optional(),
 	updatedAt: z.date().optional(),
 });

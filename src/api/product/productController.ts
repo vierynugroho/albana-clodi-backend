@@ -1,7 +1,8 @@
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import type { Request, RequestHandler, Response } from "express";
 import { StatusCodes } from "http-status-codes";
-import type { RequestQueryProductType } from "./productModel";
+import { UpdateCategoryRequestSchema } from "../category/categoryModel";
+import { CreateProductRequestSchema, type RequestQueryProductType, UpdateProductRequestSchema } from "./productModel";
 import { productService } from "./productService";
 
 class ProductController {
@@ -17,15 +18,17 @@ class ProductController {
 	};
 
 	public createProduct: RequestHandler = async (req: Request, res: Response) => {
-		const multerFile = req.file as Express.Multer.File;
-		const serviceResponse = await productService.createProduct(req.body, multerFile);
+		const multerFile = req.files as Express.Multer.File[];
+		const parsedBody = CreateProductRequestSchema.shape.body.parse(req.body);
+		const serviceResponse = await productService.createProduct(parsedBody, multerFile);
 		res.status(serviceResponse.statusCode).send(serviceResponse);
 	};
 
 	public updateProduct: RequestHandler = async (req: Request, res: Response) => {
 		const id = req.params.id;
-		const multerFile = req.file as Express.Multer.File;
-		const serviceResponse = await productService.updateProduct(req.body, id, multerFile);
+		const multerFile = req.files as Express.Multer.File[];
+		const parsedBody = UpdateProductRequestSchema.shape.body.parse(req.body);
+		const serviceResponse = await productService.updateProduct(parsedBody, id, multerFile);
 		res.status(serviceResponse.statusCode).send(serviceResponse);
 	};
 
