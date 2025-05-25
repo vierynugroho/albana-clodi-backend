@@ -150,7 +150,11 @@ model Customer {
   name          String?
   category      CustomerCategories?
   address       String?             @db.Text
-  subdistrict   String?
+  province      String?
+  city          String?
+  district      String?
+  village       String?
+  addressDetail String?             @map("address_detail")
   postalCode    String?             @map("postal_code")
   phoneNumber   String?             @map("phone_number")
   destinationId Int?                @map("destination_id")
