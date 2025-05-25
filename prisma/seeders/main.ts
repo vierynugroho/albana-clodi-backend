@@ -10,9 +10,9 @@ async function main() {
 	try {
 		console.log("Starting seeder....");
 
-		await UserSeeder();
-		await RegionSeeder();
-		await OrderSeeder();
+		// await UserSeeder();
+		// await RegionSeeder();
+		// await OrderSeeder();
 		await ProductsSeeder();
 
 		console.log("Completed seeder....");
