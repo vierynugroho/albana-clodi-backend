@@ -54,7 +54,7 @@ app.use("/health-check", healthCheckRouter);
 app.use("/auth", authRouter);
 app.use("/users", authenticate, authorizeRoles([Roles.ADMIN, Roles.SUPERADMIN]), userRouter);
 app.use("/expenses", authenticate, authorizeRoles([Roles.ADMIN, Roles.SUPERADMIN]), expensesRouter);
-app.use("/products", productRouter);
+app.use("/products", authenticate, authorizeRoles([Roles.ADMIN, Roles.SUPERADMIN]), productRouter);
 app.use("/delivery-places", authenticate, authorizeRoles([Roles.ADMIN, Roles.SUPERADMIN]), deliveryPlaceRouter);
 app.use("/orders", authenticate, authorizeRoles([Roles.ADMIN, Roles.SUPERADMIN]), orderRouter);
 app.use("/regions", authenticate, authorizeRoles([Roles.ADMIN, Roles.SUPERADMIN]), regionRouter);
