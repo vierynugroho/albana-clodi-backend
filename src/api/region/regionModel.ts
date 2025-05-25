@@ -18,7 +18,7 @@ export const RequestQueryProvince = z.object({
 });
 export type RequestQueryProvinceType = z.infer<typeof RequestQueryProvince>;
 export const GetProvinceRequestSchema = z.object({
-	query: RequestQueryProvince,
+	query: RequestQueryProvince.optional(),
 });
 
 // Get City Schema
