@@ -67,10 +67,10 @@ productRegistry.registerPath({
 });
 productRouter.put(
 	"/:id",
-	validateStock,
-	parseNestedBody,
-	validateRequest(UpdateProductRequestSchema),
 	upload.single("image"),
+	parseNestedBody,
+	validateStock,
+	validateRequest(UpdateProductRequestSchema),
 	productController.updateProduct,
 );
 

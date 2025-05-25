@@ -115,15 +115,15 @@ export async function ProductsSeeder() {
 				});
 
 				// Buat harga grosir
-				await prisma.productWholesaler.create({
-					data: {
-						productVariantId: createdVariant.id,
-						lowerLimitItem: 10,
-						upperLimitItem: 50,
-						unitPrice: 100000,
-						wholesalerPrice: 85000,
-					},
-				});
+				// await prisma.productWholesaler.create({
+				// 	data: {
+				// 		productVariantId: createdVariant.id,
+				// 		lowerLimitItem: 10,
+				// 		upperLimitItem: 50,
+				// 		unitPrice: 100000,
+				// 		wholesalerPrice: 85000,
+				// 	},
+				// });
 			}
 		}
 		console.timeEnd("Products seeding");
