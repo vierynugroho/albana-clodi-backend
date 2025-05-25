@@ -42,8 +42,8 @@ export const DeleteCustomerRequestSchema = z.object({
 export type DeleteCustomerSchema = z.infer<typeof DeleteCustomerSchema>;
 
 export const RequestQueryCustomer = z.object({
-	page: z.number().min(1).optional(),
-	limit: z.number().min(5).optional(),
+	page: z.coerce.number().min(1).optional(),
+	limit: z.coerce.number().min(5).optional(),
 	category: z.nativeEnum(CustomerCategoryEnum).optional(),
 	status: z.nativeEnum(CustomerStatusEnum).optional(),
 	sort: z.string().optional(),
