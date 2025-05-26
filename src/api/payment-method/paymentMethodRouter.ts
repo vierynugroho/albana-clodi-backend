@@ -33,7 +33,7 @@ paymentMethodRegistry.registerPath({
 	tags: ["Payment Method"],
 	security: [{ bearerAuth: [] }],
 	request: {
-		params: GetPaymentMethodRequestShema.pick({ params: true }),
+		params: GetPaymentMethodRequestShema.shape.params,
 	},
 	responses: createApiResponse(PaymentMethodSchema, "Success", StatusCodes.OK),
 });
@@ -52,7 +52,7 @@ paymentMethodRegistry.registerPath({
 		body: {
 			content: {
 				"application/json": {
-					schema: CreatePaymentMethodRequestSchema.pick({ body: true }),
+					schema: CreatePaymentMethodRequestSchema.shape.body,
 				},
 			},
 		},
@@ -70,11 +70,11 @@ paymentMethodRegistry.registerPath({
 		body: {
 			content: {
 				"application/json": {
-					schema: UpdatePaymentMethodRequestSchema.pick({ body: true }),
+					schema: UpdatePaymentMethodRequestSchema.shape.body,
 				},
 			},
 		},
-		params: UpdatePaymentMethodRequestSchema.pick({ params: true }),
+		params: UpdatePaymentMethodRequestSchema.shape.params,
 	},
 	responses: createApiResponse(PaymentMethodSchema, "Success", StatusCodes.CREATED),
 });
@@ -90,7 +90,7 @@ paymentMethodRegistry.registerPath({
 	tags: ["Payment Method"],
 	security: [{ bearerAuth: [] }],
 	request: {
-		params: DeletePaymentMethodRequestShema.pick({ params: true }),
+		params: DeletePaymentMethodRequestShema.shape.params,
 	},
 	responses: createApiResponse(PaymentMethodSchema, "Success", StatusCodes.CREATED),
 });

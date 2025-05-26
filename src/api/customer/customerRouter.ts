@@ -30,29 +30,7 @@ customerRegistry.registerPath({
 	tags: ["Customer"],
 	security: [{ bearerAuth: [] }],
 	request: {
-		query: z.object({
-			page: z.coerce.number().min(1).optional(),
-			search: z.string().optional(),
-			limit: z.coerce.number().min(5).optional(),
-			category: z.string().optional(),
-			status: z.string().optional(),
-			sort: z.string().optional(),
-			order: z.string().optional(),
-			startDate: z.coerce.date().optional(),
-			endDate: z.coerce.date().optional(),
-			month: z.coerce
-				.string()
-				.regex(/^\d{1,2}$/)
-				.optional(),
-			year: z.coerce
-				.string()
-				.regex(/^\d{4}$/)
-				.optional(),
-			week: z.coerce
-				.string()
-				.regex(/^\d{1,2}$/)
-				.optional(),
-		}),
+		query: GetAllCustomerRequestSchema.shape.query,
 	},
 	responses: createApiResponse(z.array(CustomerSchema), "Success", StatusCodes.CREATED),
 });
@@ -63,6 +41,9 @@ customerRegistry.registerPath({
 	path: "/customers/{id}",
 	tags: ["Customer"],
 	security: [{ bearerAuth: [] }],
+	request: {
+		params: GetCustomerRequestSchema.shape.params,
+	},
 	responses: createApiResponse(CustomerSchema, "Success", StatusCodes.OK),
 });
 customerRouter.get("/:id", validateRequest(GetCustomerRequestSchema), customerController.getDetailCustomer);
@@ -76,7 +57,7 @@ customerRegistry.registerPath({
 		body: {
 			content: {
 				"application/json": {
-					schema: CreateCustomerRequestSchema.pick({ body: true }),
+					schema: CreateCustomerRequestSchema.shape.body,
 				},
 			},
 		},
@@ -94,10 +75,11 @@ customerRegistry.registerPath({
 		body: {
 			content: {
 				"application/json": {
-					schema: UpdateCustomerRequestSchema.pick({ body: true }),
+					schema: UpdateCustomerRequestSchema.shape.body,
 				},
 			},
 		},
+		params: UpdateCustomerRequestSchema.shape.params,
 	},
 	responses: createApiResponse(CustomerSchema, "Success", StatusCodes.CREATED),
 });
@@ -112,7 +94,7 @@ customerRegistry.registerPath({
 		body: {
 			content: {
 				"application/json": {
-					schema: DeleteCustomerRequestSchema.pick({ body: true }),
+					schema: DeleteCustomerRequestSchema.shape.body,
 				},
 			},
 		},

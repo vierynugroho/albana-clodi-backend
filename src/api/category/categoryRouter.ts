@@ -30,6 +30,9 @@ categoryRegistry.registerPath({
 	path: "/categories/{id}",
 	tags: ["Category"],
 	security: [{ bearerAuth: [] }],
+	request: {
+		params: GetCategoryRequestSchema.shape.params,
+	},
 	responses: createApiResponse(z.array(CategorySchema), "Success", StatusCodes.OK),
 });
 categoryRouter.get("/:id", validateRequest(GetCategoryRequestSchema), categoryController.Detail);
@@ -43,7 +46,7 @@ categoryRegistry.registerPath({
 		body: {
 			content: {
 				"application/json": {
-					schema: CreateCategoryRequestSchema.pick({ body: true }),
+					schema: CreateCategoryRequestSchema.shape.body,
 				},
 			},
 		},
@@ -61,11 +64,11 @@ categoryRegistry.registerPath({
 		body: {
 			content: {
 				"application/json": {
-					schema: UpdateCategoryRequestSchema.pick({ body: true }),
+					schema: UpdateCategoryRequestSchema.shape.body,
 				},
 			},
 		},
-		params: UpdateCategoryRequestSchema.pick({ params: true }),
+		params: UpdateCategoryRequestSchema.shape.params,
 	},
 	responses: createApiResponse(CategorySchema, "Success", StatusCodes.OK),
 });
@@ -77,7 +80,7 @@ categoryRegistry.registerPath({
 	tags: ["Category"],
 	security: [{ bearerAuth: [] }],
 	request: {
-		params: UpdateCategoryRequestSchema.pick({ params: true }),
+		params: UpdateCategoryRequestSchema.shape.params,
 	},
 	responses: createApiResponse(CategorySchema, "Success", StatusCodes.OK),
 });

@@ -58,8 +58,8 @@ class ProductService {
 	public getAllProducts = async (query: RequestQueryProductType) => {
 		try {
 			const {
-				page = 1,
-				limit = 10,
+				page: rawPage = 1,
+				limit: rawLimit = 10,
 				type,
 				categoryId,
 				productDiscountId,
@@ -73,6 +73,8 @@ class ProductService {
 				search,
 				year,
 			} = query;
+			const page = Number(rawPage) || 1;
+			const limit = Number(rawLimit) || 10;
 			const skip = (page - 1) * limit;
 			const queryArgs: Prisma.ProductFindManyArgs = {};
 			const sortableFields = ["createdAt", "name", "email"];
