@@ -168,17 +168,21 @@ export const OrderQuerySchema = z.object({
 		salesChannelId: z.string().uuid().optional(),
 		deliveryPlaceId: z.string().uuid().optional(),
 		orderDate: z.string().optional(),
-		orderStatus: z.string().optional(),
 		orderMonth: z.string().optional(),
 		orderYear: z.string().optional(),
 		startDate: z.string().optional(),
 		endDate: z.string().optional(),
 		customerCategory: z.string().optional(),
-		paymentStatus: z.string().optional(),
+		paymentStatus: z
+			.string()
+			.optional()
+			.transform((val) => val?.toLowerCase() as "settlement" | "pending" | "cancel" | "installments" | undefined),
 		productId: z.string().uuid().optional(),
 		paymentMethodId: z.string().uuid().optional(),
 		search: z.string().optional(),
 		sort: z.string().optional(),
+		unavailableReceipt: z.enum(["yes"]).optional(),
+		orderStatus: z.string().optional(),
 		order: z.enum(["asc", "desc"]).optional(),
 	}),
 });
