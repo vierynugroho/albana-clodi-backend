@@ -19,6 +19,7 @@ export const salesChannelRouter: Router = express.Router();
 salesChannelRegistry.registerPath({
 	method: "get",
 	path: "/sales-channels",
+	tags: ["Sales Channel"],
 	security: [{ bearerAuth: [] }],
 	responses: createApiResponse(z.array(SalesChannelSchema), "Success", StatusCodes.OK),
 });
@@ -30,7 +31,7 @@ salesChannelRegistry.registerPath({
 	tags: ["Sales Channel"],
 	security: [{ bearerAuth: [] }],
 	request: {
-		params: GetSalesChannelRequestSchema.pick({ params: true }),
+		params: GetSalesChannelRequestSchema.shape.params,
 	},
 	responses: createApiResponse(SalesChannelSchema, "Success", StatusCodes.OK),
 });
@@ -49,7 +50,7 @@ salesChannelRegistry.registerPath({
 		body: {
 			content: {
 				"application/json": {
-					schema: CreateSalesChannelRequestSchema.pick({ body: true }),
+					schema: CreateSalesChannelRequestSchema.shape.body,
 				},
 			},
 		},
@@ -71,11 +72,11 @@ salesChannelRegistry.registerPath({
 		body: {
 			content: {
 				"application/json": {
-					schema: UpdateCustomerRequestSchema.pick({ body: true }),
+					schema: UpdateCustomerRequestSchema.shape.body,
 				},
 			},
 		},
-		params: UpdateSalesChannelRequestSchema.pick({ params: true }),
+		params: UpdateSalesChannelRequestSchema.shape.params,
 	},
 	responses: createApiResponse(SalesChannelSchema, "Success", StatusCodes.OK),
 });
@@ -87,7 +88,7 @@ salesChannelRegistry.registerPath({
 	tags: ["Sales Channel"],
 	security: [{ bearerAuth: [] }],
 	request: {
-		params: DeleteCustomerRequestSchema.pick({ params: true }),
+		params: DeleteCustomerRequestSchema.shape.params,
 	},
 	responses: createApiResponse(SalesChannelSchema, "Success", StatusCodes.OK),
 });
