@@ -38,7 +38,7 @@ export const importData = async <T>(
 		const mappedData = jsonData.map(mapFunction);
 
 		console.log("====================================");
-		console.log(mappedData);
+		// console.log(mappedData);
 		console.log("====================================");
 
 		// Validasi data yang telah di-map

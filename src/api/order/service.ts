@@ -1207,6 +1207,7 @@ class OrderService {
 
 					// Data Product
 					const productList = row["Produk & Qty"] as string;
+					console.log({ productList });
 					const products = productList?.includes("\n")
 						? productList
 								.split("\n")
@@ -1218,13 +1219,31 @@ class OrderService {
 									const skus = skuList.split(",").map((sku) => sku.trim());
 
 									return {
-										productName,
+										productName: productName.trim(),
 										skus,
 										quantity: Number.parseInt(quantity),
 									};
 								})
 								.filter(Boolean)
-						: [];
+						: productList
+							? (() => {
+									const match = productList.match(/(.*?)\s*\(SKU:\s*([^)]+)\)\s*x(\d+)/);
+									if (!match) return [];
+
+									const [_, productName, skuList, quantity] = match;
+									const skus = skuList.split(",").map((sku) => sku.trim());
+
+									return [
+										{
+											productName: productName.trim(),
+											skus,
+											quantity: Number.parseInt(quantity),
+										},
+									];
+								})()
+							: [];
+
+					console.log({ products });
 
 					// Data pembayaran
 					const paymentStatus = row["Status Pembayaran"] as PaymentStatus;
