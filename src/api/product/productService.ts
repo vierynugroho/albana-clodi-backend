@@ -76,6 +76,7 @@ class ProductService {
 			const skip = (page - 1) * limit;
 			const queryArgs: Prisma.ProductFindManyArgs = {};
 			const sortableFields = ["createdAt", "name", "email"];
+			console.log(query.search);
 
 			if (sort && sortableFields.includes(sort)) {
 				queryArgs.orderBy = {
@@ -127,6 +128,8 @@ class ProductService {
 			}
 
 			if (search) {
+				console.log(search);
+
 				queryArgs.where = {
 					...queryArgs.where,
 					OR: [
@@ -221,6 +224,7 @@ class ProductService {
 
 			const [products, total] = await Promise.all([
 				this.productRepo.findMany({
+					...queryArgs,
 					skip,
 					take: limit,
 					include: {
@@ -444,6 +448,7 @@ class ProductService {
 					productVariants: true,
 				},
 			});
+			console.log(existingProduct);
 
 			if (!existingProduct) {
 				return ServiceResponse.failure("Product not found", null, StatusCodes.NOT_FOUND);
@@ -524,7 +529,7 @@ class ProductService {
 					data: {
 						...req.product,
 						category: req.categoryId ? { connect: { id: req.categoryId } } : undefined,
-						ProductDiscount: req.productDiscount
+						ProductDiscount: req.productDiscount?.id
 							? {
 									update: {
 										where: { id: req.productDiscount.id },
@@ -550,9 +555,12 @@ class ProductService {
 										barcode: barcodeUrl,
 										imageUrl: imageUrls[index],
 										// Update pricing information
-										productPrices: productPrices
+										productPrices: productPrices?.id
 											? ({
-													update: productPrices,
+													update: {
+														where: { id: productPrices.id },
+														data: productPrices,
+													},
 												} as unknown as Prisma.ProductPriceUncheckedUpdateManyWithoutProductVariantNestedInput)
 											: undefined,
 									},

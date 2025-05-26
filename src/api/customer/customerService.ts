@@ -82,6 +82,7 @@ export class CustomerService {
 			// TODO:: filter berdasarkan nama alamat no hp
 			if (search) {
 				query.where = {
+					...query.where,
 					OR: [
 						{ name: { contains: search, mode: "insensitive" } },
 						{ email: { contains: search, mode: "insensitive" } },

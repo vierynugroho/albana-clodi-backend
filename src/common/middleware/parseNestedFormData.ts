@@ -21,10 +21,10 @@ export const parseNestedBody = (req: Request, res: Response, next: NextFunction)
 							if (!Array.isArray(currentAcc)) {
 								currentAcc = [];
 							}
-							currentAcc[Number.parseInt(k, 10)] = value;
+							currentAcc[Number.parseInt(k, 10)] = typeof value === "string" ? value.trim() : value;
 							return currentAcc;
 						}
-						(acc as Record<string, unknown>)[k] = value;
+						(acc as Record<string, unknown>)[k] = typeof value === "string" ? value.trim() : value;
 						return acc;
 					}
 
@@ -48,7 +48,7 @@ export const parseNestedBody = (req: Request, res: Response, next: NextFunction)
 				}, data);
 			} else {
 				const objectPath = require("object-path");
-				objectPath.set(data, key, value);
+				objectPath.set(data, key, typeof value === "string" ? value.trim() : value);
 			}
 		}
 	}
