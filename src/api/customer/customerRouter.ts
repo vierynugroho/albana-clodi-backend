@@ -31,7 +31,7 @@ customerRegistry.registerPath({
 	security: [{ bearerAuth: [] }],
 	request: {
 		query: z.object({
-			age: z.coerce.number().min(1).optional(),
+			page: z.coerce.number().min(1).optional(),
 			search: z.string().optional(),
 			limit: z.coerce.number().min(5).optional(),
 			category: z.string().optional(),
