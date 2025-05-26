@@ -10,10 +10,10 @@ async function main() {
 	try {
 		console.log("Starting seeder....");
 
-		// await UserSeeder();
+		await UserSeeder();
 		// await RegionSeeder();
 		// await OrderSeeder();
-		await ProductsSeeder();
+		// await ProductsSeeder();
 
 		console.log("Completed seeder....");
 	} catch (error) {
