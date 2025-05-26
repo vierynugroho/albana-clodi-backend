@@ -4,6 +4,7 @@ import { PrismaClient } from "@prisma/client";
 import type { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import { NIL } from "uuid";
+import { ZodSchema } from "zod";
 import { ServiceResponse } from "../models/serviceResponse";
 import type { AuthRequest } from "../types/auth";
 
