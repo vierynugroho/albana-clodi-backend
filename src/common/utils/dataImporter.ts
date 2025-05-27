@@ -34,11 +34,12 @@ export const importData = async <T>(
 		if (jsonData.length === 0) {
 			return ServiceResponse.failure("File Excel tidak berisi data", null, StatusCodes.BAD_REQUEST);
 		}
+		console.log(mapFunction);
 
 		const mappedData = jsonData.map(mapFunction);
 
 		console.log("====================================");
-		// console.log(mappedData);
+		console.log(mappedData);
 		console.log("====================================");
 
 		// Validasi data yang telah di-map
@@ -58,7 +59,7 @@ export const importData = async <T>(
 				// Periksa nilai-nilai yang tidak valid (undefined, null, NaN)
 				// Fungsi rekursif untuk memeriksa nilai yang tidak valid di dalam objek bersarang
 				const checkInvalidValue = (value: unknown): boolean => {
-					if (value === undefined || value === null || (typeof value === "number" && Number.isNaN(value))) {
+					if (typeof value === "number" && Number.isNaN(value)) {
 						return true;
 					}
 
