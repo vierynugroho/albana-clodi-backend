@@ -7,9 +7,10 @@ import { exportData } from "@/common/utils/dataExporter";
 import { importData } from "@/common/utils/dataImporter";
 import { env } from "@/common/utils/envConfig";
 import { logger } from "@/server";
-import { type Prisma, PrismaClient, type ProductDiscount } from "@prisma/client";
+import { type Prisma, PrismaClient, type ProductDiscount, type ProductDiscountTypes } from "@prisma/client";
 import type { DefaultArgs } from "@prisma/client/runtime/library";
 import { StatusCodes } from "http-status-codes";
+import chunk from "lodash.chunk";
 import type {
 	CreateProductType,
 	DeleteProductManyType,
@@ -737,10 +738,8 @@ class ProductService {
 						"Harga Agent": variantFields.agent.join(", ") ?? null,
 						"Harga Reseller": variantFields.reseller.join(", ") ?? null,
 						"Jumlah Stok": variantFields.stock.join(", ") ?? null,
-						"Diskon Produk": product.ProductDiscount.map((discount: ProductDiscount) =>
-							discount.type === "NOMINAL" ? `Rp.${discount.value}` : `${Number(discount.value) * 100}%`,
-						).join(","),
-						"Tipe Diskon": product.ProductDiscount.map((disc) => disc.type).join(", "),
+						"Diskon Produk": product.ProductDiscount.map((discount: ProductDiscount) => discount.value).join(","),
+						"Tipe Diskon": product.ProductDiscount.map((discount: ProductDiscount) => discount.type).join(","),
 						"Berat (gram)": product.weight ?? null,
 					};
 				},
@@ -762,58 +761,100 @@ class ProductService {
 			const importResult = await importData<Prisma.ProductCreateInput>(
 				file,
 				(row) => {
-					const categoryName = row.Kategori as string;
-					return {
-						name: row["Nama Produk"] as string,
-						category: {
-							connectOrCreate: {
-								create: {
-									name: categoryName,
-								},
-								where: {
-									name: categoryName,
-								},
-							},
-						},
-						description: row.Deskripsi,
-						weight: row["Berat (gram)"],
-						productVariants: {
-							create: {
-								sku: row.SKU,
-								imageUrl: row.Gambar,
-								size: row.Size,
-								color: row.Warna,
-								stock: row["Jumlah Stok"],
-								productPrices: {
-									create: {
-										normal: row["Harga Jual"],
-										member: row["Harga Member"],
-										reseller: row["Harga Reseller"],
-										buy: row["Harga Beli (Harga Modal)"],
-										agent: row["Harga Agent"],
+					const categoryName = row.Kategori as string | undefined;
+					const hasPrice =
+						row["Harga Jual"] ||
+						row["Harga Member"] ||
+						row["Harga Reseller"] ||
+						row["Harga Beli (Harga Modal)"] ||
+						row["Harga Agent"];
+					const hasVariant = row.SKU || row.Gambar || row.Size || row.Warna || row["Jumlah Stok"];
+					const hasDiscount = row["Diskon Produk"] || row["Tipe Diskon"];
+
+					let productVariantData: Prisma.ProductVariantCreateWithoutProductInput | undefined = undefined;
+
+					if (hasVariant) {
+						productVariantData = {
+							sku: row.SKU ? String(row.SKU) : null,
+							imageUrl: row.Gambar ? String(row.Gambar).trim() : null,
+							size: row.Size ? String(row.Size) : null,
+							color: row.Warna ? String(row.Warna) : null,
+							stock: row["Jumlah Stok"] ? Number(row["Jumlah Stok"]) : null,
+							barcode: null,
+							productPrices: hasPrice
+								? {
+										create: {
+											normal: row["Harga Jual"] ? Number(row["Harga Jual"]) : null,
+											member: row["Harga Member"] ? Number(row["Harga Member"]) : null,
+											reseller: row["Harga Reseller"] ? Number(row["Harga Reseller"]) : null,
+											buy: row["Harga Beli (Harga Modal)"] ? Number(row["Harga Beli (Harga Modal)"]) : null,
+											agent: row["Harga Agent"] ? Number(row["Harga Agent"]) : null,
+										},
+									}
+								: undefined,
+						};
+					}
+
+					const productData: Prisma.ProductCreateInput = {
+						name: row["Nama Produk"] ? String(row["Nama Produk"]) : null,
+						category: categoryName
+							? {
+									connectOrCreate: {
+										create: { name: categoryName },
+										where: { name: categoryName },
 									},
-								},
-							},
-						},
-						ProductDiscount: {
-							create: {
-								value:
-									row["Tipe Diskon"] === "NOMINAL"
-										? (row["Diskon Produkk"] as string).split("Rp.")[1]
-										: (row["Diskon Produkk"] as string).split("%")[0],
-							},
-						},
-					} as Prisma.ProductCreateInput;
+								}
+							: undefined,
+						description: row.Deskripsi ? String(row.Deskripsi) : null,
+						weight: row["Berat (gram)"] ? Number(row["Berat (gram)"]) : null,
+						productVariants: productVariantData
+							? {
+									create: productVariantData,
+								}
+							: undefined,
+						ProductDiscount: hasDiscount
+							? {
+									create: {
+										value: row["Diskon Produk"] ? Number(row["Diskon Produk"]) : null,
+										type: row["Tipe Diskon"] ? (row["Tipe Diskon"] as ProductDiscountTypes) : null,
+									},
+								}
+							: undefined,
+					};
+
+					console.log(productVariantData);
+
+					return productData;
 				},
 				async (data) => {
-					return this.productRepo.createMany({
-						data,
-						skipDuplicates: true,
-					});
+					const BATCH_SIZE = 100;
+					const batches = chunk(data, BATCH_SIZE);
+					for (const batch of batches) {
+						await Promise.all(
+							batch.map((product) =>
+								this.productRepo.create({
+									data: product,
+									include: {
+										productVariants: {
+											include: {
+												productPrices: true,
+											},
+										},
+										category: true,
+										ProductDiscount: true,
+									},
+								}),
+							),
+						);
+					}
 				},
 			);
 
-			return ServiceResponse.success("Berhasil mengimpor data product", importResult.responseObject, StatusCodes.OK);
+			return ServiceResponse.success(
+				"Berhasil mengimpor data product",
+				importResult.responseObject?.length,
+				StatusCodes.OK,
+			);
 		} catch (ex) {
 			const errorMessage = `Error exporting product: ${(ex as Error).message}`;
 			return ServiceResponse.failure(

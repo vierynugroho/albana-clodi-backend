@@ -307,19 +307,18 @@ export class CustomerService {
 						orderBy: { createdAt: "desc" },
 					});
 				},
-				(customer, index) => ({
+				(customer: Customer, index) => ({
 					No: index + 1,
 					Nama: customer.name ?? null,
 					Kategori: customer.category ?? null,
 					Alamat: customer.address ?? null,
 					Provinsi: customer.province ?? null,
-					"Kota/Kabupaten": customer.city ?? null,
+					"Kota/Kab": customer.city ?? null,
 					Kecamatan: customer.district ?? null,
 					Kelurahan: customer.village ?? null,
 					"Kode Pos": customer.postalCode ?? null,
 					Email: customer.email ?? null,
-					"No. Telp": customer.phoneNumber ?? null,
-					Tanggal: customer.createdAt ? formatter.format(new Date(customer.createdAt)) : null,
+					"No. Telpon": customer.phoneNumber ?? null,
 				}),
 				"Customer",
 				"Tidak ada data customer untuk diekspor",
@@ -339,16 +338,18 @@ export class CustomerService {
 			const importResult = await importData<Prisma.CustomerCreateInput>(
 				file,
 				(row, index) => ({
-					name: row.Nama as string,
-					province: row.Provinsi as string,
-					city: row["Kota/Kabupaten"] as string,
-					district: row.Kecamatan as string,
-					village: row.Kelurahan as string,
-					address: row.Alamat as string,
-					category: row.Kategori as CustomerCategories,
-					email: row.Email as string,
-					postalCode: String(row["Kode Pos"]),
-					phoneNumber: String(row["No. Telp"]),
+					name: (row.Nama as string).toString() ?? null,
+					province: (row.Provinsi as string) ?? null,
+					city: (row["Kota/Kab"] as string) ?? null,
+					district: (row.Kecamatan as string) ?? null,
+					village: (row.Kelurahan as string) ?? null,
+					address: (row.Alamat as string) ?? null,
+					category: (row.Kategori === "Pelanggan"
+						? "CUSTOMER"
+						: ((row.Kategori as CustomerCategories).toUpperCase() ?? null)) as CustomerCategories,
+					email: (row.Email as string) ?? null,
+					postalCode: row["Kode Pos"] ? String(row["Kode Pos"]) : null,
+					phoneNumber: row["No. Telpon"] ? String(row["No. Telpon"]) : null,
 				}),
 				async (data) => {
 					return this.customerRepo.createMany({
