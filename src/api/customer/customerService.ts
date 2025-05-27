@@ -23,8 +23,8 @@ export class CustomerService {
 	public getAllCustomers = async (reqQuery: RequestQueryCustomerType) => {
 		try {
 			const {
-				page = 1,
-				limit = 10,
+				page: rawPage = 1,
+				limit: rawLimit = 10,
 				category,
 				sort,
 				status,
@@ -36,6 +36,8 @@ export class CustomerService {
 				year,
 				week,
 			} = reqQuery;
+			const page = Number(rawPage) || 1;
+			const limit = Number(rawLimit) || 10;
 			const skip = (page - 1) * limit;
 			const query: Prisma.CustomerFindManyArgs = {};
 			const sortableFields = ["createdAt", "name", "email"];
