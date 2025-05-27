@@ -46,6 +46,7 @@ class OrderService {
 				orderYear: query.orderYear as string | undefined,
 				startDate: query.startDate as string | undefined,
 				endDate: query.endDate as string | undefined,
+				unavailableReceipt: query.unavailableReceipt as "yes" | null,
 				ordererCustomerId: query.ordererCustomerId as string | undefined,
 				deliveryTargetCustomerId: query.deliveryTargetCustomerId as string | undefined,
 				deliveryPlaceId: query.deliveryPlaceId as string | undefined,
@@ -145,6 +146,20 @@ class OrderService {
 				}
 			}
 
+			if (queryParams.unavailableReceipt === "yes") {
+				console.log("filteredd");
+				if (filter.OrderDetail) {
+					console.log("filteredd 2");
+					filter.OrderDetail = {
+						receiptNumber: null,
+					};
+				} else {
+					filter.OrderDetail = {
+						receiptNumber: null,
+					};
+				}
+			}
+
 			console.log("==========FILTER=========");
 			console.log(filter);
 			console.log("=========================");
@@ -157,6 +172,7 @@ class OrderService {
 					OrdererCustomer: true,
 					DeliveryTargetCustomer: true,
 					OrderDetail: {
+						where: { ...(queryParams.paymentStatus && { paymentStatus: queryParams.paymentStatus }) },
 						include: {
 							OrderProducts: {
 								where: queryParams.productId ? { productId: queryParams.productId } : undefined,
@@ -173,7 +189,6 @@ class OrderService {
 									? {
 											where: {
 												...(queryParams.paymentMethodId && { id: queryParams.paymentMethodId }),
-												...(queryParams.paymentStatus && { status: queryParams.paymentStatus }),
 											},
 										}
 									: true,
@@ -1207,6 +1222,7 @@ class OrderService {
 
 					// Data Product
 					const productList = row["Produk & Qty"] as string;
+					console.log({ productList });
 					const products = productList?.includes("\n")
 						? productList
 								.split("\n")
@@ -1218,13 +1234,31 @@ class OrderService {
 									const skus = skuList.split(",").map((sku) => sku.trim());
 
 									return {
-										productName,
+										productName: productName.trim(),
 										skus,
 										quantity: Number.parseInt(quantity),
 									};
 								})
 								.filter(Boolean)
-						: [];
+						: productList
+							? (() => {
+									const match = productList.match(/(.*?)\s*\(SKU:\s*([^)]+)\)\s*x(\d+)/);
+									if (!match) return [];
+
+									const [_, productName, skuList, quantity] = match;
+									const skus = skuList.split(",").map((sku) => sku.trim());
+
+									return [
+										{
+											productName: productName.trim(),
+											skus,
+											quantity: Number.parseInt(quantity),
+										},
+									];
+								})()
+							: [];
+
+					console.log({ products });
 
 					// Data pembayaran
 					const paymentStatus = row["Status Pembayaran"] as PaymentStatus;

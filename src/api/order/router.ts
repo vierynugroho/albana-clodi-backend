@@ -5,7 +5,7 @@ import express, { type Request, type Response, type Router } from "express";
 import multer from "multer";
 import { z } from "zod";
 import { OrderController } from "./controller";
-import { CreateOrderSchema, OrderParamsSchema, OrderSchema, UpdateOrderSchema } from "./model";
+import { CreateOrderSchema, OrderParamsSchema, OrderQuerySchema, OrderSchema, UpdateOrderSchema } from "./model";
 
 export const orderRegistry = new OpenAPIRegistry();
 export const orderRouter: Router = express.Router();
@@ -40,7 +40,7 @@ orderRegistry.registerPath({
 				.optional()
 				.describe("ID tempat pengiriman (contoh: da127630-ae9c-4678-b0f6-cdb51d645bfb)"),
 			orderDate: z.string().optional().describe("Tanggal pemesanan (contoh: 2024-01-01T00:00:00.000Z)"),
-			orderStatus: z.string().optional().describe("Status pesanan (contoh: settlement, pending, cancel, installments)"),
+			unavailableReceipt: z.enum(["yes"]).optional().describe("tidak ada resi?"),
 			orderMonth: z.string().optional().describe("Bulan pemesanan (1-12)"),
 			orderYear: z.string().optional().describe("Tahun pemesanan (contoh: 2024)"),
 			startDate: z.string().optional().describe("Tanggal mulai pencarian (contoh: 2024-01-01T00:00:00.000Z)"),
@@ -308,7 +308,10 @@ const orderController = new OrderController();
 
 const upload = multer({ storage: multer.memoryStorage() });
 
-orderRouter.route("/").get(orderController.getAll).post(validateRequest(CreateOrderSchema), orderController.create);
+orderRouter
+	.route("/")
+	.get(validateRequest(OrderQuerySchema), orderController.getAll)
+	.post(validateRequest(CreateOrderSchema), orderController.create);
 orderRouter
 	.route("/:id")
 	.get(validateRequest(OrderParamsSchema), orderController.getOne)
