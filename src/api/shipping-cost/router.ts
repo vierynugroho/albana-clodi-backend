@@ -13,7 +13,7 @@ shippingCostRegistry.register("ShippingCost", ShippingCostSchema);
 
 shippingCostRegistry.registerPath({
 	method: "get",
-	path: "/shipping-cost",
+	path: "/shipping-cost/calculate",
 	tags: ["ShippingCost"],
 	security: [{ bearerAuth: [] }],
 	request: {
