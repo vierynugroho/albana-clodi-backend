@@ -33,7 +33,7 @@ productRegistry.registerPath({
 		body: {
 			content: {
 				"multipart/form-data": {
-					schema: CreateProductRequestSchema.pick({ body: true }),
+					schema: CreateProductRequestSchema.shape.body,
 				},
 			},
 		},
@@ -57,17 +57,17 @@ productRegistry.registerPath({
 		body: {
 			content: {
 				"multipart/form-data": {
-					schema: UpdateProductRequestSchema.pick({ body: true }),
+					schema: UpdateProductRequestSchema.shape.body,
 				},
 			},
 		},
-		params: UpdateProductRequestSchema.pick({ params: true }),
+		params: UpdateProductRequestSchema.shape.params,
 	},
 	responses: createApiResponse(ProductSchema, "Success", StatusCodes.OK),
 });
 productRouter.put(
 	"/:id",
-	upload.single("image"),
+	upload.array("images"),
 	parseNestedBody,
 	validateStock,
 	validateRequest(UpdateProductRequestSchema),
@@ -83,7 +83,7 @@ productRegistry.registerPath({
 		body: {
 			content: {
 				"application/json": {
-					schema: DeleteProductRequestSchema.pick({ body: true }),
+					schema: DeleteProductRequestSchema.shape.body,
 				},
 			},
 		},
@@ -98,7 +98,7 @@ productRegistry.registerPath({
 	tags: ["Product"],
 	security: [{ bearerAuth: [] }],
 	request: {
-		query: GetAllProductsRequestSchema.pick({ query: true }),
+		query: GetAllProductsRequestSchema.shape.query,
 	},
 	responses: createApiResponse(z.array(ProductSchema), "Success", StatusCodes.OK),
 });
@@ -110,7 +110,7 @@ productRegistry.registerPath({
 	tags: ["Product"],
 	security: [{ bearerAuth: [] }],
 	request: {
-		params: GetProductRequestSchema.pick({ params: true }),
+		params: GetProductRequestSchema.shape.params,
 	},
 	responses: createApiResponse(ProductSchema, "Success", StatusCodes.OK),
 });

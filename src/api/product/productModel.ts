@@ -5,7 +5,11 @@ import { commonValidations } from "@/common/utils/commonValidation";
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { optional, z } from "zod";
 import { CreateCategorySchema } from "../category/categoryModel";
-import { CreateProductDiscountSchema, ProductDiscountSchema } from "../product-discount/productDiscountModel";
+import {
+	CreateProductDiscountSchema,
+	ProductDiscountSchema,
+	UpdateProductDiscountSchema,
+} from "../product-discount/productDiscountModel";
 import { CreateProductPriceSchema, UpdateProductPriceSchema } from "../product-price/productPriceModel";
 import {
 	CreateProductVariantSchema,
@@ -53,7 +57,7 @@ export type CreateProductType = z.infer<typeof CreateProductSchema>;
 export const UpdateProductSchema = z.object({
 	product: ProductSchema.partial().optional(),
 	categoryId: z.string().uuid().optional(),
-	productDiscount: UpdateProductPriceSchema.optional(),
+	productDiscount: UpdateProductDiscountSchema.optional(),
 	productVariants: z
 		.array(
 			UpdateProductVariantSchema.extend({
