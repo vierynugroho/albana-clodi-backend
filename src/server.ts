@@ -59,7 +59,7 @@ app.use("/delivery-places", authenticate, authorizeRoles([Roles.ADMIN, Roles.SUP
 app.use("/orders", authenticate, authorizeRoles([Roles.ADMIN, Roles.SUPERADMIN]), orderRouter);
 app.use("/regions", authenticate, authorizeRoles([Roles.ADMIN, Roles.SUPERADMIN]), regionRouter);
 app.use("/customers", authenticate, authorizeRoles([Roles.ADMIN, Roles.SUPERADMIN]), customerRouter);
-app.use("/payments", authenticate, authorizeRoles([Roles.ADMIN, Roles.SUPERADMIN]), paymentMethodRouter);
+app.use("/payment-methods", authenticate, authorizeRoles([Roles.ADMIN, Roles.SUPERADMIN]), paymentMethodRouter);
 app.use("/sales-channels", authenticate, authorizeRoles([Roles.ADMIN, Roles.SUPERADMIN]), salesChannelRouter);
 app.use("/shipping-cost", authenticate, authorizeRoles([Roles.ADMIN, Roles.SUPERADMIN]), shippingCostRouter);
 app.use("/reports", authenticate, authorizeRoles([Roles.ADMIN, Roles.SUPERADMIN]), reportRouter);
