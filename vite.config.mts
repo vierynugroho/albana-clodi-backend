@@ -10,11 +10,4 @@ export default defineConfig({
 		restoreMocks: true,
 	},
 	plugins: [tsconfigPaths()],
-	optimizeDeps: {
-		esbuildOptions: {
-			define: {
-				global: "globalThis",
-			},
-		},
-	},
 });
