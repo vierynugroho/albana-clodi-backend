@@ -14,8 +14,7 @@
 		"resolveJsonModule": true,
 		"skipLibCheck": true,
 		"forceConsistentCasingInFileNames": true,
-		"types": ["vitest/globals", "node"],
-		"typeRoots": ["./node_modules", "./types"]
+		"types": ["vitest/globals", "node"]
 	},
 	"include": ["src/**/*"],
 	"exclude": ["node_modules"]
