@@ -12,7 +12,10 @@
 		"forceConsistentCasingInFileNames": true,
 		"types": ["node"],
 		"typeRoots": ["./node_modules/@types", "./types"],
-		"importHelpers": true
+		"importHelpers": true,
+		"paths": {
+			"*": ["src/*"]
+		}
 	},
 	"ts-node": {
 		// Do not forget to `npm i -D tsconfig-paths`
