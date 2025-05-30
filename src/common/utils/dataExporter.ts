@@ -1,7 +1,6 @@
-import { StatusCodesrom "httphttp-status-codes
-import xlsxmxlsx";xlsx
-import { ServiceResponseonse } fr./common/models/serviceResponsels/serviceResponse";
-import { logger }gger } ./server "./server";
+import { StatusCodes } from "http-status-codes";
+import xlsx from "xlsx";
+import { ServiceResponse } from "./../models/serviceResponse";
 
 interface ExportParams {
 	startDate?: string;
@@ -149,7 +148,6 @@ export const exportData = async <T>(
 
 		return ServiceResponse.success("Berhasil mengekspor data", { buffer, fileName }, StatusCodes.OK);
 	} catch (error) {
-		logger.error(error);
 		return ServiceResponse.failure("Gagal mengekspor data", null, StatusCodes.INTERNAL_SERVER_ERROR);
 	}
 };

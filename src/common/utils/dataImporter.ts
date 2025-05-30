@@ -1,7 +1,6 @@
-import { StatusCodesrom "httphttp-status-codes
-import xlsxmxlsx";xlsx
-import { ServiceResponseonse } fr./common/models/serviceResponsels/serviceResponse";
-import { logger }gger } ./server "./server";
+import { StatusCodes } from "http-status-codes";
+import xlsx from "xlsx";
+import { ServiceResponse } from "./../models/serviceResponse";
 
 /**
  * Fungsi untuk mengimpor data dari file Excel
@@ -49,7 +48,6 @@ export const importData = async <T>(
 
 				// Periksa apakah item adalah objek yang valid
 				if (!item || typeof item !== "object") {
-					logger.error(`Data pada baris ${i + 1} tidak valid: format data tidak sesuai`);
 					return {
 						isValid: false,
 						errorMessage: `Data pada baris ${i + 1} tidak valid: format data tidak sesuai`,
@@ -83,7 +81,6 @@ export const importData = async <T>(
 
 				if (invalidValues.length > 0) {
 					const invalidFields = invalidValues.map(([key]) => key).join(", ");
-					logger.error(`Data tidak valid pada baris ${i + 1}. Field yang bermasalah: ${invalidFields}`);
 					return {
 						isValid: false,
 						errorMessage: `Data pada baris ${i + 1} tidak valid: ${invalidFields} memiliki nilai yang tidak sesuai`,
@@ -115,7 +112,6 @@ export const importData = async <T>(
 
 		return ServiceResponse.success("Berhasil mengimpor data", mappedData, StatusCodes.OK);
 	} catch (error) {
-		logger.error(error);
 		return ServiceResponse.failure("Gagal mengimpor data", null, StatusCodes.INTERNAL_SERVER_ERROR);
 	}
 };
