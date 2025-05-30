@@ -47,6 +47,18 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
 
 		next();
 	} catch (error) {
+		if (error instanceof jwt.TokenExpiredError) {
+			res
+				.status(StatusCodes.UNAUTHORIZED)
+				.send(ServiceResponse.failure("Unauthorized - Token telah kadaluarsa", null, StatusCodes.UNAUTHORIZED));
+			return;
+		}
+		if (error instanceof jwt.JsonWebTokenError) {
+			res
+				.status(StatusCodes.UNAUTHORIZED)
+				.send(ServiceResponse.failure("Unauthorized - Token tidak valid", null, StatusCodes.UNAUTHORIZED));
+			return;
+		}
 		next(error);
 	}
 };

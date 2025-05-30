@@ -67,7 +67,7 @@ app.use("/receipts", authenticate, authorizeRoles([Roles.ADMIN, Roles.SUPERADMIN
 app.use("/shop", authenticate, authorizeRoles([Roles.SUPERADMIN]), shopRouter);
 app.use("/categories", authenticate, authorizeRoles([Roles.SUPERADMIN]), categoryRouter);
 
-app.use(openAPIRouter);
+app.use("/api-docs", openAPIRouter);
 
 // Error handlers
 app.use(errorHandler());
