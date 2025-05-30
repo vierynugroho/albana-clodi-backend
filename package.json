@@ -67,15 +67,21 @@
 		"pino-pretty": "13.0.0",
 		"prettier": "^3.5.3",
 		"supertest": "7.1.0",
+		"tsconfig-paths": "^4.2.0",
 		"tsup": "8.4.0",
 		"tsx": "4.19.3",
 		"typescript": "5.8.3",
 		"vite-tsconfig-paths": "5.1.4"
 	},
 	"tsup": {
-		"entry": ["src/index.ts"],
+		"entry": [
+			"src/index.ts"
+		],
 		"outDir": "dist",
-		"format": ["esm", "cjs"],
+		"format": [
+			"esm",
+			"cjs"
+		],
 		"target": "es2020",
 		"sourcemap": true,
 		"clean": true,

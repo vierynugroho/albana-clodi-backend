@@ -4,7 +4,7 @@
 		"module": "ESNext",
 		"baseUrl": ".",
 		"paths": {
-			"@/*": ["*"]
+			"@/*": ["src/*"]
 		},
 		"moduleResolution": "Node",
 		"outDir": "dist",
@@ -16,6 +16,10 @@
 		"forceConsistentCasingInFileNames": true,
 		"types": ["node"],
 		"typeRoots": ["./node_modules/@types", "./types"]
+	},
+	"ts-node": {
+		// Do not forget to `npm i -D tsconfig-paths`
+		"require": ["tsconfig-paths/register"]
 	},
 	"include": ["src/**/*"],
 	"exclude": ["node_modules"]
