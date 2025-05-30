@@ -5,6 +5,7 @@
 	"author": "Edwin Hernandez",
 	"repository": "edwinhern/express-typescript-2024",
 	"license": "MIT",
+	"type": "module",
 	"main": "index.ts",
 	"engines": {
 		"node": "20.x"
