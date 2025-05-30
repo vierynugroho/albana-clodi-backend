@@ -1,14 +1,13 @@
 {
 	"compilerOptions": {
 		"target": "ESNext",
-		"module": "ESNext",
+		"module": "CommonJS",
 		"baseUrl": "./src",
 		"paths": {
 			"@/*": ["*"]
 		},
 		"moduleResolution": "Node",
 		"outDir": "dist",
-		"importsNotUsedAsValues": "remove",
 		"strict": true,
 		"esModuleInterop": true,
 		"resolveJsonModule": true,
