@@ -1,12 +1,8 @@
-import { PrismaClient } from "@prisma/client";
-
+import prismaClient from "@/config/prisma";
 export class ExpenseRepository {
-	constructor(private readonly prisma: PrismaClient) {}
-
 	public get client() {
-		return this.prisma;
+		return prismaClient;
 	}
 }
 
-const prisma = new PrismaClient();
-export const expenseRepository = new ExpenseRepository(prisma);
+export const expenseRepository = new ExpenseRepository();

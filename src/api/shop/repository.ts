@@ -1,12 +1,10 @@
+import prismaClient from "@/config/prisma";
 import { PrismaClient } from "@prisma/client";
 
 export class ShopRepository {
-	constructor(private readonly prisma: PrismaClient) {}
-
 	public get client() {
-		return this.prisma;
+		return prismaClient;
 	}
 }
 
-const prisma = new PrismaClient();
-export const shopRepository = new ShopRepository(prisma);
+export const shopRepository = new ShopRepository();
