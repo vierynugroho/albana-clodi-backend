@@ -5,7 +5,6 @@
 	"author": "Edwin Hernandez",
 	"repository": "edwinhern/express-typescript-2024",
 	"license": "MIT",
-	"type": "module",
 	"main": "index.ts",
 	"engines": {
 		"node": "20.x"
@@ -77,14 +76,9 @@
 		"@": "dist"
 	},
 	"tsup": {
-		"entry": [
-			"src/index.ts"
-		],
+		"entry": ["src/index.ts"],
 		"outDir": "dist",
-		"format": [
-			"esm",
-			"cjs"
-		],
+		"format": ["esm", "cjs"],
 		"target": "es2020",
 		"sourcemap": true,
 		"clean": true,

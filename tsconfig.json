@@ -1,7 +1,7 @@
 {
 	"compilerOptions": {
 		"target": "ESNext",
-		"module": "ESNext",
+		"module": "CommonJS",
 		"baseUrl": "./",
 		"moduleResolution": "Node",
 		"outDir": "./dist",
@@ -12,10 +12,7 @@
 		"forceConsistentCasingInFileNames": true,
 		"types": ["node"],
 		"typeRoots": ["./node_modules/@types", "./types"],
-		"importHelpers": true,
-		"paths": {
-			"*": ["src/*"]
-		}
+		"importHelpers": true
 	},
 	"ts-node": {
 		// Do not forget to `npm i -D tsconfig-paths`
