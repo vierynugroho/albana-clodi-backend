@@ -1,5 +1,4 @@
 import { ServiceResponse } from "@/common/models/serviceResponse";
-import { PrismaClient } from "@prisma/client";
 import { StatusCodes } from "http-status-codes";
 import type { CreatePaymentMethodType, UpdatePaymentMethodType } from "./paymentMethodModel";
 import { PaymentMethodRepository } from "./paymentMethodRepository";
@@ -7,7 +6,7 @@ import { PaymentMethodRepository } from "./paymentMethodRepository";
 class PaymentMethodService {
 	public readonly paymentMethodRepo: PaymentMethodRepository["paymentMethodRepo"];
 
-	constructor(paymentMethodRepository = new PaymentMethodRepository(new PrismaClient())) {
+	constructor(paymentMethodRepository = new PaymentMethodRepository()) {
 		this.paymentMethodRepo = paymentMethodRepository.paymentMethodRepo;
 	}
 

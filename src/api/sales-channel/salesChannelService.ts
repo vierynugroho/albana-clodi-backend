@@ -6,7 +6,7 @@ import { SalesChannelRepository } from "./salesChannelRepository";
 
 class SalesChannelService {
 	public readonly salesChannelRepo: SalesChannelRepository["salesChannel"];
-	constructor(public readonly salesChannelRepository = new SalesChannelRepository(new PrismaClient())) {
+	constructor(public readonly salesChannelRepository = new SalesChannelRepository()) {
 		this.salesChannelRepo = salesChannelRepository.salesChannel;
 	}
 

@@ -12,7 +12,7 @@ import { RegionRepository } from "./regionRepository";
 class RegionService {
 	private readonly regionRepo: RegionRepository;
 
-	constructor(regionRepository = new RegionRepository(new PrismaClient())) {
+	constructor(regionRepository = new RegionRepository()) {
 		this.regionRepo = regionRepository;
 	}
 

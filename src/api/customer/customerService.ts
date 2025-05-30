@@ -16,7 +16,7 @@ import { CustomerRepository } from "./customerRepository";
 export class CustomerService {
 	private readonly customerRepo: CustomerRepository["customer"];
 
-	constructor(customerRepository = new CustomerRepository(new PrismaClient())) {
+	constructor(customerRepository = new CustomerRepository()) {
 		this.customerRepo = customerRepository.customer;
 	}
 

@@ -6,7 +6,7 @@ import { CategoryRepository } from "./categoryRepository";
 
 class CategoryService {
 	private readonly categoryRepo: CategoryRepository["category"];
-	constructor(categoryRepository = new CategoryRepository(new PrismaClient())) {
+	constructor(categoryRepository = new CategoryRepository()) {
 		this.categoryRepo = categoryRepository.category;
 	}
 

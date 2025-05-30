@@ -1,8 +1,9 @@
+import prismaClient from "@/config/prisma";
 import type { PrismaClient } from "@prisma/client";
 
 export class SalesChannelRepository {
 	public readonly salesChannel: PrismaClient["salesChannel"];
-	constructor(public readonly prismaInit: PrismaClient) {
-		this.salesChannel = prismaInit.salesChannel;
+	constructor() {
+		this.salesChannel = prismaClient.salesChannel;
 	}
 }
