@@ -4,7 +4,7 @@
 		"module": "ESNext",
 		"baseUrl": ".",
 		"paths": {
-			"@/*": ["src/*"]
+			"@/*": ["*"]
 		},
 		"moduleResolution": "Node",
 		"outDir": "dist",
@@ -17,6 +17,6 @@
 		"types": ["node"],
 		"typeRoots": ["./node_modules/@types", "./types"]
 	},
-	"include": ["./src/**/*"],
+	"include": ["src/**/*"],
 	"exclude": ["node_modules"]
 }
