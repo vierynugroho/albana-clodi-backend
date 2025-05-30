@@ -2,12 +2,12 @@
 	"compilerOptions": {
 		"target": "ESNext",
 		"module": "ESNext",
+		"baseUrl": "./src",
 		"paths": {
 			"@/*": ["*"]
 		},
 		"moduleResolution": "Node",
 		"outDir": "./dist",
-    	"baseUrl": "./",
 		"importsNotUsedAsValues": "remove",
 		"strict": true,
 		"esModuleInterop": true,
