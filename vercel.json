@@ -1,13 +1,13 @@
 {
   "builds": [
     {
-      "src": "src/main.ts",
+      "src": "src/index.ts",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
-      "dest": "src/main.ts",
+      "dest": "src/index.ts",
       "methods": [
         "GET",
         "POST",
