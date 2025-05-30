@@ -1,7 +1,9 @@
 {
+    "buildCommand": "prisma generate && npm run build",
     "builds": [
         {
-            "src": "./src/index.ts"
+            "src": "./src/index.ts",
+            "use": "@vercel/node"
         }
     ],
     "routes": [
