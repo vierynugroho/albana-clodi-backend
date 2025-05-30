@@ -33,6 +33,7 @@ export const OrderDetailSchema = z.object({
 			packaging: z.number().optional().describe("Biaya packaging"),
 			insurance: z.number().optional().describe("Biaya asuransi"),
 			weight: z.number().optional().describe("Berat produk 1 kg"),
+			installment: z.number().optional().describe("Bayar Cicilan"),
 			discount: z
 				.object({
 					value: z.number().describe("Nilai diskon"),

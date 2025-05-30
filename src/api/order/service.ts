@@ -4,7 +4,7 @@ import { exportData } from "@/common/utils/dataExporter";
 import { importData } from "@/common/utils/dataImporter";
 import { logger } from "@/server";
 import { type CustomerCategories, type Prisma, PrismaClient } from "@prisma/client";
-import type { PaymentStatus } from "@prisma/client";
+import { PaymentStatus } from "@prisma/client";
 import { StatusCodes } from "http-status-codes";
 import { v4 as uuidv4 } from "uuid";
 import type { CreateOrderType, OrderQueryType, UpdateOrderType } from "./model";
@@ -328,8 +328,15 @@ class OrderService {
 						};
 						ongkir1kg?: number;
 					};
+					const installment =
+						data.orderDetail.detail.otherFees && typeof data.orderDetail.detail.otherFees === "object"
+							? (data.orderDetail.detail.otherFees as { installment?: number }).installment
+							: undefined;
 					if (packaging && typeof packaging !== "number") {
 						return ServiceResponse.failure("Biaya packaging harus berupa angka", null, StatusCodes.BAD_REQUEST);
+					}
+					if (installment && typeof installment !== "number") {
+						return ServiceResponse.failure("Biaya cicilan harus berupa angka", null, StatusCodes.BAD_REQUEST);
 					}
 					if (insurance && typeof insurance !== "number") {
 						return ServiceResponse.failure("Biaya asuransi harus berupa angka", null, StatusCodes.BAD_REQUEST);
@@ -462,6 +469,10 @@ class OrderService {
 					// Tambahkan biaya asuransi jika ada
 					if (otherFees.insurance) {
 						totalPrice += otherFees.insurance;
+					}
+
+					if (otherFees.installment) {
+						totalPrice += otherFees.installment;
 					}
 
 					// Tambahkan biaya packaging jika ada
@@ -1594,6 +1605,42 @@ class OrderService {
 		} catch (error) {
 			logger.error(error);
 			return ServiceResponse.failure("Gagal mengimpor data order", null, StatusCodes.INTERNAL_SERVER_ERROR);
+		}
+	};
+
+	public cancelOrders = async (id: string) => {
+		try {
+			const existingOrder = await this.orderRepo.client.order.findUnique({
+				where: { id },
+				include: {
+					OrderDetail: {
+						include: {
+							OrderProducts: true,
+						},
+					},
+					ShippingServices: true,
+				},
+			});
+
+			if (!existingOrder) {
+				return ServiceResponse.failure("Data order tidak ditemukan", null, StatusCodes.NOT_FOUND);
+			}
+
+			const updatedOrder = await this.orderRepo.client.orderDetail.update({
+				where: { id: existingOrder.OrderDetail?.id },
+				data: {
+					paymentStatus: PaymentStatus.CANCEL,
+				},
+			});
+
+			return ServiceResponse.success("Berhasil membatalkan pesanan", updatedOrder, StatusCodes.OK);
+		} catch (error) {
+			logger.error(error);
+			return ServiceResponse.failure(
+				"Gagal menghapus data order",
+				(error as Error).message,
+				StatusCodes.INTERNAL_SERVER_ERROR,
+			);
 		}
 	};
 
