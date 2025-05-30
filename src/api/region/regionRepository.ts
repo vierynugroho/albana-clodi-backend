@@ -1,3 +1,4 @@
+import prismaClient from "@/config/prisma";
 import type { PrismaClient, Province } from "@prisma/client";
 
 export class RegionRepository {
@@ -6,10 +7,10 @@ export class RegionRepository {
 	public readonly district: PrismaClient["district"];
 	public readonly village: PrismaClient["village"];
 
-	constructor(private readonly prismaInit: PrismaClient) {
-		this.province = prismaInit.province;
-		this.city = prismaInit.city;
-		this.district = prismaInit.district;
-		this.village = prismaInit.village;
+	constructor() {
+		this.province = prismaClient.province;
+		this.city = prismaClient.city;
+		this.district = prismaClient.district;
+		this.village = prismaClient.village;
 	}
 }
