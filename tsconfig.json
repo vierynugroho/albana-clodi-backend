@@ -2,7 +2,7 @@
 	"compilerOptions": {
 		"target": "ESNext",
 		"module": "ESNext",
-		"baseUrl": ".",
+		"baseUrl": "./src",
 		"paths": {
 			"@/*": ["*"]
 		},
@@ -20,6 +20,6 @@
 		// Do not forget to `npm i -D tsconfig-paths`
 		"require": ["tsconfig-paths/register"]
 	},
-	"include": ["src/**/*"],
+	"include": ["src"],
 	"exclude": ["node_modules"]
 }
