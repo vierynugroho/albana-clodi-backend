@@ -1,9 +1,9 @@
-import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
-import { validateRequest } from "@/common/utils/httpHandlers";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Router } from "express";
 import { StatusCodes } from "http-status-codes";
 import { type ZodTypeAny, z } from "zod";
+import { createApiResponse } from "./../../api-docs/openAPIResponseBuilders";
+import { validateRequest } from "./../../common/utils/httpHandlers";
 import { paymentMethodController } from "./paymentMethodController";
 import {
 	CreatePaymentMethodRequestSchema,

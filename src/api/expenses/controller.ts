@@ -1,6 +1,6 @@
-import { ServiceResponse } from "@/common/models/serviceResponse";
 import type { Request, RequestHandler, Response } from "express";
 import { StatusCodes } from "http-status-codes";
+import { ServiceResponse } from "./../../common/models/serviceResponse";
 import { expenseService } from "./service";
 
 export class ExpenseController {

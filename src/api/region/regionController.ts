@@ -1,5 +1,5 @@
-import { ServiceResponse } from "@/common/models/serviceResponse";
 import type { Request, RequestHandler, Response } from "express";
+import { ServiceResponse } from "./../../common/models/serviceResponse";
 import type { RequestQueryProvinceType } from "./regionModel";
 import { regionService } from "./regionService";
 

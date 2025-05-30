@@ -1,13 +1,13 @@
-import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
-import { CustomerCategoryEnum } from "@/common/enums/customer/customerCategoryEnum";
-import { CustomerStatusEnum } from "@/common/enums/customer/customerStatusEnum";
-import { OrderPaginationEnum } from "@/common/enums/orderPaginationEnum";
-import { validateRequest } from "@/common/utils/httpHandlers";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Router } from "express";
 import { StatusCodes } from "http-status-codes";
 import multer from "multer";
 import { type ZodTypeAny, z } from "zod";
+import { createApiResponse } from "./../../api-docs/openAPIResponseBuilders";
+import { CustomerCategoryEnum } from "./../../common/enums/customer/customerCategoryEnum";
+import { CustomerStatusEnum } from "./../../common/enums/customer/customerStatusEnum";
+import { OrderPaginationEnum } from "./../../common/enums/orderPaginationEnum";
+import { validateRequest } from "./../../common/utils/httpHandlers";
 import { customerController } from "./customerController";
 import {
 	CreateCustomerRequestSchema,

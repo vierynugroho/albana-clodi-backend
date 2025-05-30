@@ -1,6 +1,5 @@
-import { ServiceResponse } from "@/common/models/serviceResponse";
-import { logger } from "@/server";
 import { StatusCodes } from "http-status-codes";
+import { ServiceResponse } from "./../../common/models/serviceResponse";
 
 class LocationService {
 	public getProvinces = async () => {
@@ -19,7 +18,6 @@ class LocationService {
 
 			return ServiceResponse.success("Berhasil mengambil data provinsi", data.rajaongkir.results, StatusCodes.OK);
 		} catch (error) {
-			logger.error(error);
 			return ServiceResponse.failure("Gagal mengambil data provinsi", null, StatusCodes.INTERNAL_SERVER_ERROR);
 		}
 	};
@@ -45,7 +43,6 @@ class LocationService {
 
 			return ServiceResponse.success("Berhasil mengambil data kota", filteredCities, StatusCodes.OK);
 		} catch (error) {
-			logger.error(error);
 			return ServiceResponse.failure("Gagal mengambil data kota", null, StatusCodes.INTERNAL_SERVER_ERROR);
 		}
 	};

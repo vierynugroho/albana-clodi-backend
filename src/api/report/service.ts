@@ -1,7 +1,6 @@
-import { ServiceResponse } from "@/common/models/serviceResponse";
-import { logger } from "@/server";
 import { type PaymentStatus, Prisma } from "@prisma/client";
 import { StatusCodes } from "http-status-codes";
+import { ServiceResponse } from "./../../common/models/serviceResponse";
 import { type ReportRepository, reportRepository } from "./repository";
 
 interface IReportParams {
@@ -146,7 +145,6 @@ class ReportService {
 				StatusCodes.OK,
 			);
 		} catch (error) {
-			logger.error(error);
 			return ServiceResponse.failure("Gagal mendapatkan report expenses", null, StatusCodes.INTERNAL_SERVER_ERROR);
 		}
 	};
@@ -391,7 +389,6 @@ class ReportService {
 				StatusCodes.OK,
 			);
 		} catch (error) {
-			logger.error(error);
 			return ServiceResponse.failure("Gagal mendapatkan report orders", null, StatusCodes.INTERNAL_SERVER_ERROR);
 		}
 	};
@@ -529,7 +526,6 @@ class ReportService {
 				StatusCodes.OK,
 			);
 		} catch (error) {
-			logger.error(error);
 			return ServiceResponse.failure("Gagal mendapatkan report products", null, StatusCodes.INTERNAL_SERVER_ERROR);
 		}
 	};
@@ -886,7 +882,6 @@ class ReportService {
 
 			return ServiceResponse.success("Berhasil mendapatkan report transactions", responseData, StatusCodes.OK);
 		} catch (error) {
-			logger.error(error);
 			return ServiceResponse.failure("Gagal mendapatkan report orders", null, StatusCodes.INTERNAL_SERVER_ERROR);
 		}
 	};
@@ -1071,7 +1066,6 @@ class ReportService {
 				StatusCodes.OK,
 			);
 		} catch (error) {
-			logger.error(error);
 			return ServiceResponse.failure("Gagal mendapatkan report orders", null, StatusCodes.INTERNAL_SERVER_ERROR);
 		}
 	};
@@ -1318,7 +1312,6 @@ class ReportService {
 
 			return ServiceResponse.success("Berhasil mendapatkan report produk terjual", responseData, StatusCodes.OK);
 		} catch (error) {
-			logger.error(error);
 			return ServiceResponse.failure(
 				"Gagal mendapatkan report produk terjual",
 				null,

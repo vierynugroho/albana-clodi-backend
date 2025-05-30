@@ -1,6 +1,6 @@
-import { ServiceResponse } from "@/common/models/serviceResponse";
 import { PrismaClient } from "@prisma/client";
 import { StatusCodes } from "http-status-codes";
+import { ServiceResponse } from "./../../common/models/serviceResponse";
 import type { CreatePaymentMethodType, UpdatePaymentMethodType } from "./paymentMethodModel";
 import { PaymentMethodRepository } from "./paymentMethodRepository";
 

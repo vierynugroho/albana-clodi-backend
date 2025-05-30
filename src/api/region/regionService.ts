@@ -1,6 +1,6 @@
-import { ServiceResponse } from "@/common/models/serviceResponse";
 import { type Prisma, PrismaClient } from "@prisma/client";
 import { StatusCodes } from "http-status-codes";
+import { ServiceResponse } from "./../../common/models/serviceResponse";
 import type {
 	RequestQueryCityType,
 	RequestQueryDistrictType,

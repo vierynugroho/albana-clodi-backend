@@ -1,6 +1,3 @@
-import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
-import { authorizeRoles } from "@/common/middleware/authorizeRoles";
-import { validateRequest } from "@/common/utils/httpHandlers";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import { Roles } from "@prisma/client";
 import express, { type Request, type Response, type Router } from "express";
@@ -9,6 +6,9 @@ import { z } from "zod";
 import { ExpensesSchema } from "../expenses/model";
 import { OrderSchema } from "../order/model";
 import { ProductPriceSchema } from "../product-price/productPriceModel";
+import { createApiResponse } from "./../../api-docs/openAPIResponseBuilders";
+import { authorizeRoles } from "./../../common/middleware/authorizeRoles";
+import { validateRequest } from "./../../common/utils/httpHandlers";
 import { ReportController } from "./controller";
 
 export const reportRegistry = new OpenAPIRegistry();

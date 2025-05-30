@@ -1,10 +1,10 @@
 import type { UUID } from "node:crypto";
 import { URLSearchParams } from "node:url";
-import { ServiceResponse } from "@/common/models/serviceResponse";
-import { exportData } from "@/common/utils/dataExporter";
-import { importData } from "@/common/utils/dataImporter";
 import { type Customer, type CustomerCategories, Expense, type Prisma, PrismaClient } from "@prisma/client";
 import { StatusCodes } from "http-status-codes";
+import { ServiceResponse } from "./../../common/models/serviceResponse";
+import { exportData } from "./../../common/utils/dataExporter";
+import { importData } from "./../../common/utils/dataImporter";
 import type {
 	CreateCustomerType,
 	DeleteCustomerSchema,

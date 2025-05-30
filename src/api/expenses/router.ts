@@ -1,9 +1,9 @@
-import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
-import { validateRequest } from "@/common/utils/httpHandlers";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Request, type Response, type Router } from "express";
 import multer from "multer";
 import { z } from "zod";
+import { createApiResponse } from "./../../api-docs/openAPIResponseBuilders";
+import { validateRequest } from "./../../common/utils/httpHandlers";
 import { ExpenseController } from "./controller";
 import { CreateExpensesSchema, ExpenseParamsSchema, ExpensesSchema, UpdateExpensesSchema } from "./model";
 

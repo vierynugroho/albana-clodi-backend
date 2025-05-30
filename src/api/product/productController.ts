@@ -1,7 +1,7 @@
-import { ServiceResponse } from "@/common/models/serviceResponse";
 import type { Request, RequestHandler, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import { UpdateCategoryRequestSchema } from "../category/categoryModel";
+import { ServiceResponse } from "./../../common/models/serviceResponse";
 import { CreateProductRequestSchema, type RequestQueryProductType, UpdateProductRequestSchema } from "./productModel";
 import { productService } from "./productService";
 

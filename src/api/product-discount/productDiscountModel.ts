@@ -1,5 +1,5 @@
-import { ProductDiscountTypeEnum } from "@/common/enums/product/productDiscountTypeEnum";
 import { z } from "zod";
+import { ProductDiscountTypeEnum } from "./../../common/enums/product/productDiscountTypeEnum";
 
 export const ProductDiscountSchema = z.object({
 	id: z.string(),

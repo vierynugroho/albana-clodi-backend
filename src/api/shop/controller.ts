@@ -1,5 +1,5 @@
-import type { AuthRequest } from "@/common/types/auth";
 import type { RequestHandler, Response } from "express";
+import type { AuthRequest } from "./../../common/types/auth";
 import type { CreateShopSettingType, UpdateShopSettingType } from "./model";
 import { shopService } from "./service";
 

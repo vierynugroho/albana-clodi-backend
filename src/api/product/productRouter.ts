@@ -1,13 +1,13 @@
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Router } from "express";
 
-import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
-import { parseNestedBody } from "@/common/middleware/parseNestedFormData";
-import { validateStock } from "@/common/middleware/validateStock";
-import { validateRequest } from "@/common/utils/httpHandlers";
 import { StatusCodes } from "http-status-codes";
 import multer from "multer";
 import { type ZodAny, z } from "zod";
+import { createApiResponse } from "./../../api-docs/openAPIResponseBuilders";
+import { parseNestedBody } from "./../../common/middleware/parseNestedFormData";
+import { validateStock } from "./../../common/middleware/validateStock";
+import { validateRequest } from "./../../common/utils/httpHandlers";
 import { productController } from "./productController";
 import {
 	CreateProductRequestSchema,

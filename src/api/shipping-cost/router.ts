@@ -1,8 +1,8 @@
-import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
-import { validateRequest } from "@/common/utils/httpHandlers";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Request, type Response, type Router } from "express";
 import { z } from "zod";
+import { createApiResponse } from "./../../api-docs/openAPIResponseBuilders";
+import { validateRequest } from "./../../common/utils/httpHandlers";
 import { ShippingCostController } from "./controller";
 import { ShippingCostParamsSchema, ShippingCostSchema } from "./model";
 

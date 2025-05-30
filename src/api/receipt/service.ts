@@ -1,7 +1,6 @@
-import { ServiceResponse } from "@/common/models/serviceResponse";
-import { logger } from "@/server";
 import { type PaymentStatus, Prisma } from "@prisma/client";
 import { StatusCodes } from "http-status-codes";
+import { ServiceResponse } from "./../../common/models/serviceResponse";
 import { type ReceiptRepository, receiptRepository } from "./repository";
 
 interface IReceiptParams {
@@ -216,11 +215,9 @@ class ReportService {
 
 				return ServiceResponse.success("Berhasil mendapatkan data receipt", receiptData, StatusCodes.OK);
 			} catch (error) {
-				logger.error(error);
 				return ServiceResponse.failure("Gagal mendapatkan data receipt", null, StatusCodes.INTERNAL_SERVER_ERROR);
 			}
 		} catch (error) {
-			logger.error(error);
 			return ServiceResponse.failure("Gagal mendapatkan report orders", null, StatusCodes.INTERNAL_SERVER_ERROR);
 		}
 	};

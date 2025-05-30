@@ -1,7 +1,3 @@
-import { OrderPaginationEnum } from "@/common/enums/orderPaginationEnum";
-import { ProductPriceEnum } from "@/common/enums/product/productPriceEnum";
-import { ProductTypeEnum } from "@/common/enums/product/productTypeEnum";
-import { commonValidations } from "@/common/utils/commonValidation";
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { optional, z } from "zod";
 import { CreateCategorySchema } from "../category/categoryModel";
@@ -16,6 +12,10 @@ import {
 	ProductVariantSchema,
 	UpdateProductVariantSchema,
 } from "../product-variant/productVariantModel";
+import { OrderPaginationEnum } from "./../../common/enums/orderPaginationEnum";
+import { ProductPriceEnum } from "./../../common/enums/product/productPriceEnum";
+import { ProductTypeEnum } from "./../../common/enums/product/productTypeEnum";
+import { commonValidations } from "./../../common/utils/commonValidation";
 
 extendZodWithOpenApi(z);
 

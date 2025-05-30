@@ -1,9 +1,8 @@
-import { ServiceResponse } from "@/common/models/serviceResponse";
-import { exportData } from "@/common/utils/dataExporter";
-import { importData } from "@/common/utils/dataImporter";
-import { logger } from "@/server";
 import type { Expense, Prisma } from "@prisma/client";
 import { StatusCodes } from "http-status-codes";
+import { ServiceResponse } from "./../../common/models/serviceResponse";
+import { exportData } from "./../../common/utils/dataExporter";
+import { importData } from "./../../common/utils/dataImporter";
 import type { CreateExpensesType, UpdateExpensesType } from "./model";
 import { type ExpenseRepository, expenseRepository } from "./repository";
 
@@ -40,7 +39,6 @@ class ExpenseService {
 
 			return ServiceResponse.success("Berhasil menambahkan data pengeluaran", result, StatusCodes.CREATED);
 		} catch (error) {
-			logger.error(error);
 			return ServiceResponse.failure("Gagal menambahkan data pengeluaran", null, StatusCodes.INTERNAL_SERVER_ERROR);
 		}
 	};
@@ -64,7 +62,6 @@ class ExpenseService {
 
 			return ServiceResponse.success("Berhasil mengubah data pengeluaran", updatedExpense, StatusCodes.OK);
 		} catch (error) {
-			logger.error(error);
 			return ServiceResponse.failure("Gagal mengubah data pengeluaran", null, StatusCodes.INTERNAL_SERVER_ERROR);
 		}
 	};
@@ -77,7 +74,6 @@ class ExpenseService {
 
 			return ServiceResponse.success("Berhasil menghapus data pengeluaran", null, StatusCodes.OK);
 		} catch (error) {
-			logger.error(error);
 			return ServiceResponse.failure("Gagal menghapus data pengeluaran", null, StatusCodes.INTERNAL_SERVER_ERROR);
 		}
 	};
@@ -94,7 +90,6 @@ class ExpenseService {
 
 			return ServiceResponse.success("Berhasil mendapatkan detail pengeluaran", expense, StatusCodes.OK);
 		} catch (error) {
-			logger.error(error);
 			return ServiceResponse.failure("Gagal mendapatkan detail pengeluaran", null, StatusCodes.INTERNAL_SERVER_ERROR);
 		}
 	};
@@ -253,7 +248,6 @@ class ExpenseService {
 				StatusCodes.OK,
 			);
 		} catch (error) {
-			logger.error(error);
 			return ServiceResponse.failure("Gagal mendapatkan data pengeluaran", null, StatusCodes.INTERNAL_SERVER_ERROR);
 		}
 	};
@@ -288,7 +282,6 @@ class ExpenseService {
 				"Tidak ada data pengeluaran untuk diekspor",
 			);
 		} catch (error) {
-			logger.error(error);
 			return ServiceResponse.failure("Gagal mengekspor data pengeluaran", null, StatusCodes.INTERNAL_SERVER_ERROR);
 		}
 	};
@@ -358,7 +351,6 @@ class ExpenseService {
 				StatusCodes.OK,
 			);
 		} catch (error) {
-			logger.error(error);
 			return ServiceResponse.failure("Gagal mengimpor data pengeluaran", null, StatusCodes.INTERNAL_SERVER_ERROR);
 		}
 	};

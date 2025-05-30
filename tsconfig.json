@@ -2,19 +2,17 @@
 	"compilerOptions": {
 		"target": "ESNext",
 		"module": "ESNext",
-		"baseUrl": "./src",
-		"paths": {
-			"@/*": ["*"]
-		},
+		"baseUrl": "./",
 		"moduleResolution": "Node",
-		"outDir": "dist",
+		"outDir": "./dist",
 		"strict": true,
 		"esModuleInterop": true,
 		"resolveJsonModule": true,
 		"skipLibCheck": true,
 		"forceConsistentCasingInFileNames": true,
 		"types": ["node"],
-		"typeRoots": ["./node_modules/@types", "./types"]
+		"typeRoots": ["./node_modules/@types", "./types"],
+		"importHelpers": true
 	},
 	"ts-node": {
 		// Do not forget to `npm i -D tsconfig-paths`

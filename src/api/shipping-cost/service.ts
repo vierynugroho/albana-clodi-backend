@@ -1,6 +1,5 @@
-import { ServiceResponse } from "@/common/models/serviceResponse";
-import { logger } from "@/server";
 import { StatusCodes } from "http-status-codes";
+import { ServiceResponse } from "./../../common/models/serviceResponse";
 
 class ShippingCostService {
 	public checkShippingCost = async (
@@ -38,7 +37,6 @@ class ShippingCostService {
 
 			return ServiceResponse.success("Successfully calculated shipping cost", data.data, StatusCodes.OK);
 		} catch (error) {
-			logger.error(error);
 			return ServiceResponse.failure("Failed to calculate shipping cost", null, StatusCodes.INTERNAL_SERVER_ERROR);
 		}
 	};

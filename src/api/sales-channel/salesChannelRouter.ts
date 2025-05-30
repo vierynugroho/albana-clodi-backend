@@ -1,10 +1,10 @@
-import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
-import { validateRequest } from "@/common/utils/httpHandlers";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import express, { type Router } from "express";
 import { StatusCodes } from "http-status-codes";
 import { type ZodTypeAny, z } from "zod";
 import { DeleteCustomerRequestSchema, UpdateCustomerRequestSchema } from "../customer/customerModel";
+import { createApiResponse } from "./../../api-docs/openAPIResponseBuilders";
+import { validateRequest } from "./../../common/utils/httpHandlers";
 import { salesChannelController } from "./salesChannelController";
 import {
 	CreateSalesChannelRequestSchema,

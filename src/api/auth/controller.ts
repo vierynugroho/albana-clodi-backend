@@ -1,5 +1,5 @@
-import type { AuthRequest } from "@/common/types/auth";
 import type { Request, RequestHandler, Response } from "express";
+import type { AuthRequest } from "./../../common/types/auth";
 import type { LoginType, RegisterType, UpdateProfileType } from "./model";
 import { authService } from "./service";
 

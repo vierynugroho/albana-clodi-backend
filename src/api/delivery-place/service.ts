@@ -1,6 +1,5 @@
-import { ServiceResponse } from "@/common/models/serviceResponse";
-import { logger } from "@/server";
 import { StatusCodes } from "http-status-codes";
+import { ServiceResponse } from "./../../common/models/serviceResponse";
 import type { CreateDeliveryPlaceType, UpdateDeliveryPlaceType } from "./model";
 import { type DeliveryPlaceRepository, deliveryPlaceRepository } from "./repository";
 
@@ -16,7 +15,6 @@ class DeliveryPlaceService {
 			const result = await this.deliveryPlaceRepo.client.deliveryPlace.findMany();
 			return ServiceResponse.success("Berhasil mengambil data asal pengiriman", result, StatusCodes.OK);
 		} catch (error) {
-			logger.error(error);
 			return ServiceResponse.failure("Gagal mengambil data asal pengiriman", null, StatusCodes.INTERNAL_SERVER_ERROR);
 		}
 	};
@@ -33,7 +31,6 @@ class DeliveryPlaceService {
 
 			return ServiceResponse.success("Berhasil mengambil data asal pengiriman", result, StatusCodes.OK);
 		} catch (error) {
-			logger.error(error);
 			return ServiceResponse.failure("Gagal mengambil data asal pengiriman", null, StatusCodes.INTERNAL_SERVER_ERROR);
 		}
 	};
@@ -46,7 +43,6 @@ class DeliveryPlaceService {
 
 			return ServiceResponse.success("Berhasil membuat data asal pengiriman", result, StatusCodes.CREATED);
 		} catch (error) {
-			logger.error(error);
 			return ServiceResponse.failure("Gagal membuat data asal pengiriman", null, StatusCodes.INTERNAL_SERVER_ERROR);
 		}
 	};
@@ -71,7 +67,6 @@ class DeliveryPlaceService {
 
 			return ServiceResponse.success("Berhasil memperbarui data asal pengiriman", result, StatusCodes.OK);
 		} catch (error) {
-			logger.error(error);
 			return ServiceResponse.failure("Gagal memperbarui data asal pengiriman", null, StatusCodes.INTERNAL_SERVER_ERROR);
 		}
 	};
@@ -92,7 +87,6 @@ class DeliveryPlaceService {
 
 			return ServiceResponse.success("Berhasil menghapus data asal pengiriman", result, StatusCodes.OK);
 		} catch (error) {
-			logger.error(error);
 			return ServiceResponse.failure("Gagal menghapus data asal pengiriman", null, StatusCodes.INTERNAL_SERVER_ERROR);
 		}
 	};

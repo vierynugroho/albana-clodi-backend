@@ -1,6 +1,6 @@
-import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
+import { createApiResponse } from "./../../api-docs/openAPIResponseBuilders";
 
 export const receiptRegistry = new OpenAPIRegistry();
 

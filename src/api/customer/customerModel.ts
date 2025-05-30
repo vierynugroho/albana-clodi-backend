@@ -1,8 +1,8 @@
-import { CustomerCategoryEnum } from "@/common/enums/customer/customerCategoryEnum";
-import { CustomerStatusEnum } from "@/common/enums/customer/customerStatusEnum";
-import { OrderPaginationEnum } from "@/common/enums/orderPaginationEnum";
-import { commonValidations } from "@/common/utils/commonValidation";
 import { z } from "zod";
+import { CustomerCategoryEnum } from "./../../common/enums/customer/customerCategoryEnum";
+import { CustomerStatusEnum } from "./../../common/enums/customer/customerStatusEnum";
+import { OrderPaginationEnum } from "./../../common/enums/orderPaginationEnum";
+import { commonValidations } from "./../../common/utils/commonValidation";
 
 export const CustomerSchema = z.object({
 	id: z.string().optional(),

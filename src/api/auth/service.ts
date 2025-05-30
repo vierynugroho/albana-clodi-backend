@@ -1,8 +1,8 @@
-import { ServiceResponse } from "@/common/models/serviceResponse";
 import type { Roles } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { StatusCodes } from "http-status-codes";
 import jwt from "jsonwebtoken";
+import { ServiceResponse } from "./../../common/models/serviceResponse";
 import type { LoginType, RegisterType, UpdateProfileType } from "./model";
 import { authRepository } from "./repository";
 

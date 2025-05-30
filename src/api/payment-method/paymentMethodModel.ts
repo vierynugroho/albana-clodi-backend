@@ -1,5 +1,5 @@
-import { commonValidations } from "@/common/utils/commonValidation";
 import { z } from "zod";
+import { commonValidations } from "./../../common/utils/commonValidation";
 
 export const PaymentMethodSchema = z.object({
 	id: z.string().optional(),

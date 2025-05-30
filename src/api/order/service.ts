@@ -1,12 +1,11 @@
-import { ServiceResponse } from "@/common/models/serviceResponse";
-import type { OrderWithRelations } from "@/common/types/orderExport";
-import { exportData } from "@/common/utils/dataExporter";
-import { importData } from "@/common/utils/dataImporter";
-import { logger } from "@/server";
 import { type CustomerCategories, type Prisma, PrismaClient } from "@prisma/client";
 import type { PaymentStatus } from "@prisma/client";
 import { StatusCodes } from "http-status-codes";
 import { v4 as uuidv4 } from "uuid";
+import { ServiceResponse } from "./../../common/models/serviceResponse";
+import type { OrderWithRelations } from "./../../common/types/orderExport";
+import { exportData } from "./../../common/utils/dataExporter";
+import { importData } from "./../../common/utils/dataImporter";
 import type { CreateOrderType, OrderQueryType, UpdateOrderType } from "./model";
 import { type OrderRepository, orderRepository } from "./repository";
 
@@ -213,7 +212,6 @@ class OrderService {
 
 			return ServiceResponse.success("Berhasil mengambil data order", filteredResult, StatusCodes.OK);
 		} catch (error) {
-			logger.error(error);
 			return ServiceResponse.failure("Gagal mengambil data order", null, StatusCodes.INTERNAL_SERVER_ERROR);
 		}
 	};
@@ -251,7 +249,6 @@ class OrderService {
 
 			return ServiceResponse.success("Berhasil mengambil data order", result, StatusCodes.OK);
 		} catch (error) {
-			logger.error(error);
 			return ServiceResponse.failure("Gagal mengambil data order", null, StatusCodes.INTERNAL_SERVER_ERROR);
 		}
 	};
@@ -595,7 +592,6 @@ class OrderService {
 
 			return ServiceResponse.success("Berhasil membuat data order", result, StatusCodes.CREATED);
 		} catch (error) {
-			logger.error(error);
 			return ServiceResponse.failure(
 				"Gagal membuat data order",
 				(error as Error).message,
@@ -1001,7 +997,6 @@ class OrderService {
 
 			return ServiceResponse.success("Berhasil mengupdate data order", result, StatusCodes.OK);
 		} catch (error) {
-			logger.error(error);
 			return ServiceResponse.failure(
 				"Gagal mengupdate data order",
 				(error as Error).message,
@@ -1059,7 +1054,6 @@ class OrderService {
 
 			return ServiceResponse.success("Berhasil menghapus data order", result, StatusCodes.OK);
 		} catch (error) {
-			logger.error(error);
 			return ServiceResponse.failure(
 				"Gagal menghapus data order",
 				(error as Error).message,
@@ -1199,7 +1193,6 @@ class OrderService {
 				"Tidak ada data pesanan untuk diekspor",
 			);
 		} catch (error) {
-			logger.error(error);
 			return ServiceResponse.failure("Gagal mengekspor data pesanan", null, StatusCodes.INTERNAL_SERVER_ERROR);
 		}
 	};
@@ -1592,7 +1585,6 @@ class OrderService {
 
 			return ServiceResponse.success("Berhasil mengimpor data order", importResult.responseObject, StatusCodes.OK);
 		} catch (error) {
-			logger.error(error);
 			return ServiceResponse.failure("Gagal mengimpor data order", null, StatusCodes.INTERNAL_SERVER_ERROR);
 		}
 	};
@@ -1766,7 +1758,6 @@ class OrderService {
 
 			return ServiceResponse.success("Berhasil mengambil data order", filteredResult, StatusCodes.OK);
 		} catch (error) {
-			logger.error(error);
 			return ServiceResponse.failure("Gagal mengambil data order", null, StatusCodes.INTERNAL_SERVER_ERROR);
 		}
 	};
