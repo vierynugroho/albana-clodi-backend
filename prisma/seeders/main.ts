@@ -11,9 +11,9 @@ async function main() {
 		console.log("Starting seeder....");
 
 		await UserSeeder();
-		// await RegionSeeder();
-		// await OrderSeeder();
-		// await ProductsSeeder();
+		await RegionSeeder();
+		await OrderSeeder();
+		await ProductsSeeder();
 
 		console.log("Completed seeder....");
 	} catch (error) {

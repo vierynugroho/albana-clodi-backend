@@ -56,7 +56,7 @@ app.use("/users", authenticate, authorizeRoles([Roles.ADMIN, Roles.SUPERADMIN]),
 app.use("/expenses", authenticate, authorizeRoles([Roles.ADMIN, Roles.SUPERADMIN]), expensesRouter);
 app.use("/products", authenticate, authorizeRoles([Roles.ADMIN, Roles.SUPERADMIN]), productRouter);
 app.use("/delivery-places", authenticate, authorizeRoles([Roles.ADMIN, Roles.SUPERADMIN]), deliveryPlaceRouter);
-app.use("/orders", authenticate, authorizeRoles([Roles.ADMIN, Roles.SUPERADMIN]), orderRouter);
+app.use("/orders", orderRouter);
 app.use("/regions", authenticate, authorizeRoles([Roles.ADMIN, Roles.SUPERADMIN]), regionRouter);
 app.use("/customers", authenticate, authorizeRoles([Roles.ADMIN, Roles.SUPERADMIN]), customerRouter);
 app.use("/payment-methods", authenticate, authorizeRoles([Roles.ADMIN, Roles.SUPERADMIN]), paymentMethodRouter);
@@ -67,7 +67,7 @@ app.use("/receipts", authenticate, authorizeRoles([Roles.ADMIN, Roles.SUPERADMIN
 app.use("/shop", authenticate, authorizeRoles([Roles.SUPERADMIN]), shopRouter);
 app.use("/categories", authenticate, authorizeRoles([Roles.SUPERADMIN]), categoryRouter);
 
-app.use(openAPIRouter);
+app.use("/api-docs", openAPIRouter);
 
 // Error handlers
 app.use(errorHandler());

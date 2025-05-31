@@ -33,6 +33,12 @@ export class OrderController {
 		res.status(serviceResponse.statusCode).send(serviceResponse);
 	};
 
+	public cancel: RequestHandler = async (req: Request, res: Response) => {
+		const { id } = req.params;
+		const serviceResponse = await orderService.cancelOrders(id);
+		res.status(serviceResponse.statusCode).send(serviceResponse);
+	};
+
 	public exportOrders: RequestHandler = async (req: Request, res: Response) => {
 		const { startDate, endDate, month, year, week } = req.query;
 

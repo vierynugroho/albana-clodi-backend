@@ -244,6 +244,19 @@ orderRegistry.registerPath({
 });
 
 orderRegistry.registerPath({
+	method: "patch",
+	path: "/orders/{id}/cancel",
+	tags: ["Order"],
+	security: [{ bearerAuth: [] }],
+	request: {
+		params: z.object({
+			id: z.string().describe("ID order"),
+		}),
+	},
+	responses: createApiResponse(z.object({ message: z.string() }), "Berhasil menghapus order"),
+});
+
+orderRegistry.registerPath({
 	method: "get",
 	path: "/orders/export/excel",
 	tags: ["Order"],
@@ -317,5 +330,6 @@ orderRouter
 	.get(validateRequest(OrderParamsSchema), orderController.getOne)
 	.put(validateRequest(UpdateOrderSchema), orderController.update)
 	.delete(validateRequest(OrderParamsSchema), orderController.delete);
+orderRouter.route("/:id/cancel").patch(validateRequest(OrderParamsSchema), orderController.cancel);
 orderRouter.route("/export/excel").get(orderController.exportOrders);
 orderRouter.route("/import/excel").post(upload.single("orders_data"), orderController.importOrders);

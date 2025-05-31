@@ -104,6 +104,7 @@ class AuthService {
 					id: user.id,
 					email: user.email as string,
 					fullname: user.fullname as string,
+					phoneNumber: user.phoneNumber,
 					role: user.role as Roles,
 				},
 				StatusCodes.OK,

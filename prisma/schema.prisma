@@ -189,6 +189,7 @@ model Order {
   DeliveryTargetCustomer   Customer?         @relation("DeliveryTargetCustomer", fields: [deliveryTargetCustomerId], references: [id])
   OrderDetail              OrderDetail?
   ShippingServices         ShippingService[]
+  Installment              Installment?
 
   @@index([ordererCustomerId])
   @@index([deliveryTargetCustomerId])
@@ -279,6 +280,7 @@ model PaymentMethod {
   updatedAt     DateTime @updatedAt @map("updated_at")
 
   orderDetails OrderDetail[]
+  Installment  Installment?
 
   @@index([name])
   @@map("payment_methods")
@@ -397,4 +399,23 @@ model Village {
 
   @@index([name])
   @@map("villages")
+}
+
+model Installment {
+  id              String   @id @default(uuid()) @db.Uuid
+  amount          Float
+  paymentDate     DateTime @map("payment_date")
+  isPaid          Boolean  @default(false) @map("is_paid")
+  paymentMethodId String   @unique @map("payment_method_id") @db.Uuid
+  orderId         String   @unique @map("order_id") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  Order         Order         @relation(fields: [orderId], references: [id])
+  PaymentMethod PaymentMethod @relation(fields: [paymentMethodId], references: [id])
+
+  @@index([isPaid])
+  @@index([orderId])
+  @@index([paymentMethodId])
+  @@map("installments")
 }

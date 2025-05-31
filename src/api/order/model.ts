@@ -33,6 +33,14 @@ export const OrderDetailSchema = z.object({
 			packaging: z.number().optional().describe("Biaya packaging"),
 			insurance: z.number().optional().describe("Biaya asuransi"),
 			weight: z.number().optional().describe("Berat produk 1 kg"),
+			installments: z
+				.object({
+					paymentMethodId: z.string().uuid().optional().describe("ID metode pembayaran cicilan"),
+					paymentDate: z.string().optional().describe("Tanggal pembayaran cicilan"),
+					amount: z.number().optional().describe("Jumlah pembayaran cicilan"),
+				})
+				.optional()
+				.describe("Informasi cicilan"),
 			discount: z
 				.object({
 					value: z.number().describe("Nilai diskon"),
