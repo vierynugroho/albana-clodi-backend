@@ -533,7 +533,9 @@ class OrderService {
 					data: {
 						orderId: createdOrder.id,
 						paymentMethodId: data.orderDetail.paymentMethod?.id,
-						code: data.orderDetail.detail.code,
+						code:
+							data.orderDetail.detail.code ||
+							`OID-${Date.now().toString().slice(-4)}-${Math.floor(1000 + Math.random() * 9000)}`,
 						otherFees: data.orderDetail.detail.otherFees,
 						finalPrice: totalPrice,
 						paymentStatus: data.orderDetail.paymentMethod?.status
