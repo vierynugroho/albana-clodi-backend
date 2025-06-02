@@ -523,10 +523,11 @@ class ProductService {
 				imageUrls.push(...Array(req.productVariants?.length || 0).fill(null));
 			}
 
+			let responseData: Product;
 			// Use transaction to ensure data consistency during update
 			await prisma?.$transaction(async (tx: Prisma.TransactionClient) => {
 				// Update main product information
-				await tx.product.update({
+				responseData = (await tx.product.update({
 					where: { id: productId },
 					data: {
 						...req.product,
@@ -540,7 +541,7 @@ class ProductService {
 								}
 							: undefined,
 					},
-				});
+				})) as Product;
 
 				if (req.productVariants?.length) {
 					// Update existing variants or create new ones
