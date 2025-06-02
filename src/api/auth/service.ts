@@ -63,9 +63,10 @@ class AuthService {
 				return ServiceResponse.failure("Email atau password salah", null, StatusCodes.UNAUTHORIZED);
 			}
 
-			const isPasswordValid = bcrypt.compare(data.password, user.password as string);
+			const isPasswordValid = await bcrypt.compare(data.password, user.password as string);
 
 			if (!isPasswordValid) {
+				
 				return ServiceResponse.failure("Email atau password salah", null, StatusCodes.UNAUTHORIZED);
 			}
 
