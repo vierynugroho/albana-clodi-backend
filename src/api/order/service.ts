@@ -235,7 +235,11 @@ class OrderService {
 								include: {
 									Product: {
 										include: {
-											productVariants: true,
+											productVariants: {
+												include: {
+													productPrices: true,
+												},
+											},
 										},
 									},
 								},

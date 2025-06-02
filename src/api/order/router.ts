@@ -112,6 +112,11 @@ orderRegistry.registerPath({
 										value: 10,
 										type: "percent",
 									},
+									installments: {
+										paymentMethodId: "1598512d-0daa-45c1-bbeb-01855ebc1447",
+										paymentDate: "2023-01-01T00:00:00.000Z",
+										amount: 50000,
+									},
 								},
 								receiptNumber: "JNE123456789",
 							},
@@ -181,6 +186,11 @@ orderRegistry.registerPath({
 									packaging: 5000,
 									insurance: 10000,
 									weight: 1000,
+									installments: {
+										paymentMethodId: "1598512d-0daa-45c1-bbeb-01855ebc1447",
+										paymentDate: "2023-01-01T00:00:00.000Z",
+										amount: 50000,
+									},
 									shippingCost: {
 										shippingService: "JNE",
 										cost: 1000,
