@@ -103,6 +103,13 @@ orderRegistry.registerPath({
 									packaging: 5000,
 									insurance: 10000,
 									weight: 1000,
+									productDiscount: [
+										{
+											produkVariantId: "0f027aee-6ed4-406e-8e70-1f951ecb66a0",
+											discountAmount: 10,
+											discountType: "percent",
+										},
+									],
 									shippingCost: {
 										shippingService: "JNE",
 										cost: 1000,
@@ -186,6 +193,18 @@ orderRegistry.registerPath({
 									packaging: 5000,
 									insurance: 10000,
 									weight: 1000,
+									productDiscount: [
+										{
+											produkVariantId: "0f027aee-6ed4-406e-8e70-1f951ecb66a0",
+											discountAmount: 5000,
+											discountType: "nominal",
+										},
+										{
+											produkVariantId: "1a2b3c4d-5e6f-7g8h-9i0j-1k2l3m4n5o6p",
+											discountAmount: 10,
+											discountType: "percent",
+										},
+									],
 									installments: {
 										paymentMethodId: "1598512d-0daa-45c1-bbeb-01855ebc1447",
 										paymentDate: "2023-01-01T00:00:00.000Z",

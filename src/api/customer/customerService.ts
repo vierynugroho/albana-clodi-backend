@@ -119,7 +119,14 @@ export class CustomerService {
 			}
 
 			const [customers, total] = await Promise.all([
-				this.customerRepo.findMany({ ...query, skip, take: limit }),
+				this.customerRepo.findMany({
+					...query,
+					skip,
+					take: limit,
+					orderBy: {
+						createdAt: "desc", // Mengurutkan berdasarkan data terbaru (descending)
+					},
+				}),
 				this.customerRepo.count(),
 			]);
 
