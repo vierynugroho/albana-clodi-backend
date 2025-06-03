@@ -166,6 +166,9 @@ class OrderService {
 
 			const result = await this.orderRepo.client.order.findMany({
 				where: filter,
+				orderBy: {
+					createdAt: "desc", // Menampilkan waktu terbaru (descending)
+				},
 				include: {
 					Installment: true,
 					SalesChannel: true,
