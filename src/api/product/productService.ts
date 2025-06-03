@@ -229,6 +229,9 @@ class ProductService {
 					...queryArgs,
 					skip,
 					take: limit,
+					orderBy: {
+						createdAt: "desc", // Mengurutkan berdasarkan data terbaru (descending)
+					},
 					include: {
 						category: true,
 						productVariants: {

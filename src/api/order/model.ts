@@ -41,6 +41,16 @@ export const OrderDetailSchema = z.object({
 				})
 				.optional()
 				.describe("Informasi cicilan"),
+			productDiscount: z
+				.array(
+					z.object({
+						produkVariantId: z.string().uuid().describe("ID varian produk"),
+						discountAmount: z.number().describe("Jumlah diskon"),
+						discountType: z.enum(["percent", "nominal"]).describe("Tipe diskon (persen atau nominal)"),
+					}),
+				)
+				.optional()
+				.describe("Diskon produk"),
 			discount: z
 				.object({
 					value: z.number().describe("Nilai diskon"),

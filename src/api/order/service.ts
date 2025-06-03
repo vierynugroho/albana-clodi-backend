@@ -2,6 +2,7 @@ import { ServiceResponse } from "@/common/models/serviceResponse";
 import type { OrderWithRelations } from "@/common/types/orderExport";
 import { exportData } from "@/common/utils/dataExporter";
 import { importData } from "@/common/utils/dataImporter";
+import prismaClient from "@/config/prisma";
 import { logger } from "@/server";
 import { type CustomerCategories, type Prisma, PrismaClient } from "@prisma/client";
 import { PaymentStatus } from "@prisma/client";
@@ -336,6 +337,7 @@ class OrderService {
 							paymentDate: Date;
 							amount: number;
 						};
+
 						discount?: {
 							value: number;
 							type: "percent" | "nominal";
@@ -351,6 +353,38 @@ class OrderService {
 					}
 					if (insurance && typeof insurance !== "number") {
 						return ServiceResponse.failure("Biaya asuransi harus berupa angka", null, StatusCodes.BAD_REQUEST);
+					}
+					// Validasi productDiscount jika ada
+					if (data.orderDetail.detail.otherFees?.productDiscount) {
+						const { productDiscount } = data.orderDetail.detail.otherFees as {
+							productDiscount?: Array<{
+								produkVariantId: string;
+								discountAmount: number;
+								discountType: "percent" | "nominal";
+							}>;
+						};
+
+						if (!Array.isArray(productDiscount)) {
+							return ServiceResponse.failure("Diskon produk harus berupa array", null, StatusCodes.BAD_REQUEST);
+						}
+
+						for (const discount of productDiscount) {
+							if (!discount.produkVariantId || typeof discount.produkVariantId !== "string") {
+								return ServiceResponse.failure("ID varian produk harus valid", null, StatusCodes.BAD_REQUEST);
+							}
+
+							if (typeof discount.discountAmount !== "number") {
+								return ServiceResponse.failure("Jumlah diskon harus berupa angka", null, StatusCodes.BAD_REQUEST);
+							}
+
+							if (discount.discountType !== "percent" && discount.discountType !== "nominal") {
+								return ServiceResponse.failure(
+									"Tipe diskon produk harus 'percent' atau 'nominal'",
+									null,
+									StatusCodes.BAD_REQUEST,
+								);
+							}
+						}
 					}
 					if (discount) {
 						if (typeof discount !== "object" || discount === null) {
@@ -499,6 +533,60 @@ class OrderService {
 
 						if (otherFees.installments.amount) {
 							totalPrice += otherFees.installments.amount;
+						}
+					}
+
+					// Proses diskon produk jika ada
+					if (otherFees.productDiscount && otherFees.productDiscount.length > 0) {
+						for (const discount of otherFees.productDiscount) {
+							// Cari produk yang sesuai dengan ID varian
+							const product = data.orderDetail.orderProducts.find(
+								(p) => p.productVariantId === discount.produkVariantId,
+							);
+
+							// Ambil data harga produk dari database berdasarkan varian produk
+							const productPriceDB = await prisma.productPrice.findFirst({
+								where: { productVariantId: product?.productVariantId },
+							});
+
+							// Tentukan harga yang digunakan berdasarkan kategori pelanggan
+							let discountProductPrice = 0;
+							const customer = await prisma.customer.findUnique({
+								where: { id: data.order.ordererCustomerId },
+								select: { category: true },
+							});
+
+							if (productPriceDB) {
+								const customerCategory = customer?.category;
+								switch (customerCategory) {
+									case "RESELLER":
+										discountProductPrice = productPriceDB.reseller || productPriceDB.normal || 0;
+										break;
+									case "MEMBER":
+										discountProductPrice = productPriceDB.member || productPriceDB.normal || 0;
+										break;
+									case "AGENT":
+										discountProductPrice = productPriceDB.agent || productPriceDB.normal || 0;
+										break;
+									default:
+										discountProductPrice = productPriceDB.normal || 0;
+								}
+							}
+
+							if (product) {
+								// Hitung jumlah diskon berdasarkan tipe
+								let discountAmount = 0;
+								if (discount.discountType === "percent") {
+									// Hitung diskon persentase dari harga produk
+									discountAmount = (discountProductPrice * product.productQty * discount.discountAmount) / 100;
+								} else if (discount.discountType === "nominal") {
+									// Diskon nominal langsung
+									discountAmount = discount.discountAmount * product.productQty;
+								}
+
+								// Kurangi total harga dengan diskon
+								totalPrice -= discountAmount;
+							}
 						}
 					}
 
@@ -836,6 +924,11 @@ class OrderService {
 							value: number;
 							type: "percent" | "nominal";
 						};
+						productDiscount?: Array<{
+							produkVariantId: string;
+							discountAmount: number;
+							discountType: "percent" | "nominal";
+						}>;
 						installments?: {
 							paymentMethodId: string;
 							paymentDate?: Date;
@@ -850,8 +943,8 @@ class OrderService {
 						};
 					};
 
-					// Add packaging cost if exists
 					if (otherFees.packaging) {
+						// Add packaging cost if exists
 						totalPrice += otherFees.packaging;
 					}
 
@@ -895,27 +988,27 @@ class OrderService {
 						}
 					}
 
-					// Add insurance cost if exists
 					if (otherFees.insurance) {
+						// Add insurance cost if exists
 						totalPrice += otherFees.insurance;
 					}
 
-					// Add cost based on order weight
 					if (otherFees.weight) {
+						// Add cost based on order weight
 						const orderWeight = 1; // Order weight in kg
 						const pricePerKg = otherFees.weight; // Price per kg
 						totalPrice += orderWeight * pricePerKg;
 					}
 
-					// Add shipping cost if exists
 					if (otherFees.shippingCost) {
+						// Add shipping cost if exists
 						if (otherFees.shippingCost.cost) {
 							totalPrice += otherFees.shippingCost.cost;
 						}
 					}
 
-					// Proses discount jika ada
 					if (otherFees.discount) {
+						// Proses discount jika ada
 						// Jika discount dalam bentuk persentase
 						if (otherFees.discount.type === "percent" && otherFees.discount.value) {
 							const discountAmount = (totalPrice * otherFees.discount.value) / 100;
@@ -924,6 +1017,60 @@ class OrderService {
 						// Jika discount dalam bentuk nominal
 						else if (otherFees.discount.type === "nominal" && otherFees.discount.value) {
 							totalPrice -= otherFees.discount.value;
+						}
+					}
+
+					if (otherFees.productDiscount && otherFees.productDiscount.length > 0) {
+						// Proses diskon produk jika ada
+						for (const discount of otherFees.productDiscount) {
+							// Cari produk yang sesuai dengan ID varian
+							const product = data.orderDetail.orderProducts.find(
+								(p) => p.productVariantId === discount.produkVariantId,
+							);
+
+							// Ambil data harga produk dari database berdasarkan varian produk
+							const productPriceDB = await prismaClient.productPrice.findFirst({
+								where: { productVariantId: product?.productVariantId },
+							});
+
+							// Tentukan harga yang digunakan berdasarkan kategori pelanggan
+							let discountProductPrice = 0;
+							const customer = await prismaClient.customer.findUnique({
+								where: { id: data.order.ordererCustomerId },
+								select: { category: true },
+							});
+
+							if (productPriceDB) {
+								const customerCategory = customer?.category;
+								switch (customerCategory) {
+									case "RESELLER":
+										discountProductPrice = productPriceDB.reseller || productPriceDB.normal || 0;
+										break;
+									case "MEMBER":
+										discountProductPrice = productPriceDB.member || productPriceDB.normal || 0;
+										break;
+									case "AGENT":
+										discountProductPrice = productPriceDB.agent || productPriceDB.normal || 0;
+										break;
+									default:
+										discountProductPrice = productPriceDB.normal || 0;
+								}
+							}
+
+							if (product) {
+								// Hitung jumlah diskon berdasarkan tipe
+								let discountAmount = 0;
+								if (discount.discountType === "percent") {
+									// Hitung diskon persentase dari harga produk
+									discountAmount = (discountProductPrice * (product.productQty || 0) * discount.discountAmount) / 100;
+								} else if (discount.discountType === "nominal") {
+									// Diskon nominal langsung
+									discountAmount = discount.discountAmount * (product.productQty || 0);
+								}
+
+								// Kurangi total harga dengan diskon
+								totalPrice -= discountAmount;
+							}
 						}
 					}
 				}
