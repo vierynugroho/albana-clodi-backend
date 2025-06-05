@@ -164,7 +164,7 @@ export class CustomerService {
 		try {
 			const foundCustomer = await this.customerRepo.findFirst({
 				where: {
-					OR: [{ email: req.email }, { name: req.name }, { phoneNumber: req.phoneNumber }],
+					OR: [{ email: req.email }, { phoneNumber: req.phoneNumber }],
 				},
 			});
 			if (foundCustomer) {
