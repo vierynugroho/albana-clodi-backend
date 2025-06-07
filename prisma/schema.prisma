@@ -280,7 +280,7 @@ model PaymentMethod {
   updatedAt     DateTime @updatedAt @map("updated_at")
 
   orderDetails OrderDetail[]
-  Installment  Installment?
+  Installment  Installment[]
 
   @@index([name])
   @@map("payment_methods")
@@ -406,7 +406,7 @@ model Installment {
   amount          Float
   paymentDate     DateTime @map("payment_date")
   isPaid          Boolean  @default(false) @map("is_paid")
-  paymentMethodId String   @unique @map("payment_method_id") @db.Uuid
+  paymentMethodId String   @map("payment_method_id") @db.Uuid
   orderId         String   @unique @map("order_id") @db.Uuid
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")

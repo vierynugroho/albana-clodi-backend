@@ -89,23 +89,22 @@ orderRegistry.registerPath({
 					schema: CreateOrderSchema,
 					example: {
 						order: {
-							ordererCustomerId: "29d9f9d0-a35d-4ec1-af8c-6e514cade06c",
-							deliveryTargetCustomerId: "e1ee8c68-feed-47fd-8a24-c0af38ac9f51",
-							deliveryPlaceId: "da127630-ae9c-4678-b0f6-cdb51d645bfb",
-							salesChannelId: "659a18d0-a4da-4103-a7bd-a81616cca889",
+							ordererCustomerId: "24fffee3-ee3f-4c13-8a4f-0cd7447b9bb3",
+							deliveryTargetCustomerId: "24fffee3-ee3f-4c13-8a4f-0cd7447b9bb3",
+							deliveryPlaceId: "6eedb934-112b-4a9a-81bb-fb62d952fa28",
+							salesChannelId: "0136e1f4-9a3b-45e0-b292-9f01bf902c71",
 							orderDate: "2023-01-01T00:00:00.000Z",
 							note: "Tolong kirim secepatnya",
 						},
 						orderDetail: {
 							detail: {
-								code: "ORD-004",
 								otherFees: {
 									packaging: 5000,
 									insurance: 10000,
 									weight: 1000,
 									productDiscount: [
 										{
-											produkVariantId: "0f027aee-6ed4-406e-8e70-1f951ecb66a0",
+											produkVariantId: "40d6aefe-de8c-4afa-8aa2-8bbb017b3d7f",
 											discountAmount: 10,
 											discountType: "percent",
 										},
@@ -120,7 +119,7 @@ orderRegistry.registerPath({
 										type: "percent",
 									},
 									installments: {
-										paymentMethodId: "1598512d-0daa-45c1-bbeb-01855ebc1447",
+										paymentMethodId: "35adbda7-ade2-4b82-a512-588ad1a2ef11",
 										paymentDate: "2023-01-01T00:00:00.000Z",
 										amount: 50000,
 									},
@@ -128,14 +127,14 @@ orderRegistry.registerPath({
 								receiptNumber: "JNE123456789",
 							},
 							paymentMethod: {
-								id: "1598512d-0daa-45c1-bbeb-01855ebc1447",
+								id: "35adbda7-ade2-4b82-a512-588ad1a2ef11",
 								status: "PENDING",
 								date: "2023-01-01T00:00:00.000Z",
 							},
 							orderProducts: [
 								{
-									productId: "0f11aa20-1f00-428d-9651-b226abfedae9",
-									productVariantId: "0f027aee-6ed4-406e-8e70-1f951ecb66a0",
+									productId: "57593814-de52-4377-a1e9-ca3ec1e9aaac",
+									productVariantId: "40d6aefe-de8c-4afa-8aa2-8bbb017b3d7f",
 									productQty: 2,
 								},
 							],
