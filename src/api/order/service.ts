@@ -644,41 +644,36 @@ class OrderService {
 				});
 
 				// Buat order products
-				const orderProductsPromises = data.orderDetail.orderProducts.map(async (orderProduct) => {
+				console.log(data.orderDetail.orderProducts);
+				for (const orderProduct of data.orderDetail.orderProducts) {
+					// Validasi productId
 					if (!orderProduct.productId) {
-						return ServiceResponse.failure("productId is required", null, StatusCodes.BAD_REQUEST);
+						throw new Error("productId is required");
 					}
 
+					// Cek keberadaan dan stok varian produk
 					const productVariant = await prisma.productVariant.findUnique({
-						where: {
-							id: orderProduct.productVariantId,
-						},
+						where: { id: orderProduct.productVariantId },
 					});
 
+					// Validasi keberadaan varian produk
 					if (!productVariant) {
-						return ServiceResponse.failure("product variant is not found", null, StatusCodes.NOT_FOUND);
+						throw new Error("product variant is not found");
 					}
 
-					if (!productVariant || (productVariant.stock !== null && productVariant.stock <= 0)) {
-						return ServiceResponse.failure(
-							`Stok produk dengan ID ${orderProduct.productVariantId} tidak tersedia`,
-							null,
-							StatusCodes.BAD_REQUEST,
-						);
+					// Validasi ketersediaan stok
+					if (productVariant.stock !== null && productVariant.stock < orderProduct.productQty) {
+						throw new Error(`Stok produk dengan ID ${orderProduct.productVariantId} tidak mencukupi`);
 					}
 
+					// Kurangi stok produk
 					await prisma.productVariant.update({
-						where: {
-							id: orderProduct.productVariantId,
-						},
-						data: {
-							stock: {
-								decrement: orderProduct.productQty,
-							},
-						},
+						where: { id: orderProduct.productVariantId },
+						data: { stock: { decrement: orderProduct.productQty } },
 					});
 
-					return await prisma.orderProduct.create({
+					// Buat entri order product
+					await prisma.orderProduct.create({
 						data: {
 							orderId: createdOrder.id,
 							orderDetailId: createdOrderDetail.id,
@@ -686,9 +681,8 @@ class OrderService {
 							productQty: orderProduct.productQty,
 						},
 					});
-				});
-
-				await Promise.all(orderProductsPromises);
+				}
+				console.log("ORDER PRODUCT");
 
 				// Buat shipping services jika ada
 				if (data.orderDetail.shippingServices && data.orderDetail.shippingServices.length > 0) {
