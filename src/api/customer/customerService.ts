@@ -248,7 +248,12 @@ export class CustomerService {
 		}
 	};
 
-	private getDestinationIdFromAPI = async (village: string, district: string, city: string, postalCode: string) => {
+	private getDestinationIdFromAPI = async (
+		village: string,
+		district: string,
+		city: string,
+		postalCode: string | null,
+	) => {
 		const API_KEY = process.env.RAJAONGKIR_SHIPPING_DELIVERY_API_KEY;
 		const BASE_URL = process.env.RAJAONGKIR_BASE_URL;
 
@@ -269,10 +274,19 @@ export class CustomerService {
 		const cleanDistrict = removePrefix(district);
 		const cleanCity = removePrefix(city);
 
-		const keyword = [cleanVillage, cleanDistrict, cleanCity, postalCode]
-		.filter((v) => !!v)
-		.join(' ');
-	  
+		// Buat array untuk keyword
+		const keywordParts = [cleanVillage, cleanDistrict, cleanCity].filter(
+			(v) => v !== null && v !== undefined && v !== "",
+		);
+
+		// Tambahkan kode pos jika ada
+		if (postalCode) {
+			keywordParts.push(postalCode);
+		}
+
+		// Format keyword seperti contoh: "Purwokerto, Srengat, Blitar, 12345"
+		const keyword = keywordParts.join(", ");
+
 		const query = new URLSearchParams();
 		query.append("keyword", keyword);
 
@@ -282,6 +296,8 @@ export class CustomerService {
 				"x-api-key": API_KEY as string,
 			},
 		});
+
+		console.log({ response, query });
 
 		const data = await response.json();
 		return data.data.length === 1 ? data.data[0].id : null;
