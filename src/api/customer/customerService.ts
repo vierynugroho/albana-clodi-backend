@@ -164,11 +164,11 @@ export class CustomerService {
 		try {
 			const foundCustomer = await this.customerRepo.findFirst({
 				where: {
-					OR: [{ email: req.email }, { name: req.name }, { phoneNumber: req.phoneNumber }],
+					OR: [{ email: req.email }, { phoneNumber: req.phoneNumber }],
 				},
 			});
 			if (foundCustomer) {
-				return ServiceResponse.failure("Customer already exists", null, StatusCodes.BAD_REQUEST);
+				return ServiceResponse.failure("Phone number or email already in use", null, StatusCodes.BAD_REQUEST);
 			}
 
 			const destinationId = await this.getDestinationIdFromAPI(req.village, req.district, req.city, req.postalCode);
@@ -252,7 +252,7 @@ export class CustomerService {
 		village: string,
 		district: string,
 		city: string,
-		postalCode: string | null,
+		postalCode: string | undefined,
 	) => {
 		const API_KEY = process.env.RAJAONGKIR_SHIPPING_DELIVERY_API_KEY;
 		const BASE_URL = process.env.RAJAONGKIR_BASE_URL;
@@ -280,7 +280,7 @@ export class CustomerService {
 		);
 
 		// Tambahkan kode pos jika ada
-		if (postalCode) {
+		if (postalCode !== undefined && postalCode !== null) {
 			keywordParts.push(postalCode);
 		}
 

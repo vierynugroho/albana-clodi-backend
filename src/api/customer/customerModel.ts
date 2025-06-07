@@ -13,7 +13,7 @@ export const CustomerSchema = z.object({
 	city: z.string(),
 	district: z.string(),
 	village: z.string(),
-	postalCode: z.string(),
+	postalCode: z.string().optional(),
 	phoneNumber: z.string(),
 	email: z.string(),
 	destinationId: z.number().optional(),
