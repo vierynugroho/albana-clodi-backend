@@ -119,14 +119,7 @@ export class CustomerService {
 			}
 
 			const [customers, total] = await Promise.all([
-				this.customerRepo.findMany({
-					...query,
-					skip,
-					take: limit,
-					orderBy: {
-						createdAt: "desc", // Mengurutkan berdasarkan data terbaru (descending)
-					},
-				}),
+				this.customerRepo.findMany({ ...query, skip, take: limit }),
 				this.customerRepo.count(),
 			]);
 
@@ -276,9 +269,10 @@ export class CustomerService {
 		const cleanDistrict = removePrefix(district);
 		const cleanCity = removePrefix(city);
 
-		const keyword = `${cleanDistrict} ${cleanCity} ${postalCode}`;
-		console.log(keyword);
-
+		const keyword = [cleanVillage, cleanDistrict, cleanCity, postalCode]
+		.filter((v) => !!v)
+		.join(' ');
+	  
 		const query = new URLSearchParams();
 		query.append("keyword", keyword);
 

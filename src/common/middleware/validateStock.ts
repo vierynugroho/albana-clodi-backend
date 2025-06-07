@@ -32,7 +32,7 @@ export const validateStock = async (req: AuthRequest, res: Response, next: NextF
 					return;
 				}
 
-				if ((foundVariant.stock ?? 0) < variant.stock) {
+				if (foundVariant?.stock !== null && foundVariant?.stock > variant.stock) {
 					res.status(StatusCodes.BAD_REQUEST).json(
 						ServiceResponse.failure(
 							"Insufficient stock",
