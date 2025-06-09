@@ -1,6 +1,5 @@
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { logger } from "@/server";
-import { type PaymentStatus, Prisma } from "@prisma/client";
 import { StatusCodes } from "http-status-codes";
 import { type ReceiptRepository, receiptRepository } from "./repository";
 
@@ -110,6 +109,8 @@ class ReportService {
 				let shippingName = "";
 				let shippingType = "";
 				let shippingService = "";
+				let installmentInfo = null;
+				let productDiscount = null;
 				let weight = 0;
 				const discount = {
 					type: "",
@@ -150,6 +151,66 @@ class ReportService {
 								discount.persen = finalPrice > 0 ? (discount.value / finalPrice) * 100 : 0;
 							}
 						}
+					}
+
+					if (
+						"installments" in otherFees &&
+						typeof otherFees.installments === "object" &&
+						otherFees.installments !== null
+					) {
+						installmentInfo = {
+							paymentMethodId:
+								"paymentMethodId" in otherFees.installments ? otherFees.installments.paymentMethodId || "" : "",
+							paymentDate: "paymentDate" in otherFees.installments ? otherFees.installments.paymentDate || "" : "",
+							amount: "amount" in otherFees.installments ? otherFees.installments.amount || 0 : 0,
+						};
+					}
+
+					// Proses product discount jika ada
+					if (
+						"productDiscount" in otherFees &&
+						Array.isArray(otherFees.productDiscount) &&
+						otherFees.productDiscount.length > 0
+					) {
+						// Proses setiap diskon produk
+						const productDiscounts = otherFees.productDiscount.map((discount) => {
+							const discountObj = typeof discount === "object" && discount !== null ? discount : {};
+							return {
+								produkVariantId: "produkVariantId" in discountObj ? discountObj.produkVariantId : "",
+								discountAmount: "discountAmount" in discountObj ? discountObj.discountAmount : 0,
+								discountType: "discountType" in discountObj ? discountObj.discountType : "nominal",
+							};
+						});
+
+						// Tambahkan informasi diskon produk ke produk yang sesuai
+						productDiscount = products.map((product) => {
+							const productVariantId = product?.product_variants?.[0]?.id;
+							const matchingDiscount = productDiscounts.find(
+								(discount) => discount.produkVariantId === productVariantId,
+							);
+
+							const updatedProduct = { ...product };
+							if (matchingDiscount && updatedProduct) {
+								// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+								(updatedProduct as any).discount = {
+									amount: matchingDiscount.discountAmount,
+									type: matchingDiscount.discountType,
+								};
+
+								// Hitung nominal diskon jika tipe persentase
+								if (matchingDiscount.discountType === "percent" || matchingDiscount.discountType === "percentage") {
+									const productPrice = updatedProduct.product_price || 0;
+									// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+									(updatedProduct as any).discountNominal =
+										(productPrice * Number(matchingDiscount?.discountAmount)) / 100;
+								} else {
+									// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+									(updatedProduct as any).discountNominal = matchingDiscount.discountAmount;
+								}
+							}
+
+							return updatedProduct;
+						});
 					}
 
 					if (
@@ -196,6 +257,8 @@ class ReportService {
 					notes: order.note || "",
 					weight: weight,
 					discount: discount,
+					productDiscount: productDiscount,
+					installments: installmentInfo,
 					insurance_fee: insuranceFee,
 					packaging_fee: packagingFee,
 					shipping_cost: shippingCost,
@@ -212,6 +275,19 @@ class ReportService {
 						phone: order.DeliveryTargetCustomer?.phoneNumber || "Tidak ada nomor telepon",
 						email: order.DeliveryTargetCustomer?.email || "Tidak ada email",
 					},
+					dropship_info: (() => {
+						const isDropshipper = order.DeliveryTargetCustomer?.category === "DROPSHIPPER";
+						return {
+							sender: {
+								name: isDropshipper ? order.DeliveryTargetCustomer?.name || "Tidak ada nama" : "",
+								address: isDropshipper ? order.DeliveryTargetCustomer?.address || "Tidak ada alamat" : "",
+							},
+							recipient: {
+								name: isDropshipper ? order.OrdererCustomer?.name || "Tidak ada nama" : "",
+								address: isDropshipper ? order.OrdererCustomer?.address || "Tidak ada alamat" : "",
+							},
+						};
+					})(),
 				};
 
 				return ServiceResponse.success("Berhasil mendapatkan data receipt", receiptData, StatusCodes.OK);
