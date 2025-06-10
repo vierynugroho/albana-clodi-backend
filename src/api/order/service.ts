@@ -487,24 +487,24 @@ class OrderService {
 						switch (customer.category) {
 							case "CUSTOMER":
 							case "DROPSHIPPER":
-								productPrice = priceData.normal || 0;
+								productPrice = Number(priceData.normal) || 0;
 								break;
 							case "MEMBER":
-								productPrice = priceData.member || priceData.normal || 0;
+								productPrice = Number(priceData.member) || Number(priceData.normal) || 0;
 								break;
 							case "RESELLER":
-								productPrice = priceData.reseller || priceData.normal || 0;
+								productPrice = Number(priceData.reseller) || Number(priceData.normal) || 0;
 								break;
 							case "AGENT":
-								productPrice = priceData.agent || priceData.normal || 0;
+								productPrice = Number(priceData.agent) || Number(priceData.normal) || 0;
 								break;
 							default:
-								productPrice = priceData.normal || 0;
+								productPrice = Number(priceData.normal) || 0;
 						}
 					}
 
 					// Tambahkan ke total price (harga * quantity)
-					totalPrice += productPrice * orderProduct.productQty;
+					totalPrice += productPrice * Number(orderProduct.productQty);
 				}
 
 				// Tambahkan other fees jika ada
@@ -513,7 +513,7 @@ class OrderService {
 
 					// Tambahkan biaya asuransi jika ada
 					if (otherFees.insurance) {
-						totalPrice += otherFees.insurance;
+						totalPrice += Number(otherFees.insurance);
 					}
 
 					if (otherFees.installments) {
@@ -525,14 +525,14 @@ class OrderService {
 									paymentDate: otherFees.installments.paymentDate
 										? new Date(otherFees.installments.paymentDate)
 										: new Date(),
-									amount: otherFees.installments.amount,
+									amount: Number(otherFees.installments.amount),
 									isPaid: true,
 								},
 							});
 						}
 
 						if (otherFees.installments.amount) {
-							totalPrice += otherFees.installments.amount;
+							totalPrice += Number(otherFees.installments.amount);
 						}
 					}
 
@@ -559,17 +559,21 @@ class OrderService {
 							if (productPriceDB) {
 								const customerCategory = customer?.category;
 								switch (customerCategory) {
-									case "RESELLER":
-										discountProductPrice = productPriceDB.reseller || productPriceDB.normal || 0;
+									case "CUSTOMER":
+									case "DROPSHIPPER":
+										discountProductPrice = Number(productPriceDB.normal) || 0;
 										break;
 									case "MEMBER":
-										discountProductPrice = productPriceDB.member || productPriceDB.normal || 0;
+										discountProductPrice = Number(productPriceDB.member) || Number(productPriceDB.normal) || 0;
+										break;
+									case "RESELLER":
+										discountProductPrice = Number(productPriceDB.reseller) || Number(productPriceDB.normal) || 0;
 										break;
 									case "AGENT":
-										discountProductPrice = productPriceDB.agent || productPriceDB.normal || 0;
+										discountProductPrice = Number(productPriceDB.agent) || Number(productPriceDB.normal) || 0;
 										break;
 									default:
-										discountProductPrice = productPriceDB.normal || 0;
+										discountProductPrice = Number(productPriceDB.normal) || 0;
 								}
 							}
 
@@ -578,34 +582,35 @@ class OrderService {
 								let discountAmount = 0;
 								if (discount.discountType === "percent") {
 									// Hitung diskon persentase dari harga produk
-									discountAmount = (discountProductPrice * product.productQty * discount.discountAmount) / 100;
+									discountAmount =
+										(Number(discountProductPrice) * Number(product.productQty) * Number(discount.discountAmount)) / 100;
 								} else if (discount.discountType === "nominal") {
 									// Diskon nominal langsung
-									discountAmount = discount.discountAmount * product.productQty;
+									discountAmount = Number(discount.discountAmount) * Number(product.productQty);
 								}
 
 								// Kurangi total harga dengan diskon
-								totalPrice -= discountAmount;
+								totalPrice -= Number(discountAmount);
 							}
 						}
 					}
 
 					// Tambahkan biaya packaging jika ada
 					if (otherFees.packaging) {
-						totalPrice += otherFees.packaging;
+						totalPrice += Number(otherFees.packaging);
 					}
 
 					// Tambahkan biaya untuk order berdasarkan berat
 					if (otherFees.weight) {
 						const orderWeight = 1; // Berat order dalam kg
-						const pricePerKg = otherFees.weight; // Harga per kg dari otherFees.weight
-						totalPrice += orderWeight * pricePerKg;
+						const pricePerKg = Number(otherFees.weight); // Harga per kg dari otherFees.weight
+						totalPrice += Number(orderWeight) * Number(pricePerKg);
 					}
 
 					// Tambahkan biaya pengiriman jika ada
 					if (otherFees.shippingCost) {
 						if (otherFees.shippingCost.cost) {
-							totalPrice += otherFees.shippingCost.cost;
+							totalPrice += Number(otherFees.shippingCost.cost);
 						}
 					}
 
@@ -613,12 +618,12 @@ class OrderService {
 					if (otherFees.discount) {
 						// Jika discount dalam bentuk persentase
 						if (otherFees.discount.type === "percent" && otherFees.discount.value) {
-							const discountAmount = (totalPrice * otherFees.discount.value) / 100;
-							totalPrice -= discountAmount;
+							const discountAmount = (Number(totalPrice) * Number(otherFees.discount.value)) / 100;
+							totalPrice -= Number(discountAmount);
 						}
 						// Jika discount dalam bentuk nominal
 						else if (otherFees.discount.type === "nominal" && otherFees.discount.value) {
-							totalPrice -= otherFees.discount.value;
+							totalPrice -= Number(otherFees.discount.value);
 						}
 					}
 				}
@@ -632,7 +637,7 @@ class OrderService {
 							data.orderDetail.detail.code ||
 							`OID-${Date.now().toString().slice(-4)}-${Math.floor(1000 + Math.random() * 9000)}`,
 						otherFees: data.orderDetail.detail.otherFees,
-						finalPrice: totalPrice,
+						finalPrice: Number(totalPrice),
 						paymentStatus: data.orderDetail.paymentMethod?.status
 							? (data.orderDetail.paymentMethod?.status.toUpperCase() as PaymentStatus)
 							: undefined,
@@ -870,26 +875,26 @@ class OrderService {
 							switch (customer.category) {
 								case "CUSTOMER":
 								case "DROPSHIPPER":
-									productPrice = priceData.normal || 0;
+									productPrice = Number(priceData.normal) || 0;
 									break;
 								case "MEMBER":
-									productPrice = priceData.member || priceData.normal || 0;
+									productPrice = Number(priceData.member) || Number(priceData.normal) || 0;
 									break;
 								case "RESELLER":
-									productPrice = priceData.reseller || priceData.normal || 0;
+									productPrice = Number(priceData.reseller) || Number(priceData.normal) || 0;
 									break;
 								case "AGENT":
-									productPrice = priceData.agent || priceData.normal || 0;
+									productPrice = Number(priceData.agent) || Number(priceData.normal) || 0;
 									break;
 								default:
-									productPrice = priceData.normal || 0;
+									productPrice = Number(priceData.normal) || 0;
 							}
 						} else {
-							productPrice = priceData.normal || 0;
+							productPrice = Number(priceData.normal) || 0;
 						}
 
 						// Dapatkan quantity produk saat ini
-						const productQty = orderProduct.productQty || 1;
+						const productQty = Number(orderProduct.productQty) || 1;
 
 						// Cari produk yang sama di order yang sudah ada jika ada
 						let existingProductQty = 0;
@@ -898,15 +903,15 @@ class OrderService {
 								(p) => p.productId === orderProduct.productId && !orderProduct.productVariantId,
 							);
 							if (existingProduct) {
-								existingProductQty = existingProduct.productQty || 0;
+								existingProductQty = Number(existingProduct.productQty) || 0;
 							}
 						}
 
 						// Gunakan quantity dari order product saat ini, atau dari existing order jika tidak ada
-						const finalQty = productQty || existingProductQty || 1;
+						const finalQty = Number(productQty) || Number(existingProductQty) || 1;
 
 						// Tambahkan ke total price (harga * quantity)
-						totalPrice += productPrice * finalQty;
+						totalPrice += Number(productPrice) * Number(finalQty);
 					}
 				}
 
@@ -940,7 +945,7 @@ class OrderService {
 
 					if (otherFees.packaging) {
 						// Add packaging cost if exists
-						totalPrice += otherFees.packaging;
+						totalPrice += Number(otherFees.packaging) || 0;
 					}
 
 					if (otherFees.installments) {
@@ -962,7 +967,7 @@ class OrderService {
 										paymentDate: otherFees.installments.paymentDate
 											? new Date(otherFees.installments.paymentDate)
 											: new Date(),
-										amount: otherFees.installments.amount,
+										amount: Number(otherFees.installments.amount),
 										isPaid: true,
 									},
 								});
@@ -975,7 +980,7 @@ class OrderService {
 										paymentDate: otherFees.installments.paymentDate
 											? new Date(otherFees.installments.paymentDate)
 											: new Date(),
-										amount: otherFees.installments.amount,
+										amount: Number(otherFees.installments.amount),
 										isPaid: true,
 									},
 								});
@@ -985,20 +990,20 @@ class OrderService {
 
 					if (otherFees.insurance) {
 						// Add insurance cost if exists
-						totalPrice += otherFees.insurance;
+						totalPrice += Number(otherFees.insurance) || 0;
 					}
 
 					if (otherFees.weight) {
 						// Add cost based on order weight
 						const orderWeight = 1; // Order weight in kg
-						const pricePerKg = otherFees.weight; // Price per kg
+						const pricePerKg = Number(otherFees.weight) || 0; // Price per kg
 						totalPrice += orderWeight * pricePerKg;
 					}
 
 					if (otherFees.shippingCost) {
 						// Add shipping cost if exists
 						if (otherFees.shippingCost.cost) {
-							totalPrice += otherFees.shippingCost.cost;
+							totalPrice += Number(otherFees.shippingCost.cost) || 0;
 						}
 					}
 
@@ -1006,12 +1011,12 @@ class OrderService {
 						// Proses discount jika ada
 						// Jika discount dalam bentuk persentase
 						if (otherFees.discount.type === "percent" && otherFees.discount.value) {
-							const discountAmount = (totalPrice * otherFees.discount.value) / 100;
+							const discountAmount = (totalPrice * Number(otherFees.discount.value)) / 100;
 							totalPrice -= discountAmount;
 						}
 						// Jika discount dalam bentuk nominal
 						else if (otherFees.discount.type === "nominal" && otherFees.discount.value) {
-							totalPrice -= otherFees.discount.value;
+							totalPrice -= Number(otherFees.discount.value);
 						}
 					}
 
@@ -1038,17 +1043,21 @@ class OrderService {
 							if (productPriceDB) {
 								const customerCategory = customer?.category;
 								switch (customerCategory) {
+									case "CUSTOMER":
+									case "DROPSHIPPER":
+										discountProductPrice = Number(productPriceDB.normal) || 0;
+										break;
 									case "RESELLER":
-										discountProductPrice = productPriceDB.reseller || productPriceDB.normal || 0;
+										discountProductPrice = Number(productPriceDB.reseller) || Number(productPriceDB.normal) || 0;
 										break;
 									case "MEMBER":
-										discountProductPrice = productPriceDB.member || productPriceDB.normal || 0;
+										discountProductPrice = Number(productPriceDB.member) || Number(productPriceDB.normal) || 0;
 										break;
 									case "AGENT":
-										discountProductPrice = productPriceDB.agent || productPriceDB.normal || 0;
+										discountProductPrice = Number(productPriceDB.agent) || Number(productPriceDB.normal) || 0;
 										break;
 									default:
-										discountProductPrice = productPriceDB.normal || 0;
+										discountProductPrice = Number(productPriceDB.normal) || 0;
 								}
 							}
 
@@ -1057,14 +1066,18 @@ class OrderService {
 								let discountAmount = 0;
 								if (discount.discountType === "percent") {
 									// Hitung diskon persentase dari harga produk
-									discountAmount = (discountProductPrice * (product.productQty || 0) * discount.discountAmount) / 100;
+									discountAmount =
+										(Number(discountProductPrice) *
+											(Number(product.productQty) || 0) *
+											Number(discount.discountAmount)) /
+										100;
 								} else if (discount.discountType === "nominal") {
 									// Diskon nominal langsung
-									discountAmount = discount.discountAmount * (product.productQty || 0);
+									discountAmount = Number(discount.discountAmount) * (Number(product.productQty) || 0);
 								}
 
 								// Kurangi total harga dengan diskon
-								totalPrice -= discountAmount;
+								totalPrice -= Number(discountAmount);
 							}
 						}
 					}
@@ -1093,8 +1106,8 @@ class OrderService {
 							data: {
 								paymentMethodId: data.orderDetail.paymentMethod?.id,
 								code: data.orderDetail.detail?.code,
-								otherFees: data.orderDetail.detail?.otherFees,
-								finalPrice: totalPrice,
+								otherFees: data.orderDetail.detail?.otherFees ? Number(data.orderDetail.detail.otherFees) : undefined,
+								finalPrice: Number(totalPrice),
 								paymentStatus: data.orderDetail.paymentMethod?.status
 									? (data.orderDetail.paymentMethod.status.toUpperCase() as PaymentStatus)
 									: undefined,
@@ -1111,7 +1124,8 @@ class OrderService {
 								orderId: id,
 								paymentMethodId: data.orderDetail.paymentMethod?.id,
 								code: data.orderDetail.detail?.code,
-								otherFees: data.orderDetail.detail?.otherFees,
+								otherFees: data.orderDetail.detail?.otherFees ? Number(data.orderDetail.detail.otherFees) : undefined,
+								finalPrice: Number(totalPrice),
 								paymentStatus: data.orderDetail.paymentMethod?.status
 									? (data.orderDetail.paymentMethod.status.toUpperCase() as PaymentStatus)
 									: undefined,
@@ -1144,7 +1158,7 @@ class OrderService {
 							}
 
 							existingOrder.OrderDetail?.OrderProducts.map(async (db_product) => {
-								const stockDifference = db_product.productQty - (orderProduct.productQty ?? 0);
+								const stockDifference = Number(db_product.productQty) - (Number(orderProduct.productQty) ?? 0);
 								console.log(
 									`Selisih stok yang akan dikembalikan: ${stockDifference} unit untuk produk dengan ID: ${orderProduct.productVariantId}`,
 								);
