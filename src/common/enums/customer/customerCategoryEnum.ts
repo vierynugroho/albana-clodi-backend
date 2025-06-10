@@ -3,4 +3,5 @@ export enum CustomerCategoryEnum {
 	RESELLER = "RESELLER",
 	DROPSHIPPER = "DROPSHIPPER",
 	AGENT = "AGENT",
+	MEMBER = "MEMBER"
 }
