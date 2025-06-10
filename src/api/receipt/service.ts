@@ -1,5 +1,6 @@
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { logger } from "@/server";
+import type { CustomerCategories } from "@prisma/client";
 import { StatusCodes } from "http-status-codes";
 import { type ReceiptRepository, receiptRepository } from "./repository";
 
@@ -276,7 +277,7 @@ class ReportService {
 						email: order.DeliveryTargetCustomer?.email || "Tidak ada email",
 					},
 					dropship_info: (() => {
-						const isDropshipper = order.OrdererCustomer?.category === "DROPSHIPPER";
+						const isDropshipper = order.OrdererCustomer?.category === ("DROPSHIPPER" as CustomerCategories);
 						return {
 							sender: {
 								name: isDropshipper ? order.OrdererCustomer?.name || "Tidak ada nama" : "",

@@ -55,6 +55,11 @@ class OrderService {
 				search: query.search as string | undefined,
 				sort: query.sort as string | undefined,
 				order: query.order as "asc" | "desc" | undefined,
+				orderId: query.orderId as string | undefined,
+				customerName: query.customerName as string | undefined,
+				productName: query.productName as string | undefined,
+				receiptNumber: query.receiptNumber as string | undefined,
+				phoneNumber: query.phoneNumber as string | undefined,
 			};
 
 			// Filter berdasarkan sales channel
@@ -159,6 +164,71 @@ class OrderService {
 						receiptNumber: null,
 					};
 				}
+			}
+
+			// Filter berdasarkan ID order
+			if (queryParams.orderId) {
+				filter.id = queryParams.orderId;
+			}
+
+			// Filter berdasarkan nama pelanggan
+			if (queryParams.customerName) {
+				const customerNameFilter = {
+					name: {
+						contains: queryParams.customerName,
+						mode: "insensitive" as const,
+					},
+				};
+
+				filter.OR = [{ OrdererCustomer: customerNameFilter }, { DeliveryTargetCustomer: customerNameFilter }];
+			}
+
+			// Filter berdasarkan nama produk
+			if (queryParams.productName) {
+				if (!filter.OrderDetail) {
+					filter.OrderDetail = {};
+				}
+
+				if (!filter.OrderDetail.OrderProducts) {
+					filter.OrderDetail.OrderProducts = {
+						some: {
+							Product: {
+								name: {
+									contains: queryParams.productName,
+									mode: "insensitive" as const,
+								},
+							},
+						},
+					};
+				}
+			}
+
+			// Filter berdasarkan nomor resi
+			if (queryParams.receiptNumber) {
+				if (!filter.OrderDetail) {
+					filter.OrderDetail = {};
+				}
+
+				filter.OrderDetail.receiptNumber = {
+					contains: queryParams.receiptNumber,
+					mode: "insensitive" as const,
+				};
+			}
+
+			// Filter berdasarkan nomor telepon
+			if (queryParams.phoneNumber) {
+				const phoneNumberFilter = {
+					phoneNumber: {
+						contains: queryParams.phoneNumber,
+						mode: "insensitive" as const,
+					},
+				};
+
+				filter.OR = [
+					...(filter.OR || []),
+					{ OrdererCustomer: phoneNumberFilter },
+					{ DeliveryTargetCustomer: phoneNumberFilter },
+				];
 			}
 
 			console.log("==========FILTER=========");
