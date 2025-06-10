@@ -129,29 +129,32 @@ class ProductService {
 				createdAt.lte = new Date(weekEnd.setHours(23, 59, 59));
 			}
 
-			if (search) {
-				console.log(search);
-
-				queryArgs.where = {
-					...queryArgs.where,
+			const searchTerms = search?.trim().toLowerCase().split(/\s+/).filter(term => term.length > 0);
+			if (searchTerms!.length > 0) {
+				const searchConditions = searchTerms?.map(term => ({
 					OR: [
 						{
 							name: {
-								contains: search,
-								mode: "insensitive",
+								contains: term,
+								mode: "insensitive" as const,
 							},
 						},
 						{
 							productVariants: {
 								some: {
 									sku: {
-										contains: search,
-										mode: "insensitive",
+										contains: term,
+										mode: "insensitive" as const,
 									},
 								},
 							},
 						},
 					],
+				}));
+
+				queryArgs.where = {
+					...queryArgs.where,
+					AND: searchConditions,
 				};
 			}
 
