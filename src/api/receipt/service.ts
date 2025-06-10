@@ -276,15 +276,15 @@ class ReportService {
 						email: order.DeliveryTargetCustomer?.email || "Tidak ada email",
 					},
 					dropship_info: (() => {
-						const isDropshipper = order.DeliveryTargetCustomer?.category === "DROPSHIPPER";
+						const isDropshipper = order.OrdererCustomer?.category === "DROPSHIPPER";
 						return {
 							sender: {
-								name: isDropshipper ? order.DeliveryTargetCustomer?.name || "Tidak ada nama" : "",
-								address: isDropshipper ? order.DeliveryTargetCustomer?.address || "Tidak ada alamat" : "",
-							},
-							recipient: {
 								name: isDropshipper ? order.OrdererCustomer?.name || "Tidak ada nama" : "",
 								address: isDropshipper ? order.OrdererCustomer?.address || "Tidak ada alamat" : "",
+							},
+							recipient: {
+								name: isDropshipper ? order.DeliveryTargetCustomer?.name || "Tidak ada nama" : "",
+								address: isDropshipper ? order.DeliveryTargetCustomer?.address || "Tidak ada alamat" : "",
 							},
 						};
 					})(),
