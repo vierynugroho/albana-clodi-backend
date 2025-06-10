@@ -679,6 +679,7 @@ class OrderService {
 							orderDetailId: createdOrderDetail.id,
 							productId: orderProduct.productId,
 							productQty: orderProduct.productQty,
+							productVariantId: orderProduct.productVariantId,
 						},
 					});
 				}
@@ -1165,6 +1166,7 @@ class OrderService {
 									productId: orderProduct.productId,
 									productQty: orderProduct.productQty || 0,
 									orderDetailId: existingOrder.OrderDetail?.id ?? undefined,
+									productVariantId: orderProduct.productVariantId,
 								},
 							});
 						}),
