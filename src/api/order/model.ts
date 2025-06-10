@@ -194,7 +194,7 @@ export const OrderQuerySchema = z.object({
 		paymentStatus: z
 			.string()
 			.optional()
-			.transform((val) => val?.toLowerCase() as "settlement" | "pending" | "cancel" | "installments" | undefined),
+			.transform((val) => val?.toUpperCase() as "SETTLEMENT" | "PENDING" | "CANCEL" | "INSTALLMENTS" | undefined),
 		productId: z.string().uuid().optional(),
 		paymentMethodId: z.string().uuid().optional(),
 		search: z.string().optional(),
@@ -202,6 +202,12 @@ export const OrderQuerySchema = z.object({
 		unavailableReceipt: z.enum(["yes"]).optional(),
 		orderStatus: z.string().optional(),
 		order: z.enum(["asc", "desc"]).optional(),
+
+		orderId: z.string().optional(),
+		customerName: z.string().optional(),
+		productName: z.string().optional(),
+		receiptNumber: z.string().optional(),
+		phoneNumber: z.string().optional(),
 	}),
 });
 export type OrderQueryType = z.infer<typeof OrderQuerySchema>;
