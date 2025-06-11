@@ -208,6 +208,8 @@ export const OrderQuerySchema = z.object({
 		productName: z.string().optional(),
 		receiptNumber: z.string().optional(),
 		phoneNumber: z.string().optional(),
+
+		code: z.string().optional(),
 	}),
 });
 export type OrderQueryType = z.infer<typeof OrderQuerySchema>;

@@ -60,6 +60,7 @@ class OrderService {
 				productName: query.productName as string | undefined,
 				receiptNumber: query.receiptNumber as string | undefined,
 				phoneNumber: query.phoneNumber as string | undefined,
+				code: query.code as string | undefined,
 			};
 
 			// Filter berdasarkan sales channel
@@ -169,6 +170,18 @@ class OrderService {
 			// Filter berdasarkan ID order
 			if (queryParams.orderId) {
 				filter.id = queryParams.orderId;
+			}
+
+			// Filter by order code
+			if (queryParams.code) {
+				if (!filter.OrderDetail) {
+					filter.OrderDetail = {};
+				}
+
+				filter.OrderDetail.code = {
+					contains: queryParams.code,
+					mode: "insensitive" as const,
+				};
 			}
 
 			// Filter berdasarkan nama pelanggan
