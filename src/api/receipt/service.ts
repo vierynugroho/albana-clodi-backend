@@ -282,10 +282,12 @@ class ReportService {
 							sender: {
 								name: isDropshipper ? order.OrdererCustomer?.name || "Tidak ada nama" : "",
 								address: isDropshipper ? order.OrdererCustomer?.address || "Tidak ada alamat" : "",
+								phone: isDropshipper ? order.OrdererCustomer?.phoneNumber || "Tidak ada nomor telepon" : "",
 							},
 							recipient: {
 								name: isDropshipper ? order.DeliveryTargetCustomer?.name || "Tidak ada nama" : "",
 								address: isDropshipper ? order.DeliveryTargetCustomer?.address || "Tidak ada alamat" : "",
+								phone: isDropshipper ? order.DeliveryTargetCustomer?.phoneNumber || "Tidak ada nomor telepon" : "",
 							},
 						};
 					})(),
