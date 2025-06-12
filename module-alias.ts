@@ -1,17 +1,30 @@
 import path from "node:path";
 import moduleAlias from "module-alias";
 
-// Log untuk menunjukkan ke mana alias @ mengarah
-if (process.env.NODE_ENV === "production") {
-	const aliasPath = path.join(__dirname, "src");
-	console.log(`PROD - Alias @ mengarah ke: ${aliasPath}`);
+// Log untuk melihat ke mana @ mengarah
+console.log("__dirname:", __dirname);
+
+try {
+	if (process.env.NODE_ENV === "production") {
+		const prodPath = path.join(__dirname, "dist/src");
+		console.log("Production @ path:", prodPath);
+		moduleAlias.addAliases({
+			"@": prodPath,
+		});
+	} else {
+		const devPath = path.join(__dirname, "src");
+		console.log("Development @ path:", devPath);
+		moduleAlias.addAliases({
+			"@": devPath,
+		});
+	}
+} catch (error) {
+	console.error("Error saat mengatur module alias:", error);
+	console.error("Tipe __dirname:", typeof __dirname);
+	// Fallback jika terjadi error
+	const basePath = typeof __dirname === "string" ? __dirname : process.cwd();
+	console.log("Menggunakan fallback path:", basePath);
 	moduleAlias.addAliases({
-		"@": aliasPath,
-	});
-} else {
-	const aliasPath = path.join(__dirname, "src");
-	console.log(`DEV - Alias @ mengarah ke: ${aliasPath}`);
-	moduleAlias.addAliases({
-		"@": aliasPath,
+		"@": path.join(basePath, process.env.NODE_ENV === "production" ? "dist/src" : "src"),
 	});
 }
