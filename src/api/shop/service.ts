@@ -1,6 +1,6 @@
 import { AwsService } from "@/common/libs/awsService";
 import { ServiceResponse } from "@/common/models/serviceResponse";
-import { env } from "./../../common/utils/envConfig";
+import { env } from "@/common/utils/envConfig";
 import type { Roles } from "@prisma/client";
 import { StatusCodes } from "http-status-codes";
 import type { CreateShopSettingType, UpdateShopSettingType } from "./model";
