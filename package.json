@@ -89,8 +89,5 @@
 		"splitting": false,
 		"skipNodeModulesBundle": true
 	},
-	"packageManager": "pnpm@10.9.0",
-	"_moduleAliases": {
-		"@/*": ["./src/*"]
-	}
+	"packageManager": "pnpm@10.9.0"
 }
