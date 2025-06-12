@@ -1,7 +1,9 @@
+import "../module-alias";
 import cors from "cors";
 import express, { type Express } from "express";
 import helmet from "helmet";
 import { pino } from "pino";
+import "module-alias/register";
 
 import { openAPIRouter } from "@/api-docs/openAPIRouter";
 import { healthCheckRouter } from "@/api/healthCheck/healthCheckRouter";
@@ -68,6 +70,16 @@ app.use("/shop", authenticate, authorizeRoles([Roles.SUPERADMIN]), shopRouter);
 app.use("/categories", authenticate, authorizeRoles([Roles.SUPERADMIN]), categoryRouter);
 
 app.use("/api-docs", openAPIRouter);
+
+// Middleware untuk menangani rute yang tidak ditemukan
+app.use((req, res) => {
+	res.status(404).json({
+		status: "error",
+		message: "Route not found",
+		path: req.originalUrl,
+		documentation: "/api-docs",
+	});
+});
 
 // Error handlers
 app.use(errorHandler());

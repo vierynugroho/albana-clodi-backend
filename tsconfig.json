@@ -1,22 +1,24 @@
 {
 	"compilerOptions": {
-		"target": "ESNext",
-		"module": "ESNext",
-		"baseUrl": "./src",
+		"target": "es2016",
+		"module": "commonjs",
 		"paths": {
-			"@/*": ["*"]
+			"@/*": ["./src/*"]
 		},
 		"moduleResolution": "Node",
-		"outDir": "dist",
+		"outDir": "./dist",
 		"importsNotUsedAsValues": "remove",
 		"strict": true,
 		"esModuleInterop": true,
 		"resolveJsonModule": true,
 		"skipLibCheck": true,
+		"sourceRoot": "/",
+		"sourceMap": true,
+		"inlineSources": true,
 		"forceConsistentCasingInFileNames": true,
-		"types": ["node"],
-		"typeRoots": ["./node_modules/@types", "./types"]
+		"typeRoots": ["./node_modules/@types", "./src/types"],
+		"types": ["node", "express"]
 	},
-	"include": ["src/**/*"],
+	"include": ["src/**/*.ts", "src/types/express/index.d.ts"],
 	"exclude": ["node_modules"]
 }
