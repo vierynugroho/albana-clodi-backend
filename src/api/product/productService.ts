@@ -5,7 +5,7 @@ import { ServiceResponse } from "@/common/models/serviceResponse";
 import { generateBarcode } from "@/common/utils/bwipService";
 import { exportData } from "@/common/utils/dataExporter";
 import { importData } from "@/common/utils/dataImporter";
-import { env } from "./../../common/utils/envConfig";
+import { env } from "@/common/utils/envConfig";
 import prismaClient from "@/config/prisma";
 import { logger } from "@/server";
 import { type Prisma, PrismaClient, type ProductDiscount, type ProductDiscountTypes } from "@prisma/client";
