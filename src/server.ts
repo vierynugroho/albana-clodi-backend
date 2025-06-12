@@ -11,7 +11,7 @@ import { userRouter } from "@/api/user/userRouter";
 import errorHandler from "@/common/middleware/errorHandler";
 import rateLimiter from "@/common/middleware/rateLimiter";
 import requestLogger from "@/common/middleware/requestLogger";
-import { env } from "@/common/utils/envConfig";
+import { env } from "./common/utils/envConfig";
 import { Roles } from "@prisma/client";
 import { authRouter } from "./api/auth/route";
 import { categoryRouter } from "./api/category/categoryRouter";
