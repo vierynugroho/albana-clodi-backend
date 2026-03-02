@@ -1882,8 +1882,18 @@ class OrderService {
         dateStyle: "short",
       });
 
+      const exportParams = {
+        ...params,
+        startDate: params.startDate
+          ? new Date(params.startDate).toISOString()
+          : undefined,
+        endDate: params.endDate
+          ? new Date(params.endDate).toISOString()
+          : undefined,
+      };
+
       return exportData<OrderWithRelations>(
-        params,
+        exportParams,
         async (where): Promise<OrderWithRelations[]> => {
           const queryParams = {
             productId: undefined as string | undefined,

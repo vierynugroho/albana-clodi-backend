@@ -281,7 +281,7 @@ class ProductService {
             variant: productVariants,
             price: variant.productPrices[0],
           };
-        })
+        }),
       );
 
       const response: PaginatedResponse<Product> = {
@@ -296,14 +296,14 @@ class ProductService {
       return ServiceResponse.success(
         "Products retrieved successfully.",
         response,
-        StatusCodes.OK
+        StatusCodes.OK,
       );
     } catch (ex) {
       const errorMessage = `Error get all products: ${(ex as Error).message}`;
       return ServiceResponse.failure(
         "An error occurred while get all products.",
         errorMessage,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   };
@@ -326,28 +326,28 @@ class ProductService {
         return ServiceResponse.failure(
           "Product is not exist.",
           null,
-          StatusCodes.NOT_FOUND
+          StatusCodes.NOT_FOUND,
         );
       }
 
       return ServiceResponse.success(
         "Product retrieved successfully.",
         foundProduct,
-        StatusCodes.OK
+        StatusCodes.OK,
       );
     } catch (ex) {
       const errorMessage = `Error get all products: ${(ex as Error).message}`;
       return ServiceResponse.failure(
         "An error occurred while get all products.",
         errorMessage,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   };
 
   public createProduct = async (
     req: CreateProductType,
-    files: Express.Multer.File[]
+    files: Express.Multer.File[],
   ) => {
     // Check if product with the same name already exists
     const foundProduct = await prismaClient().product.findFirst({
@@ -374,7 +374,7 @@ class ProductService {
       return ServiceResponse.failure(
         "Product already exists",
         null,
-        StatusCodes.BAD_REQUEST
+        StatusCodes.BAD_REQUEST,
       );
     }
 
@@ -387,7 +387,7 @@ class ProductService {
       return ServiceResponse.failure(
         "Category is not found",
         null,
-        StatusCodes.NOT_FOUND
+        StatusCodes.NOT_FOUND,
       );
     }
 
@@ -405,7 +405,7 @@ class ProductService {
       return ServiceResponse.failure(
         "The purchase price cannot be greater than the normal or reseller price.",
         null,
-        StatusCodes.BAD_REQUEST
+        StatusCodes.BAD_REQUEST,
       );
     }
 
@@ -449,7 +449,7 @@ class ProductService {
             }
           } else {
             imageUrls.push(
-              ...Array(req.productVariants?.length || 0).fill(null)
+              ...Array(req.productVariants?.length || 0).fill(null),
             );
           }
 
@@ -494,22 +494,22 @@ class ProductService {
                     : undefined,
                 },
               });
-            })
+            }),
           );
-        }
+        },
       );
 
       return ServiceResponse.success(
         "Product created successfully.",
         newProduct,
-        StatusCodes.CREATED
+        StatusCodes.CREATED,
       );
     } catch (ex) {
       const errorMessage = `Error creating product: ${(ex as Error).message}`;
       return ServiceResponse.failure(
         "An error occurred while creating product.",
         errorMessage,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   };
@@ -517,7 +517,7 @@ class ProductService {
   public updateProduct = async (
     req: UpdateProductType,
     productId: string,
-    files: Express.Multer.File[]
+    files: Express.Multer.File[],
   ) => {
     try {
       // Verify product exists before attempting update
@@ -533,7 +533,7 @@ class ProductService {
         return ServiceResponse.failure(
           "Product not found",
           null,
-          StatusCodes.NOT_FOUND
+          StatusCodes.NOT_FOUND,
         );
       }
 
@@ -551,7 +551,7 @@ class ProductService {
         return ServiceResponse.failure(
           "The purchase price cannot be greater than the normal or reseller price.",
           null,
-          StatusCodes.BAD_REQUEST
+          StatusCodes.BAD_REQUEST,
         );
       }
 
@@ -672,30 +672,30 @@ class ProductService {
                     },
                   });
                 }
-              })
+              }),
             );
           }
-        }
+        },
       );
 
       return ServiceResponse.success(
         "Product updated successfully.",
         existingProduct,
-        StatusCodes.OK
+        StatusCodes.OK,
       );
     } catch (ex) {
       const errorMessage = `Error updating product: ${(ex as Error).message}`;
       return ServiceResponse.failure(
         "An error occurred while updating product.",
         errorMessage,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   };
 
   public deleteProduct = async (
     productId: string,
-    req: DeleteProductManyType
+    req: DeleteProductManyType,
   ) => {
     try {
       let foundProducts: Partial<Product>[];
@@ -722,7 +722,7 @@ class ProductService {
           return ServiceResponse.failure(
             "Products not found.",
             null,
-            StatusCodes.NOT_FOUND
+            StatusCodes.NOT_FOUND,
           );
         }
 
@@ -732,7 +732,7 @@ class ProductService {
           return ServiceResponse.failure(
             "Cannot delete product(s) because one or more are used in orderProduct.",
             null,
-            StatusCodes.BAD_REQUEST
+            StatusCodes.BAD_REQUEST,
           );
         }
 
@@ -748,7 +748,7 @@ class ProductService {
           return ServiceResponse.failure(
             "Product not found.",
             null,
-            StatusCodes.NOT_FOUND
+            StatusCodes.NOT_FOUND,
           );
         }
 
@@ -760,7 +760,7 @@ class ProductService {
           return ServiceResponse.failure(
             "Cannot delete product because it is used in orderProduct.",
             null,
-            StatusCodes.BAD_REQUEST
+            StatusCodes.BAD_REQUEST,
           );
         }
 
@@ -772,14 +772,14 @@ class ProductService {
       return ServiceResponse.success(
         "Product deleted successfully.",
         foundProducts,
-        StatusCodes.OK
+        StatusCodes.OK,
       );
     } catch (ex) {
       const errorMessage = `Error deleting product: ${(ex as Error).message}`;
       return ServiceResponse.failure(
         "An error occurred while deleting product.",
         errorMessage,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   };
@@ -793,8 +793,12 @@ class ProductService {
 
       const exportParams = {
         ...query,
-        startDate: query.startDate?.toISOString().split("T")[0],
-        endDate: query.endDate?.toISOString().split("T")[0],
+        startDate: query.startDate
+          ? new Date(query.startDate).toISOString()
+          : undefined,
+        endDate: query.endDate
+          ? new Date(query.endDate).toISOString()
+          : undefined,
       };
 
       return exportData<
@@ -881,7 +885,7 @@ class ProductService {
               agent: [],
               normal: [],
               reseller: [],
-            } as VariantFieldType
+            } as VariantFieldType,
           );
 
           return {
@@ -900,23 +904,23 @@ class ProductService {
             "Harga Reseller": variantFields.reseller.join(", ") ?? null,
             "Jumlah Stok": variantFields.stock.join(", ") ?? null,
             "Diskon Produk": product.ProductDiscount.map(
-              (discount: ProductDiscount) => discount.value
+              (discount: ProductDiscount) => discount.value,
             ).join(","),
             "Tipe Diskon": product.ProductDiscount.map(
-              (discount: ProductDiscount) => discount.type
+              (discount: ProductDiscount) => discount.type,
             ).join(","),
             "Berat (gram)": product.weight ?? null,
           };
         },
         "Produk",
-        "Tidak ada data produk untuk di ekspor."
+        "Tidak ada data produk untuk di ekspor.",
       );
     } catch (ex) {
       const errorMessage = `Error exporting product: ${(ex as Error).message}`;
       return ServiceResponse.failure(
         "An error occurred while exporting product.",
         errorMessage,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   };
@@ -1029,24 +1033,24 @@ class ProductService {
                     category: true,
                     ProductDiscount: true,
                   },
-                })
-              )
+                }),
+              ),
             );
           }
-        }
+        },
       );
 
       return ServiceResponse.success(
         "Berhasil mengimpor data product",
         importResult.responseObject?.length,
-        StatusCodes.OK
+        StatusCodes.OK,
       );
     } catch (ex) {
       const errorMessage = `Error exporting product: ${(ex as Error).message}`;
       return ServiceResponse.failure(
         "An error occurred while exporting product.",
         errorMessage,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        StatusCodes.INTERNAL_SERVER_ERROR,
       );
     }
   };
